@@ -936,6 +936,20 @@ function setupShoppingChat() {
       handleUserMessageSubmission(chip.dataset.prompt);
     });
   });
+
+  // Wire quick voice suggestion prompts tray
+  document.querySelectorAll('.btn-voice-prompt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cmd = btn.dataset.voiceCmd;
+      if (cmd) {
+        if (voiceControllerInstance) {
+          voiceControllerInstance.simulateVoiceCommand(cmd);
+        } else {
+          handleUserMessageSubmission(cmd);
+        }
+      }
+    });
+  });
 }
 
 function setupSessionMemory() {
@@ -965,7 +979,7 @@ async function refreshSessionMemory() {
 }
 
 /**
- * Main Message Dispatcher (Used by both Typed text and Voice input)
+ * Main Message Dispatcher with High-Converting Voice & Chat Intent Parser
  */
 async function handleUserMessageSubmission(messageText) {
   if (!messageText || !messageText.trim()) return;
@@ -975,21 +989,52 @@ async function handleUserMessageSubmission(messageText) {
   const chatInput = document.getElementById('chat-input');
   if (chatInput) chatInput.value = '';
 
-  // Append user bubble
+  // Append user message bubble
   appendChatBubble('You', cleanMsg, 'user');
 
-  // Check for conversational add-to-cart commands (e.g. "yes add it", "add the case")
   const lower = cleanMsg.toLowerCase();
-  if ((lower.includes('add it') || lower.includes('add the case') || lower.includes('add companion') || lower.includes('add accessory')) && latestRecommendedCrossSell) {
-    await window.addItemToCart(latestRecommendedCrossSell.id, 1, false, true);
-    const reply = `I have added the **${latestRecommendedCrossSell.name}** (₹${latestRecommendedCrossSell.price.toLocaleString('en-IN')}) to your cart! You can review your cart or proceed to checkout anytime.`;
-    latestAIResponseText = reply;
-    appendChatBubble('Shopping Assistant', reply, 'assistant');
-    return;
+
+  // 1. DIRECT CONVERSATIONAL VOICE/TEXT COMMAND: "Proceed to Checkout" / "Checkout" / "Buy Now"
+  if (lower === 'checkout' || lower === 'buy now' || lower.includes('proceed to checkout') || lower.includes('open cart') || lower.includes('pay now')) {
+    if (cartData.items && cartData.items.length > 0) {
+      appendChatBubble('Shopping Assistant', `Opening your cart with **${cartData.items.length} item(s)** (₹${cartData.total.toLocaleString('en-IN')}) and initiating secure Razorpay checkout...`, 'assistant');
+      openCartDrawer();
+      setTimeout(() => window.triggerCheckoutFlow(), 400);
+      return;
+    } else {
+      appendChatBubble('Shopping Assistant', 'Your shopping cart is currently empty! Search our catalog or choose an item below to begin checkout.', 'assistant');
+      return;
+    }
   }
 
-  // Contextual loading indicator
-  const loadingId = appendChatBubble('Shopping Assistant', 'Searching catalog & evaluating recommendations...', 'assistant');
+  // 2. DIRECT CONVERSATIONAL VOICE/TEXT COMMAND: "Add to cart" / "Add headphones" / "Add companion"
+  const isAddCommand = lower === 'add to cart' || lower === 'add this' || lower === 'buy this' || lower.includes('add to cart') || lower.includes('add it') || lower.includes('add the case') || lower.includes('add companion') || lower.includes('add accessory');
+  
+  if (isAddCommand) {
+    let targetProductId = null;
+    let isCross = false;
+
+    if ((lower.includes('case') || lower.includes('companion') || lower.includes('accessory')) && latestRecommendedCrossSell) {
+      targetProductId = latestRecommendedCrossSell.id;
+      isCross = true;
+    } else if (latestRecommendedCrossSell && (lower.includes('add the case') || lower.includes('add companion'))) {
+      targetProductId = latestRecommendedCrossSell.id;
+      isCross = true;
+    } else {
+      // Default to top recommended product or seeded ANC headphones
+      targetProductId = 'prod_anc_headphones';
+    }
+
+    if (targetProductId) {
+      await window.addItemToCart(targetProductId, 1, false, isCross);
+      const reply = `I've added the item to your cart! Your updated subtotal is **₹${cartData.total.toLocaleString('en-IN')}**. You can click **Checkout** below or continue browsing.`;
+      latestAIResponseText = reply;
+      return;
+    }
+  }
+
+  // Show dynamic typing / reasoning indicator
+  const loadingId = appendTypingIndicator('AI is searching catalog & evaluating best offers...');
 
   try {
     const res = await fetch('/api/shopping/chat', {
@@ -1018,8 +1063,8 @@ async function handleUserMessageSubmission(messageText) {
 
     currentSmartCartOpportunity = data.smartCartOpportunity;
 
-    // Render natural conversational reply without diagnostic tags
-    appendChatBubble('Shopping Assistant', data.reply, 'assistant');
+    // Render interactive assistant response with rich in-bubble product card & conversion pills
+    appendAssistantChatResponse(data);
 
     // Refresh active session memory display
     refreshSessionMemory();
@@ -1027,12 +1072,156 @@ async function handleUserMessageSubmission(messageText) {
     // Dynamically refresh top recommendations as new signals arrive
     loadTopRecommendations();
 
-    // Render Dynamic Showcase cards
+    // Render Dynamic Showcase cards on right column
     renderShowcaseFeed(data);
   } catch (err) {
     removeChatBubble(loadingId);
     appendChatBubble('Shopping Assistant', 'Sorry, I encountered an issue connecting to the merchant feed. Please try again.', 'assistant');
   }
+}
+
+/**
+ * Render Rich Assistant Chat Bubble with Interactive In-Bubble Conversion Cards & Action Pills
+ */
+function appendAssistantChatResponse(data) {
+  const stream = document.getElementById('chat-stream');
+  if (!stream) return null;
+
+  const bubbleId = 'bubble_' + Date.now();
+  const bubble = document.createElement('div');
+  bubble.id = bubbleId;
+  bubble.className = 'chat-bubble bubble-assistant';
+
+  let productCardHtml = '';
+  let bundleCardHtml = '';
+  let pillsHtml = '';
+
+  const primaryRec = (data.recommendations && data.recommendations.length > 0) ? data.recommendations[0] : null;
+  const p = primaryRec ? primaryRec.product : null;
+
+  // 1. In-Bubble Interactive Product Card
+  if (p) {
+    const imgUrl = getProductImageUrl(p.id);
+    const brand = p.source || p.brand || 'OmniDirect';
+    const rating = p.rating || '4.8';
+    const priceFormatted = `₹${p.price.toLocaleString('en-IN')}`;
+
+    productCardHtml = `
+      <div class="chat-product-card" data-product-id="${p.id}">
+        <div class="cpc-header">
+          <span class="cpc-badge">✦ Recommended For You</span>
+          <span class="cpc-rating">★ ${rating}</span>
+        </div>
+        <div class="cpc-body">
+          <img src="${imgUrl}" alt="${p.name}" class="cpc-thumb" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
+          <div class="cpc-info">
+            <div class="cpc-title">${p.name}</div>
+            <div class="cpc-source">${brand} &bull; Verified In-Stock</div>
+            <div class="cpc-price-wrap">
+              <span class="cpc-price">${priceFormatted}</span>
+            </div>
+          </div>
+        </div>
+        <div class="cpc-actions">
+          <button type="button" class="cpc-btn-add" onclick="window.addItemToCart('${p.id}', 1, false, false)" title="Add to cart">
+            <span>+ Add to Cart</span>
+          </button>
+          <button type="button" class="cpc-btn-buynow" onclick="window.quickBuyNow('${p.id}')" title="Buy now with 1-click checkout">
+            <span>⚡ Buy Now</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // 2. In-Bubble Special Bundle / Negotiation Card
+  if (data.negotiation) {
+    if (data.negotiation.allowed) {
+      bundleCardHtml = `
+        <div class="chat-bundle-card">
+          <div class="cbc-header">
+            <span class="cbc-tag">🎉 Discount Approved</span>
+            <span class="cbc-savings">Save ₹${(data.negotiation.originalPrice - data.negotiation.targetPrice).toLocaleString('en-IN')}</span>
+          </div>
+          <div class="cbc-title">${data.negotiation.productName || 'Negotiated Price'}</div>
+          <div class="cbc-desc">${data.negotiation.explanation}</div>
+          <div class="cbc-footer">
+            <span class="cbc-price">₹${data.negotiation.targetPrice.toLocaleString('en-IN')}</span>
+            <button type="button" class="cbc-btn-accept" onclick="window.addItemToCart('${data.negotiation.productId}', 1, false, false)">
+              Accept Offer &amp; Add &rarr;
+            </button>
+          </div>
+        </div>
+      `;
+    } else if (data.negotiation.bundleAlternative) {
+      const b = data.negotiation.bundleAlternative;
+      bundleCardHtml = `
+        <div class="chat-bundle-card">
+          <div class="cbc-header">
+            <span class="cbc-tag">🎁 Special Bundle Alternative</span>
+            <span class="cbc-savings">Save ₹${b.totalSavings.toLocaleString('en-IN')}</span>
+          </div>
+          <div class="cbc-title">${b.bundleName}</div>
+          <div class="cbc-desc">${b.explanation || 'Special bundle pricing with complimentary accessory.'}</div>
+          <div class="cbc-footer">
+            <span class="cbc-price">₹${b.specialBundlePrice.toLocaleString('en-IN')}</span>
+            <button type="button" class="cbc-btn-accept" onclick="window.applyBundleDiscount('${b.bundleItems[0].id}', '${b.bundleItems[1].id}', ${b.totalSavings})">
+              Claim Bundle Deal &rarr;
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // 3. Contextual Quick-Reply Conversion Action Pills
+  const pills = [];
+  if (p) {
+    pills.push({ label: `🛒 Add to Cart`, action: `window.addItemToCart('${p.id}', 1, false, false)`, primary: true });
+    pills.push({ label: `⚡ Buy Now`, action: `window.quickBuyNow('${p.id}')`, primary: false });
+  }
+
+  if (data.upsellAndCrossSell?.crossSells && data.upsellAndCrossSell.crossSells.length > 0) {
+    const cs = data.upsellAndCrossSell.crossSells[0].product;
+    pills.push({ label: `💼 + ${cs.name.split(' ').slice(0, 3).join(' ')} (₹${cs.price})`, action: `window.addItemToCart('${cs.id}', 1, false, true)`, deal: true });
+  }
+
+  if (data.upsellAndCrossSell?.upsell) {
+    const up = data.upsellAndCrossSell.upsell.product;
+    pills.push({ label: `👑 Compare Pro (₹${up.price.toLocaleString('en-IN')})`, action: `handleUserMessageSubmission('Tell me about the ${up.name}')`, primary: false });
+  }
+
+  if (!data.negotiation && p && p.price > 4000) {
+    pills.push({ label: `🏷️ Negotiate ₹4,000`, action: `handleUserMessageSubmission('Can you make it ₹4,000?')`, primary: false });
+  }
+
+  if (cartData.items && cartData.items.length > 0) {
+    pills.push({ label: `🛍️ Proceed to Checkout (${cartData.items.length}) →`, action: `window.triggerCheckoutFlow()`, primary: true });
+  }
+
+  if (pills.length > 0) {
+    pillsHtml = `
+      <div class="chat-action-pills">
+        ${pills.map(pi => `
+          <button type="button" class="chat-action-pill ${pi.primary ? 'pill-primary' : ''} ${pi.deal ? 'pill-deal' : ''}" onclick="${pi.action}">
+            ${pi.label}
+          </button>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  bubble.innerHTML = `
+    <div class="bubble-sender">Shopping Assistant</div>
+    <div class="bubble-text">${formatMarkdown(data.reply || '')}</div>
+    ${productCardHtml}
+    ${bundleCardHtml}
+    ${pillsHtml}
+  `;
+
+  stream.appendChild(bubble);
+  stream.scrollTop = stream.scrollHeight;
+  return bubbleId;
 }
 
 function appendChatBubble(sender, text, type) {
@@ -1053,6 +1242,55 @@ function appendChatBubble(sender, text, type) {
   return bubbleId;
 }
 
+function appendTypingIndicator(statusText = 'AI is searching...') {
+  const stream = document.getElementById('chat-stream');
+  if (!stream) return null;
+
+  const bubbleId = 'typing_' + Date.now();
+  const bubble = document.createElement('div');
+  bubble.id = bubbleId;
+  bubble.className = 'chat-typing-bubble';
+  bubble.innerHTML = `
+    <div class="typing-dots">
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+      <span class="typing-dot"></span>
+    </div>
+    <span>${statusText}</span>
+  `;
+
+  stream.appendChild(bubble);
+  stream.scrollTop = stream.scrollHeight;
+  return bubbleId;
+}
+
+function appendInChatCartConfirmation(item, total) {
+  const stream = document.getElementById('chat-stream');
+  if (!stream) return;
+
+  const banner = document.createElement('div');
+  banner.className = 'chat-cart-confirm-banner';
+  banner.innerHTML = `
+    <div class="ccc-info">
+      <span class="ccc-icon">✓</span>
+      <div>
+        <div class="ccc-text">Added <strong>${item.name}</strong> to your cart!</div>
+        <div style="font-size: 11px; color: #15803d;">Cart Total: <strong>₹${total.toLocaleString('en-IN')}</strong></div>
+      </div>
+    </div>
+    <div class="ccc-actions">
+      <button type="button" class="ccc-btn-view" onclick="openCartDrawer()">View Cart</button>
+      <button type="button" class="ccc-btn-checkout" onclick="window.triggerCheckoutFlow()">
+        <span>⚡ Checkout</span>
+        <span>&rarr;</span>
+      </button>
+    </div>
+  `;
+
+  stream.appendChild(banner);
+  stream.scrollTop = stream.scrollHeight;
+}
+
 function removeChatBubble(bubbleId) {
   const el = document.getElementById(bubbleId);
   if (el) el.remove();
@@ -1065,7 +1303,7 @@ function formatMarkdown(text) {
 }
 
 // =============================================================
-// 4. SPEECH-TO-TEXT (STT) & TEXT-TO-SPEECH (TTS)
+// 4. ADVANCED SPEECH-TO-TEXT (STT) & VOICE COMMERCE ENGINE
 // =============================================================
 class RobustVoiceInputController {
   constructor() {
@@ -1085,6 +1323,7 @@ class RobustVoiceInputController {
     this.voiceBanner = document.getElementById('voice-status-banner');
     this.voiceLabel = document.getElementById('voice-status-label');
     this.voiceLiveText = document.getElementById('voice-live-text');
+    this.voicePromptsTray = document.getElementById('voice-quick-prompts-tray');
     this.cancelBtn = document.getElementById('btn-cancel-voice');
     this.chatInput = document.getElementById('chat-input');
 
@@ -1111,7 +1350,9 @@ class RobustVoiceInputController {
 
   startListening() {
     if (!this.isSupported()) {
-      alert('Speech recognition is not natively supported in this browser. You can use standard text chat.');
+      // Graceful fallback: Open voice prompt tray and explain
+      if (this.voicePromptsTray) this.voicePromptsTray.style.display = 'flex';
+      alert('Speech recognition is not natively supported in this browser. You can click any voice prompt below or use text chat.');
       return;
     }
 
@@ -1181,7 +1422,8 @@ class RobustVoiceInputController {
         this.setState('ERROR');
         
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          alert('Microphone access is disabled. You can continue using text chat.');
+          if (this.voicePromptsTray) this.voicePromptsTray.style.display = 'flex';
+          alert('Microphone access is disabled. You can select voice prompts from the helper tray below.');
         }
       };
 
@@ -1266,6 +1508,24 @@ class RobustVoiceInputController {
     this.setState('IDLE');
   }
 
+  /**
+   * 1-Click Simulated Voice Query Runner (For voice chips and environments without mic access)
+   */
+  simulateVoiceCommand(commandText) {
+    if (!commandText) return;
+    if (this.chatInput) this.chatInput.value = commandText;
+    this.setState('LISTENING');
+    this.updateLiveDisplay(`"${commandText}"`);
+
+    setTimeout(() => {
+      this.setState('SENDING');
+      setTimeout(() => {
+        this.setState('IDLE');
+        handleUserMessageSubmission(commandText);
+      }, 350);
+    }, 450);
+  }
+
   setState(newState) {
     this.state = newState;
 
@@ -1273,11 +1533,12 @@ class RobustVoiceInputController {
       if (this.micBtn) this.micBtn.classList.add('listening');
       if (this.micIcon) this.micIcon.textContent = '🎙';
       if (this.voiceBanner) this.voiceBanner.style.display = 'flex';
+      if (this.voicePromptsTray) this.voicePromptsTray.style.display = 'flex';
       if (this.voiceLabel) this.voiceLabel.textContent = 'LISTENING...';
     } else if (newState === 'PROCESSING') {
       if (this.micBtn) this.micBtn.classList.remove('listening');
       if (this.micIcon) this.micIcon.textContent = '◌';
-      if (this.voiceLabel) this.voiceLabel.textContent = 'FINALIZING...';
+      if (this.voiceLabel) this.voiceLabel.textContent = 'PROCESSING...';
     } else if (newState === 'SENDING') {
       if (this.micBtn) this.micBtn.classList.remove('listening');
       if (this.micIcon) this.micIcon.textContent = '↑';
@@ -1286,6 +1547,7 @@ class RobustVoiceInputController {
       if (this.micBtn) this.micBtn.classList.remove('listening');
       if (this.micIcon) this.micIcon.textContent = '🎤';
       if (this.voiceBanner) this.voiceBanner.style.display = 'none';
+      if (this.voicePromptsTray) this.voicePromptsTray.style.display = 'flex';
     }
   }
 
@@ -1578,7 +1840,21 @@ document.getElementById('btn-close-why-this')?.addEventListener('click', () => {
   document.getElementById('modal-why-this')?.classList.remove('active');
 });
 
-// Global Actions for Showcase Buttons
+// Global Actions for Showcase Buttons & In-Chat Conversion
+window.triggerCheckoutFlow = function() {
+  const proceedBtn = document.getElementById('btn-proceed-checkout');
+  if (proceedBtn) {
+    proceedBtn.click();
+  }
+};
+
+window.quickBuyNow = async function(productId) {
+  await window.addItemToCart(productId, 1, false, false);
+  setTimeout(() => {
+    window.triggerCheckoutFlow();
+  }, 350);
+};
+
 window.addItemToCart = async function(productId, quantity = 1, isUpsell = false, isCrossSell = false) {
   try {
     const res = await fetch('/api/shopping/cart/add', {
@@ -1591,9 +1867,13 @@ window.addItemToCart = async function(productId, quantity = 1, isUpsell = false,
       cartData = data.cart;
       updateCartBadge();
       openCartDrawer();
-      const addedMsg = `Added **${productId.replace(/prod_/g, '').replace(/_/g, ' ')}** to your cart. Total is now **₹${cartData.total.toLocaleString('en-IN')}**.`;
+      const addedItem = cartData.items.find(i => i.id === productId) || { name: productId.replace(/prod_/g, '').replace(/_/g, ' ') };
+      
+      // In-chat high conversion confirmation banner
+      appendInChatCartConfirmation(addedItem, cartData.total);
+
+      const addedMsg = `Added **${addedItem.name}** to your cart. Cart Total: **₹${cartData.total.toLocaleString('en-IN')}**.`;
       latestAIResponseText = addedMsg;
-      appendChatBubble('Shopping Assistant', addedMsg, 'assistant');
     }
   } catch (err) {
     console.error('Cart add error:', err);

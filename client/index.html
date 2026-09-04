@@ -31,9 +31,6 @@
       <button class="nav-switch-btn" data-target="view-merchant" id="btn-nav-merchant">
         <span class="nav-btn-icon">⚡</span> Command Center
       </button>
-      <button class="nav-switch-btn" data-target="view-ai2ai" id="btn-nav-ai2ai">
-        <span class="nav-btn-icon">🤖</span> AI-to-AI Commerce
-      </button>
     </div>
 
     <!-- Top Right Status & Cart Button -->
@@ -42,11 +39,6 @@
       <button class="btn-customer-account-nav" id="btn-nav-customer" title="Customer Profile &amp; Authentication">
         <span class="customer-avatar-icon" id="nav-customer-avatar">👤</span>
         <span class="customer-name-text" id="nav-customer-name">Sign In / Sign Up</span>
-      </button>
-
-      <!-- Direct AI-to-AI Demo Trigger -->
-      <button class="btn-ai-to-ai-nav" id="btn-launch-ai2ai" title="Open Autonomous AI-to-AI Commerce Experience">
-        <span class="ai2ai-icon">🤖</span> AI-to-AI Demo
       </button>
 
       <div class="agent-status-pill" id="global-agent-pill">
@@ -101,21 +93,6 @@
           </p>
           <button class="btn-portal btn-merchant-action">
             Open Command Center &rarr;
-          </button>
-        </div>
-
-        <!-- AI-to-AI Commerce Card (Flagship Differentiator) -->
-        <div class="portal-card portal-card-ai2ai" id="card-enter-ai2ai">
-          <div class="portal-card-header">
-            <div class="card-icon-pill icon-purple">🤖</div>
-            <span class="card-tag">Flagship Differentiator</span>
-          </div>
-          <h2 class="portal-card-title">AI-to-AI Autonomous Commerce</h2>
-          <p class="portal-card-desc">
-            Watch an external AI Buyer Agent discover, negotiate within merchant rules, evaluate transaction safety guards, and settle a test-mode payment with your Merchant AI.
-          </p>
-          <button class="btn-portal btn-ai2ai-action">
-            Launch AI-to-AI Arena &rarr;
           </button>
         </div>
       </div>
@@ -305,94 +282,6 @@
     </div>
   </main>
 
-  <!-- ============================================================= -->
-  <!-- VIEW 2c: AI-TO-AI COMMERCE AUTHENTICATION GATEWAY -->
-  <!-- ============================================================= -->
-  <main id="view-ai2ai-auth" class="app-view">
-    <div class="auth-page-container ai2ai-theme">
-      <div class="auth-card">
-        <!-- Auth Header -->
-        <div class="auth-header">
-          <div class="auth-icon-badge ai2ai-icon">🤖</div>
-          <span class="auth-eyebrow">AUTONOMOUS AGENT COMMERCE</span>
-          <h2 class="auth-title">Welcome to AI-to-AI Commerce</h2>
-          <p class="auth-sub">Authenticate to observe and control autonomous AI buyer-seller commerce negotiations, deterministic transaction guards, and test-mode settlements.</p>
-        </div>
-
-        <!-- Auth Tabs Switcher -->
-        <div class="auth-tabs">
-          <button class="auth-tab-btn active" id="tab-ai2ai-login" data-tab="login">Returning User (Log In)</button>
-          <button class="auth-tab-btn" id="tab-ai2ai-signup" data-tab="signup">New User (Sign Up)</button>
-        </div>
-
-        <!-- TAB 1: LOG IN FORM -->
-        <form id="form-ai2ai-login" class="auth-form active">
-          <div class="form-group">
-            <label class="form-label" for="ai2ai-login-email">Email Address</label>
-            <input type="email" id="ai2ai-login-email" class="form-input" placeholder="operator@omnigrowth.com" required autocomplete="email">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="ai2ai-login-password">Password</label>
-            <input type="password" id="ai2ai-login-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
-          </div>
-
-          <button type="submit" class="btn-auth-primary ai2ai-btn" id="btn-submit-ai2ai-login">
-            Enter AI-to-AI Arena &rarr;
-          </button>
-
-          <!-- Quick 1-Click Demo Profiles -->
-          <div class="demo-profiles-box">
-            <span class="demo-profiles-label">🤖 1-Click Demo Authorized Users:</span>
-            <div class="demo-profiles-list">
-              <button type="button" class="btn-demo-profile ai2ai-demo" id="btn-fill-demo-operator" title="Log in as Commerce Operator">
-                <span class="dp-name font-bold">Commerce Operator</span>
-                <span class="dp-hint">operator@omnigrowth.com</span>
-              </button>
-              <button type="button" class="btn-demo-profile ai2ai-demo" id="btn-fill-demo-agentadmin" title="Log in as Agent Admin">
-                <span class="dp-name font-bold">Agent Admin</span>
-                <span class="dp-hint">agent-admin@omnigrowth.com</span>
-              </button>
-            </div>
-          </div>
-        </form>
-
-        <!-- TAB 2: SIGN UP FORM -->
-        <form id="form-ai2ai-signup" class="auth-form">
-          <div class="form-group">
-            <label class="form-label" for="ai2ai-signup-name">Full Name</label>
-            <input type="text" id="ai2ai-signup-name" class="form-input" placeholder="e.g. Raj Kumar" required autocomplete="name">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="ai2ai-signup-email">Email Address</label>
-            <input type="email" id="ai2ai-signup-email" class="form-input" placeholder="raj@company.com" required autocomplete="email">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="ai2ai-signup-password">Password</label>
-            <input type="password" id="ai2ai-signup-password" class="form-input" placeholder="Create a secure password" required autocomplete="new-password">
-          </div>
-
-          <div class="auth-terms-hint">
-            You will gain access to autonomous AI buyer-seller negotiations, transaction guard policies, catalog schema, and test-mode payment flows.
-          </div>
-
-          <button type="submit" class="btn-auth-primary ai2ai-btn" id="btn-submit-ai2ai-signup">
-            Create Account & Launch Arena &rarr;
-          </button>
-        </form>
-
-        <div class="auth-footer-note">
-          <span>🔒 Autonomous Agent Commerce &bull; Deterministic Policy Guardrails &bull; Test Mode</span>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- ============================================================= -->
-  <!-- VIEW 3: AI SHOPPING DASHBOARD (LAVENDER + OFF-WHITE) -->
-  <!-- ============================================================= -->
   <!-- ============================================================= -->
   <!-- VIEW 2: AI SHOPPING ASSISTANT STOREFRONT -->
   <!-- ============================================================= -->
@@ -634,11 +523,6 @@
           <button class="side-nav-btn" data-subview="sub-incidents">
             <span class="nav-icon">🚨</span> Incident Center
           </button>
-
-          <div class="nav-section-title">SPECIAL</div>
-          <button class="side-nav-btn special-ai2ai-nav" data-subview="sub-ai2ai">
-            <span class="nav-icon">🤖</span> AI-to-AI Commerce
-          </button>
         </nav>
       </aside>
 
@@ -804,7 +688,7 @@
             </div>
           </div>
 
-          <!-- SECTION 5: RECENT ACTIVITY & AI-TO-AI PROMO -->
+          <!-- SECTION 5: RECENT ACTIVITY & REPLAYS -->
           <div class="command-section" style="margin-top: 24px;">
             <div class="section-title-row">
               <h3 class="command-section-heading"><span class="section-num">5</span> RECENT ACTIVITY &amp; REPLAYS</h3>
@@ -824,20 +708,6 @@
                   <!-- Populated via JS -->
                 </div>
               </div>
-            </div>
-
-            <!-- Flagship AI-to-AI Experience Promo Banner -->
-            <div class="ai2ai-promo-banner" style="margin-top: 20px;">
-              <div class="ai2ai-promo-content">
-                <span class="badge-ai-ready font-mono">FLAGSHIP DEMONSTRATION</span>
-                <h3 class="ai2ai-promo-title">Autonomous Agent-to-Agent Commerce</h3>
-                <p class="ai2ai-promo-desc">
-                  Experience full end-to-end autonomous negotiation: An external AI Buyer Agent interacts with your Merchant AI Salesperson to discover products, negotiate bundles within policy, and settle via Razorpay test mode.
-                </p>
-              </div>
-              <button class="btn-primary" onclick="switchMerchantSubview('sub-ai2ai')">
-                Launch AI-to-AI Experience &rarr;
-              </button>
             </div>
           </div>
         </div>
@@ -1390,333 +1260,11 @@
           </div>
         </div>
 
-        <!-- ========================================================= -->
-        <!-- SUB-VIEW 13: FLAGSHIP AI-TO-AI COMMERCE EXPERIENCE -->
-        <!-- ========================================================= -->
-        <div id="sub-ai2ai" class="sub-view">
-          <div class="sub-header-row">
-            <div>
-              <span class="sub-view-eyebrow">FLAGSHIP DEMONSTRATION</span>
-              <h2 class="sub-view-title">AI-to-AI Autonomous Commerce Engine</h2>
-              <p class="sub-view-desc">Simulate an autonomous external AI Buyer Agent negotiating and transacting with your Merchant AI Salesperson.</p>
-            </div>
-          </div>
-
-          <!-- Architecture Visual Map -->
-          <div class="ai2ai-flow-map">
-            <div class="flow-node"><span>🤖 AI BUYER</span></div>
-            <div class="flow-arrow">&harr;</div>
-            <div class="flow-node highlight"><span>⚡ MERCHANT AI</span></div>
-            <div class="flow-arrow">&rarr;</div>
-            <div class="flow-node"><span>📦 CATALOG</span></div>
-            <div class="flow-arrow">&rarr;</div>
-            <div class="flow-node"><span>🛡️ POLICY</span></div>
-            <div class="flow-arrow">&rarr;</div>
-            <div class="flow-node"><span>💳 RAZORPAY</span></div>
-            <div class="flow-arrow">&rarr;</div>
-            <div class="flow-node"><span>🧾 ORDER</span></div>
-          </div>
-
-          <div class="data-card" style="margin-top: 18px;">
-            <div class="ai2ai-prompt-bar">
-              <input type="text" id="ai2ai-page-intent-input" class="chat-input-field" value="Find headphones under ₹5,000 with noise cancellation for traveling">
-              <button class="btn-primary" id="btn-run-ai2ai-page-sim">Run Simulation &rarr;</button>
-            </div>
-
-            <!-- Terminal Dialogue Stream -->
-            <div class="ai2ai-terminal" id="ai2ai-page-terminal-output">
-              <div style="color: #94a3b8;">Click 'Run Simulation &rarr;' above to execute autonomous agent-to-agent negotiation.</div>
-            </div>
-          </div>
-        </div>
-
       </section>
     </div>
   </main>
 
-  <!-- ============================================================= -->
-  <!-- VIEW 4: DEDICATED AI-TO-AI COMMERCE ARENA -->
-  <!-- ============================================================= -->
-  <main id="view-ai2ai" class="app-view">
-    <div class="ai2ai-page-wrapper">
-      <!-- Hero Header & Control Bar -->
-      <div class="ai2ai-hero-header">
-        <div class="ai2ai-title-wrap">
-          <div class="ai2ai-badge-pill">
-            <span class="pulse-dot"></span> FLAGSHIP AGENTIC COMMERCE DEMONSTRATION
-          </div>
-          <h1 class="ai2ai-page-heading">AI-to-AI Autonomous Commerce</h1>
-          <p class="ai2ai-page-subtext">
-            Experience end-to-end agentic commerce where an external <strong>AI Buyer Agent</strong> discovers, negotiates bounded deals, passes deterministic <strong>Transaction Guards</strong>, and settles transactions with your <strong>Merchant AI</strong> in test mode.
-          </p>
-        </div>
 
-        <!-- Master Demo Controls & View Mode Selector -->
-        <div class="ai2ai-control-toolbar">
-          <div class="demo-playback-button-group">
-            <button class="btn-demo-ctl btn-demo-run" id="btn-demo-run" title="Run autonomous demo">
-              <span class="ctl-icon">▶</span> Run Demo
-            </button>
-            <button class="btn-demo-ctl btn-demo-pause" id="btn-demo-pause" disabled title="Pause demo execution">
-              <span class="ctl-icon">⏸</span> Pause
-            </button>
-            <button class="btn-demo-ctl btn-demo-restart" id="btn-demo-restart" title="Restart demo from beginning">
-              <span class="ctl-icon">↺</span> Restart Demo
-            </button>
-          </div>
-
-          <!-- View Mode Toggle: Human View vs Technical View -->
-          <div class="view-mode-toggle-wrap">
-            <span class="toggle-tag">View Mode:</span>
-            <div class="view-mode-pill-box">
-              <button class="mode-pill active" id="btn-mode-human" data-mode="human">
-                👤 Human View
-              </button>
-              <button class="mode-pill" id="btn-mode-tech" data-mode="technical">
-                ⚙️ Technical View
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Central Stage Status Indicator (Discovering -> Searching -> Negotiating -> Validating -> Paying -> Completed) -->
-      <div class="ai2ai-stage-stepper-card">
-        <div class="stage-step-box" data-stage="DISCOVERING" id="stage-box-discover">
-          <span class="step-badge">1</span>
-          <span class="step-text">DISCOVERING</span>
-        </div>
-        <div class="stage-flow-line"></div>
-        <div class="stage-step-box" data-stage="SEARCHING" id="stage-box-search">
-          <span class="step-badge">2</span>
-          <span class="step-text">SEARCHING</span>
-        </div>
-        <div class="stage-flow-line"></div>
-        <div class="stage-step-box" data-stage="NEGOTIATING" id="stage-box-negotiate">
-          <span class="step-badge">3</span>
-          <span class="step-text">NEGOTIATING</span>
-        </div>
-        <div class="stage-flow-line"></div>
-        <div class="stage-step-box" data-stage="VALIDATING" id="stage-box-validate">
-          <span class="step-badge">4</span>
-          <span class="step-text">VALIDATING</span>
-        </div>
-        <div class="stage-flow-line"></div>
-        <div class="stage-step-box" data-stage="PAYING" id="stage-box-pay">
-          <span class="step-badge">5</span>
-          <span class="step-text">PAYING</span>
-        </div>
-        <div class="stage-flow-line"></div>
-        <div class="stage-step-box" data-stage="COMPLETED" id="stage-box-complete">
-          <span class="step-badge">6</span>
-          <span class="step-text">COMPLETED</span>
-        </div>
-      </div>
-
-      <!-- 3-Column Arena Grid: LEFT (AI BUYER) | CENTER (TIMELINE) | RIGHT (MERCHANT AI) -->
-      <div class="ai2ai-arena-grid">
-        <!-- LEFT PANEL: AI BUYER AGENT -->
-        <aside class="agent-panel agent-panel-buyer">
-          <div class="agent-panel-header">
-            <div class="agent-avatar avatar-buyer">🤖</div>
-            <div class="agent-header-info">
-              <span class="agent-role-pill role-buyer">AI Buyer</span>
-              <h3 class="agent-title">AI Buyer Agent</h3>
-              <span class="agent-id-caption">Client Procurement Mandate</span>
-            </div>
-          </div>
-
-          <div class="agent-card-section">
-            <div class="spec-table">
-              <div class="spec-row">
-                <span class="spec-k">Intent</span>
-                <span class="spec-v">Wireless Headphones with ANC</span>
-              </div>
-              <div class="spec-row">
-                <span class="spec-k">Max Budget</span>
-                <span class="spec-v highlight-price">₹5,000</span>
-              </div>
-              <div class="spec-row">
-                <span class="spec-k">Requested Target</span>
-                <span class="spec-v">₹4,000 (Concession)</span>
-              </div>
-              <div class="spec-row">
-                <span class="spec-k">Payment Mandate</span>
-                <span class="spec-v status-ok">✓ Razorpay Test Card Ready</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="agent-state-box">
-            <div class="state-box-header">Buyer State:</div>
-            <div class="state-box-content" id="buyer-state-text">Ready to initiate query to merchant</div>
-          </div>
-
-          <!-- Structured Tool Query Output -->
-          <div class="agent-code-box">
-            <div class="code-box-header">Structured Tool Query</div>
-            <pre class="code-box-pre" id="buyer-code-pre">{
-  "action": "search_products",
-  "category": "headphones",
-  "max_price": 5000,
-  "features": "noise cancellation"
-}</pre>
-          </div>
-        </aside>
-
-        <!-- CENTER PANEL: COMMERCE INTERACTION TIMELINE -->
-        <section class="ai2ai-timeline-panel">
-          <div class="timeline-header-card">
-            <div class="timeline-title-row">
-              <h3 class="timeline-heading">Commerce Interaction Timeline</h3>
-              <span class="timeline-counter-pill" id="timeline-step-counter">Ready &bull; 0/11 Steps</span>
-            </div>
-            <span class="timeline-subheading">Step-by-step negotiation, policy gate, transaction guard, and payment settlement</span>
-          </div>
-
-          <!-- Live Messages Stream Container -->
-          <div class="timeline-stream-box" id="ai2ai-stream-box">
-            <div class="timeline-empty-prompt" id="timeline-empty-prompt">
-              <div class="empty-sparkle-icon">🤖 ⚡ 💳</div>
-              <h4>Ready to Run Autonomous AI-to-AI Demo</h4>
-              <p>Click <strong>[Run Demo]</strong> to watch the AI Buyer negotiate with Merchant AI within margin guardrails.</p>
-              <button class="btn-primary btn-run-large" onclick="document.getElementById('btn-demo-run').click()">▶ Run Flagship Demo</button>
-            </div>
-          </div>
-
-          <!-- Pre-Transaction Guard Box (Displayed dynamically during VALIDATING stage) -->
-          <div class="ai2ai-transaction-guard-card" id="ai2ai-transaction-guard-card" style="display: none;">
-            <div class="guard-card-top">
-              <div class="guard-title-group">
-                <span class="guard-badge-icon">🛡️</span>
-                <div>
-                  <h4 class="guard-heading">TRANSACTION GUARD</h4>
-                  <span class="guard-sub-caption">Deterministic Backend Financial Safety Verification</span>
-                </div>
-              </div>
-              <span class="guard-status-pill status-safe" id="guard-status-label">SAFE TO PROCEED</span>
-            </div>
-            <div class="guard-grid">
-              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Customer intent understood</span></div>
-              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Product available (18 in stock)</span></div>
-              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Price verified (₹4,999 recalculated server-side)</span></div>
-              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Discount authorized (10% policy limit respected)</span></div>
-              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Merchant policy &amp; 15% margin protected</span></div>
-              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Transaction limit passed (₹4,999 &le; ₹10,000)</span></div>
-              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Approval requirement handled</span></div>
-              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Payment readiness confirmed</span></div>
-            </div>
-          </div>
-
-          <!-- Final Summary Card (Displayed at the end of the demo) -->
-          <div class="ai2ai-complete-card" id="ai2ai-complete-card" style="display: none;">
-            <div class="complete-header-row">
-              <div class="complete-icon-box">🎉</div>
-              <div>
-                <span class="complete-tag">TRANSACTION SUCCESSFUL</span>
-                <h3 class="complete-title">AI-TO-AI TRANSACTION COMPLETE</h3>
-              </div>
-              <span class="complete-pill-status">Verified &amp; Created</span>
-            </div>
-
-            <div class="complete-summary-grid">
-              <div class="summary-cell">
-                <span class="cell-label">Product / Bundle</span>
-                <span class="cell-value" id="comp-product-val">SoundWave ANC + Travel Case</span>
-              </div>
-              <div class="summary-cell">
-                <span class="cell-label">Total Amount</span>
-                <span class="cell-value cell-price" id="comp-total-val">₹4,999</span>
-              </div>
-              <div class="summary-cell">
-                <span class="cell-label">Payment Status</span>
-                <span class="cell-value cell-badge" id="comp-pay-val">Verified (Razorpay Test Mode)</span>
-              </div>
-              <div class="summary-cell">
-                <span class="cell-label">Order Created</span>
-                <span class="cell-value cell-mono" id="comp-order-val">ORD-9428</span>
-              </div>
-            </div>
-
-            <div class="flagship-congratulations-box">
-              <span class="sparkle-gold">✨</span>
-              <div class="flagship-congrats-text">"AI buyer successfully transacted with AI merchant."</div>
-            </div>
-
-            <div class="complete-button-actions">
-              <button class="btn-secondary" id="btn-a2a-go-orders">View Order in Merchant Portal &rarr;</button>
-              <button class="btn-secondary" id="btn-a2a-go-audit">Inspect in Audit Replay &rarr;</button>
-              <button class="btn-primary" id="btn-a2a-restart-demo">↺ Restart Demo</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- RIGHT PANEL: MERCHANT AI SALESPERSON -->
-        <aside class="agent-panel agent-panel-merchant">
-          <div class="agent-panel-header">
-            <div class="agent-avatar avatar-merchant">⚡</div>
-            <div class="agent-header-info">
-              <span class="agent-role-pill role-merchant">Merchant AI</span>
-              <h3 class="agent-title">Merchant AI Salesperson</h3>
-              <span class="agent-id-caption">OmniGrowth Store #1</span>
-            </div>
-          </div>
-
-          <div class="agent-card-section">
-            <div class="spec-table">
-              <div class="spec-row">
-                <span class="spec-k">Max Discount</span>
-                <span class="spec-v">10% (Hard Rule)</span>
-              </div>
-              <div class="spec-row">
-                <span class="spec-k">Min Gross Margin</span>
-                <span class="spec-v">15% Floor Protected</span>
-              </div>
-              <div class="spec-row">
-                <span class="spec-k">Max Tx Limit</span>
-                <span class="spec-v">₹10,000</span>
-              </div>
-              <div class="spec-row">
-                <span class="spec-k">Auto-Approval Limit</span>
-                <span class="spec-v">₹2,000</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="agent-state-box">
-            <div class="state-box-header">Merchant Decision Rule:</div>
-            <div class="state-box-content" id="merchant-state-text">Direct 11.1% price drop violates 10% policy &rarr; Authorized to offer bundle counter-proposal</div>
-          </div>
-
-          <!-- Structured Catalog API Inspector -->
-          <div class="agent-code-box">
-            <div class="code-box-header">Structured Catalog Response</div>
-            <pre class="code-box-pre" id="merchant-code-pre">{
-  "action": "policy_check",
-  "max_discount_allowed": "10%",
-  "minimum_margin": "Protected",
-  "counter_offer": "Bundle for ₹4,999"
-}</pre>
-          </div>
-        </aside>
-      </div>
-
-      <!-- Agent-Readable Structured Catalog Explorer -->
-      <div class="data-card catalog-inspect-card" style="margin-top: 24px;">
-        <div class="card-header-flex">
-          <div>
-            <h3 class="card-title"><span class="card-icon-pill icon-lavender">📦</span> Agent-Readable Structured Catalog Schema</h3>
-            <p class="card-desc">Machine-readable JSON representation of store catalog queried autonomously by AI buyer agents.</p>
-          </div>
-          <button class="btn-secondary btn-sm" id="btn-toggle-raw-catalog">Inspect Raw JSON Schema</button>
-        </div>
-        <div class="agent-catalog-cards-grid" id="agent-catalog-cards-grid">
-          <!-- Populated dynamically via JS -->
-        </div>
-        <pre class="raw-json-inspector" id="raw-catalog-json" style="display: none;"></pre>
-      </div>
-    </div>
-  </main>
 
   <!-- ============================================================= -->
   <!-- MODAL 1: VISUAL AUDIT REPLAY TIMELINE -->
@@ -1835,38 +1383,6 @@
       <div class="modal-footer">
         <button class="btn-secondary" id="btn-cancel-pay">Cancel</button>
         <button class="btn-primary" id="btn-execute-pay">Authorize &amp; Pay</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================================= -->
-  <!-- MODAL 4: AI-TO-AI POPUP MODAL (ACCESSIBLE FROM HEADER) -->
-  <!-- ============================================================= -->
-  <div class="modal-overlay" id="modal-ai-to-ai">
-    <div class="modal-card modal-ai2ai-card">
-      <div class="modal-header">
-        <div>
-          <span class="modal-eyebrow">AUTONOMOUS AGENT-TO-AGENT COMMERCE</span>
-          <h2 class="modal-title">AI Buyer &bull; Merchant AI Negotiation Demo</h2>
-        </div>
-        <button class="modal-close" id="btn-close-ai2ai">&times;</button>
-      </div>
-
-      <div class="modal-body modal-ai2ai-body">
-        <div class="ai2ai-prompt-bar">
-          <input type="text" id="ai2ai-intent-input" class="chat-input-field" value="Find headphones under ₹5,000 with noise cancellation for traveling">
-          <button class="btn-primary" id="btn-run-ai2ai-sim">Run Simulation &rarr;</button>
-        </div>
-
-        <!-- Terminal Dialogue Stream -->
-        <div class="ai2ai-terminal" id="ai2ai-terminal-output">
-          <!-- Dialogue & Tool Calls injected via JS -->
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <span class="field-hint" style="margin-right: auto;">Demonstrates autonomous catalog discovery, bounded bundle negotiation, and Razorpay test capture.</span>
-        <button class="btn-primary" id="btn-close-ai2ai-footer">Done</button>
       </div>
     </div>
   </div>

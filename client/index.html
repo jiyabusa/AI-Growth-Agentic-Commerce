@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniGrowth // AI Growth &amp; Agentic Commerce Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body class="theme-light">
+  <!-- GLOBAL TOP APPLICATION BAR -->
+  <header class="global-navbar">
+    <div class="nav-brand" id="nav-brand-home">
+      <div class="brand-logo-gem"></div>
+      <div class="brand-name-group">
+        <span class="brand-title">OmniGrowth</span>
+        <span class="brand-subtitle">AI Commerce Engine</span>
+      </div>
+    </div>
+
+    <!-- PRIMARY VIEW SWITCHER -->
+    <div class="nav-switcher">
+      <button class="nav-switch-btn active" data-target="view-landing" id="btn-nav-landing">
+        Home
+      </button>
+      <button class="nav-switch-btn" data-target="view-shopping" id="btn-nav-shopping">
+        <span class="nav-btn-icon">🛍️</span> AI Shopping
+      </button>
+      <button class="nav-switch-btn" data-target="view-merchant" id="btn-nav-merchant">
+        <span class="nav-btn-icon">⚡</span> Command Center
+      </button>
+      <button class="nav-switch-btn" data-target="view-ai2ai" id="btn-nav-ai2ai">
+        <span class="nav-btn-icon">🤖</span> AI-to-AI Commerce
+      </button>
+    </div>
+
+    <!-- Top Right Status & Cart Button -->
+    <div class="top-nav-right">
+      <!-- Customer Account Pill / Quick Auth -->
+      <button class="btn-customer-account-nav" id="btn-nav-customer" title="Customer Profile &amp; Authentication">
+        <span class="customer-avatar-icon" id="nav-customer-avatar">👤</span>
+        <span class="customer-name-text" id="nav-customer-name">Sign In / Sign Up</span>
+      </button>
+
+      <!-- Direct AI-to-AI Demo Trigger -->
+      <button class="btn-ai-to-ai-nav" id="btn-launch-ai2ai" title="Open Autonomous AI-to-AI Commerce Experience">
+        <span class="ai2ai-icon">🤖</span> AI-to-AI Demo
+      </button>
+
+      <div class="agent-status-pill" id="global-agent-pill">
+        <span class="status-dot dot-active"></span>
+        <span class="status-text">Agent: Active</span>
+      </div>
+
+      <button class="btn-cart-nav" id="btn-open-cart">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-label">Cart</span>
+        <span class="cart-badge" id="nav-cart-count">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================= -->
+  <!-- VIEW 1: LANDING PAGE SWITCHER -->
+  <!-- ============================================================= -->
+  <main id="view-landing" class="app-view active">
+    <div class="landing-hero">
+      <div class="hero-badge">AI Growth &amp; Agentic Commerce</div>
+      <h1 class="hero-title">Turn your merchant into an <span class="highlight-text">AI-native business.</span></h1>
+      <p class="hero-desc">
+        Make your store sellable to autonomous AI buyers and grow revenue with conversational discovery, intelligent companion cross-sells, bounded negotiation, and deterministic policy guardrails with Razorpay test-mode settlement.
+      </p>
+
+      <div class="landing-cards-grid">
+        <!-- AI Shopping Card -->
+        <div class="portal-card portal-card-shopping" id="card-enter-shopping">
+          <div class="portal-card-header">
+            <div class="card-icon-pill icon-blue">✨</div>
+            <span class="card-tag">Customer Experience</span>
+          </div>
+          <h2 class="portal-card-title">AI Shopping Assistant</h2>
+          <p class="portal-card-desc">
+            Experience natural language &amp; voice product discovery, explainable recommendations, 1-click companion cross-sells, bounded bundle negotiation, and Razorpay checkout.
+          </p>
+          <button class="btn-portal btn-shopping-action">
+            Enter AI Shopping &rarr;
+          </button>
+        </div>
+
+        <!-- Merchant Portal Card -->
+        <div class="portal-card portal-card-merchant" id="card-enter-merchant">
+          <div class="portal-card-header">
+            <div class="card-icon-pill icon-lavender">⚡</div>
+            <span class="card-tag">Merchant Command</span>
+          </div>
+          <h2 class="portal-card-title">AI Commerce Command Center</h2>
+          <p class="portal-card-desc">
+            Monitor AI-attributed revenue growth, inspect AI sales intelligence, audit product readiness, run sales experiments, and manage deterministic policy boundaries.
+          </p>
+          <button class="btn-portal btn-merchant-action">
+            Open Command Center &rarr;
+          </button>
+        </div>
+
+        <!-- AI-to-AI Commerce Card (Flagship Differentiator) -->
+        <div class="portal-card portal-card-ai2ai" id="card-enter-ai2ai">
+          <div class="portal-card-header">
+            <div class="card-icon-pill icon-purple">🤖</div>
+            <span class="card-tag">Flagship Differentiator</span>
+          </div>
+          <h2 class="portal-card-title">AI-to-AI Autonomous Commerce</h2>
+          <p class="portal-card-desc">
+            Watch an external AI Buyer Agent discover, negotiate within merchant rules, evaluate transaction safety guards, and settle a test-mode payment with your Merchant AI.
+          </p>
+          <button class="btn-portal btn-ai2ai-action">
+            Launch AI-to-AI Arena &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- VIEW 2: CUSTOMER AUTHENTICATION GATEWAY (LOGIN & SIGN UP) -->
+  <!-- ============================================================= -->
+  <main id="view-customer-auth" class="app-view">
+    <div class="auth-page-container">
+      <div class="auth-card">
+        <!-- Auth Header -->
+        <div class="auth-header">
+          <div class="auth-icon-badge">✨</div>
+          <span class="auth-eyebrow">OMNIGROWTH AI COMMERCE</span>
+          <h2 class="auth-title">Welcome to AI Shopping Assistant</h2>
+          <p class="auth-sub">Sign in to experience personalized product recommendations, conversational discovery, and one-click autonomous checkout.</p>
+        </div>
+
+        <!-- Auth Tabs Switcher -->
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="tab-auth-signup" data-tab="signup">New Customer (Sign Up)</button>
+          <button class="auth-tab-btn" id="tab-auth-login" data-tab="login">Returning Customer (Log In)</button>
+        </div>
+
+        <!-- TAB 1: SIGN UP FORM (NEW CUSTOMER) -->
+        <form id="form-customer-signup" class="auth-form active">
+          <div class="form-group">
+            <label class="form-label" for="signup-name">Full Name</label>
+            <input type="text" id="signup-name" class="form-input" placeholder="e.g. Jiya Patel" required autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="signup-email">Email Address</label>
+            <input type="email" id="signup-email" class="form-input" placeholder="jiya@example.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="signup-password">Password</label>
+            <input type="password" id="signup-password" class="form-input" placeholder="Create a secure password" required autocomplete="new-password">
+          </div>
+
+          <div class="auth-terms-hint">
+            By signing up, your AI shopping assistant will remember your session context, cart items, and test-mode orders.
+          </div>
+
+          <button type="submit" class="btn-auth-primary" id="btn-submit-signup">
+            Create Account &amp; Start Shopping &rarr;
+          </button>
+        </form>
+
+        <!-- TAB 2: LOG IN FORM (RETURNING CUSTOMER) -->
+        <form id="form-customer-login" class="auth-form">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address</label>
+            <input type="email" id="login-email" class="form-input" placeholder="jiya@example.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" class="btn-auth-primary" id="btn-submit-login">
+            Log In &amp; Continue &rarr;
+          </button>
+
+          <!-- Quick 1-Click Demo Profiles for Returning Customers -->
+          <div class="demo-profiles-box">
+            <span class="demo-profiles-label">⚡ 1-Click Test Customer Profiles (Indian Demo Accounts):</span>
+            <div class="demo-profiles-list">
+              <button type="button" class="btn-demo-profile" id="btn-fill-demo-aarav" title="Log in as Aarav Sharma (Audio & Travel)">
+                <span class="dp-name font-bold">Aarav Sharma</span>
+                <span class="dp-hint">ANC Headphones &bull; Travel Gear</span>
+              </button>
+              <button type="button" class="btn-demo-profile" id="btn-fill-demo-priya" title="Log in as Priya Shah (Headphones + Case Cross-Sell)">
+                <span class="dp-name font-bold">Priya Shah</span>
+                <span class="dp-hint">Headphones &bull; +₹799 Companion Case</span>
+              </button>
+              <button type="button" class="btn-demo-profile" id="btn-fill-demo-rohan" title="Log in as Rohan Mehta (Mechanical Keyboards & Desk Setup)">
+                <span class="dp-name font-bold">Rohan Mehta</span>
+                <span class="dp-hint">Keyboards &bull; Desk Setup History</span>
+              </button>
+              <button type="button" class="btn-demo-profile" id="btn-fill-demo-ananya" title="Log in as Ananya Patel (Ergonomic Desk & USB-C)">
+                <span class="dp-name font-bold">Ananya Patel</span>
+                <span class="dp-hint">Laptop Riser &bull; USB-C Docking Hub</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="auth-footer-note">
+          <span>🔒 Razorpay Test Mode &bull; Deterministic Policy Guardrails</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- VIEW 2b: MERCHANT AUTHENTICATION GATEWAY (LOGIN & SIGN UP) -->
+  <!-- ============================================================= -->
+  <main id="view-merchant-auth" class="app-view">
+    <div class="auth-page-container merchant-theme">
+      <div class="auth-card">
+        <!-- Auth Header -->
+        <div class="auth-header">
+          <div class="auth-icon-badge merchant-icon">⚡</div>
+          <span class="auth-eyebrow">OMNIGROWTH COMMAND CENTER</span>
+          <h2 class="auth-title">Welcome to AI Commerce Command Center</h2>
+          <p class="auth-sub">Sign in to access your merchant dashboard, revenue analytics, AI attribution, product management, policy controls, and real-time audit trail.</p>
+        </div>
+
+        <!-- Auth Tabs Switcher -->
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="tab-merchant-login" data-tab="login">Returning Merchant (Log In)</button>
+          <button class="auth-tab-btn" id="tab-merchant-signup" data-tab="signup">New Merchant (Sign Up)</button>
+        </div>
+
+        <!-- TAB 1: LOG IN FORM (RETURNING MERCHANT) -->
+        <form id="form-merchant-login" class="auth-form active">
+          <div class="form-group">
+            <label class="form-label" for="merchant-login-email">Email Address</label>
+            <input type="email" id="merchant-login-email" class="form-input" placeholder="admin@omnigrowth.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="merchant-login-password">Password</label>
+            <input type="password" id="merchant-login-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" class="btn-auth-primary merchant-btn" id="btn-submit-merchant-login">
+            Log In to Command Center &rarr;
+          </button>
+
+          <!-- Quick 1-Click Demo Merchant Profiles -->
+          <div class="demo-profiles-box">
+            <span class="demo-profiles-label">⚡ 1-Click Demo Merchant Accounts:</span>
+            <div class="demo-profiles-list">
+              <button type="button" class="btn-demo-profile merchant-demo" id="btn-fill-demo-omnigrowth" title="Log in as OmniGrowth Labs">
+                <span class="dp-name font-bold">OmniGrowth Labs</span>
+                <span class="dp-hint">Vikram Desai &bull; Full Platform</span>
+              </button>
+              <button type="button" class="btn-demo-profile merchant-demo" id="btn-fill-demo-acousticpro" title="Log in as AcousticPro Audio">
+                <span class="dp-name font-bold">AcousticPro Audio</span>
+                <span class="dp-hint">Meera Joshi &bull; Audio Products</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- TAB 2: SIGN UP FORM (NEW MERCHANT) -->
+        <form id="form-merchant-signup" class="auth-form">
+          <div class="form-group">
+            <label class="form-label" for="merchant-signup-business">Business Name</label>
+            <input type="text" id="merchant-signup-business" class="form-input" placeholder="e.g. TechMart India" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="merchant-signup-owner">Owner Name</label>
+            <input type="text" id="merchant-signup-owner" class="form-input" placeholder="e.g. Rahul Verma" autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="merchant-signup-email">Email Address</label>
+            <input type="email" id="merchant-signup-email" class="form-input" placeholder="rahul@techmart.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="merchant-signup-password">Password</label>
+            <input type="password" id="merchant-signup-password" class="form-input" placeholder="Create a secure password" required autocomplete="new-password">
+          </div>
+
+          <div class="auth-terms-hint">
+            Your merchant dashboard will include revenue analytics, AI attribution, order management, product controls, and policy guardrails.
+          </div>
+
+          <button type="submit" class="btn-auth-primary merchant-btn" id="btn-submit-merchant-signup">
+            Create Merchant Account &rarr;
+          </button>
+        </form>
+
+        <div class="auth-footer-note">
+          <span>🔒 Razorpay Test Mode &bull; Full Revenue Attribution &bull; Deterministic Policies</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- VIEW 2c: AI-TO-AI COMMERCE AUTHENTICATION GATEWAY -->
+  <!-- ============================================================= -->
+  <main id="view-ai2ai-auth" class="app-view">
+    <div class="auth-page-container ai2ai-theme">
+      <div class="auth-card">
+        <!-- Auth Header -->
+        <div class="auth-header">
+          <div class="auth-icon-badge ai2ai-icon">🤖</div>
+          <span class="auth-eyebrow">AUTONOMOUS AGENT COMMERCE</span>
+          <h2 class="auth-title">Welcome to AI-to-AI Commerce</h2>
+          <p class="auth-sub">Authenticate to observe and control autonomous AI buyer-seller commerce negotiations, deterministic transaction guards, and test-mode settlements.</p>
+        </div>
+
+        <!-- Auth Tabs Switcher -->
+        <div class="auth-tabs">
+          <button class="auth-tab-btn active" id="tab-ai2ai-login" data-tab="login">Returning User (Log In)</button>
+          <button class="auth-tab-btn" id="tab-ai2ai-signup" data-tab="signup">New User (Sign Up)</button>
+        </div>
+
+        <!-- TAB 1: LOG IN FORM -->
+        <form id="form-ai2ai-login" class="auth-form active">
+          <div class="form-group">
+            <label class="form-label" for="ai2ai-login-email">Email Address</label>
+            <input type="email" id="ai2ai-login-email" class="form-input" placeholder="operator@omnigrowth.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ai2ai-login-password">Password</label>
+            <input type="password" id="ai2ai-login-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" class="btn-auth-primary ai2ai-btn" id="btn-submit-ai2ai-login">
+            Enter AI-to-AI Arena &rarr;
+          </button>
+
+          <!-- Quick 1-Click Demo Profiles -->
+          <div class="demo-profiles-box">
+            <span class="demo-profiles-label">🤖 1-Click Demo Authorized Users:</span>
+            <div class="demo-profiles-list">
+              <button type="button" class="btn-demo-profile ai2ai-demo" id="btn-fill-demo-operator" title="Log in as Commerce Operator">
+                <span class="dp-name font-bold">Commerce Operator</span>
+                <span class="dp-hint">operator@omnigrowth.com</span>
+              </button>
+              <button type="button" class="btn-demo-profile ai2ai-demo" id="btn-fill-demo-agentadmin" title="Log in as Agent Admin">
+                <span class="dp-name font-bold">Agent Admin</span>
+                <span class="dp-hint">agent-admin@omnigrowth.com</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- TAB 2: SIGN UP FORM -->
+        <form id="form-ai2ai-signup" class="auth-form">
+          <div class="form-group">
+            <label class="form-label" for="ai2ai-signup-name">Full Name</label>
+            <input type="text" id="ai2ai-signup-name" class="form-input" placeholder="e.g. Raj Kumar" required autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ai2ai-signup-email">Email Address</label>
+            <input type="email" id="ai2ai-signup-email" class="form-input" placeholder="raj@company.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="ai2ai-signup-password">Password</label>
+            <input type="password" id="ai2ai-signup-password" class="form-input" placeholder="Create a secure password" required autocomplete="new-password">
+          </div>
+
+          <div class="auth-terms-hint">
+            You will gain access to autonomous AI buyer-seller negotiations, transaction guard policies, catalog schema, and test-mode payment flows.
+          </div>
+
+          <button type="submit" class="btn-auth-primary ai2ai-btn" id="btn-submit-ai2ai-signup">
+            Create Account & Launch Arena &rarr;
+          </button>
+        </form>
+
+        <div class="auth-footer-note">
+          <span>🔒 Autonomous Agent Commerce &bull; Deterministic Policy Guardrails &bull; Test Mode</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- VIEW 3: AI SHOPPING DASHBOARD (LAVENDER + OFF-WHITE) -->
+  <!-- ============================================================= -->
+  <main id="view-shopping" class="app-view">
+    <div class="shopping-container-card">
+
+      <!-- TOP CUSTOMER STATUS & PERSONALIZATION BAR -->
+      <div class="customer-top-bar" id="shopping-customer-bar">
+        <div class="customer-greeting-col">
+          <div class="customer-avatar-badge" id="customer-avatar-badge">JP</div>
+          <div>
+            <h2 class="customer-greeting-heading" id="shopping-customer-greeting">Hi Jiya, what are you looking for today?</h2>
+            <div class="customer-meta-row">
+              <span class="badge-customer-status" id="customer-status-badge">✨ Authenticated Shopper</span>
+              <span class="customer-session-pill" id="customer-session-pill">Session Active</span>
+              <span class="customer-history-indicator" id="customer-history-indicator">Personalized Recommendations Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="customer-actions-group">
+          <button class="btn-customer-order-history" id="btn-edit-profile-name" title="Update your customer profile name">
+            ✏️ Edit Profile Name
+          </button>
+          <button class="btn-customer-order-history" id="btn-open-order-history" title="View past orders &amp; payments">
+            🧾 My Orders (<span id="customer-order-count">0</span>)
+          </button>
+          <button class="btn-customer-switch-user" id="btn-switch-user" title="Switch customer account or sign out">
+            ⇄ Switch User
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================================= -->
+      <!-- TOP SECTION: "RECOMMENDED FOR YOU" (6-8 PRODUCTS) -->
+      <!-- ========================================================= -->
+      <section class="top-recommendations-section" id="top-recommendations-section">
+        <div class="top-rec-header">
+          <div class="top-rec-title-group">
+            <div class="top-rec-title-row">
+              <span class="sparkle-icon">✨</span>
+              <h3 class="top-rec-heading">Recommended for You</h3>
+              <span class="badge-rec-type" id="badge-rec-mode">Personalized Signals</span>
+            </div>
+            <p class="top-rec-sub" id="top-rec-subtitle">
+              Intelligent selections curated across our verified merchant catalog and configured partner networks.
+            </p>
+          </div>
+
+          <div class="top-rec-controls">
+            <button class="btn-rec-filter active" data-filter="all">All Sources</button>
+            <button class="btn-rec-filter" data-filter="electronics">Audio &amp; Computing</button>
+            <button class="btn-rec-filter" data-filter="accessories">Accessories</button>
+          </div>
+        </div>
+
+        <!-- 6-8 Recommendations Grid / Horizontal Flow -->
+        <div class="top-recommendations-grid" id="top-recommendations-grid">
+          <!-- Populated dynamically via JS with 6-8 rich product cards with source & explainable reason badges -->
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- MAIN SHOPPING SPLIT LAYOUT: CHAT STREAM + DYNAMIC SHOWCASE -->
+      <!-- ========================================================= -->
+      <div class="shopping-layout">
+        <!-- Chat & Interactive Shopping Panel -->
+        <section class="shopping-chat-panel">
+          <div class="panel-header-bar">
+            <div class="panel-title-group">
+              <div class="panel-title-row">
+                <h3 class="panel-heading"><span class="sparkle-icon">💬</span> AI Conversational Sales Assistant</h3>
+                <!-- SPEAKER / TEXT-TO-SPEECH BUTTON IN HEADER -->
+                <button class="btn-speaker-header" id="btn-toggle-speaker" title="Read latest AI response aloud" aria-label="Read AI response aloud">
+                  <span class="speaker-icon" id="speaker-icon">🔊</span>
+                  <span class="speaker-text" id="speaker-status-text">Listen</span>
+                </button>
+              </div>
+              <span class="panel-sub">Ask for specs, travel compatibility, bundle negotiations, or speak via microphone</span>
+            </div>
+
+            <!-- Session Shopping Memory Banner -->
+            <div class="session-memory-banner" id="session-memory-banner">
+              <div class="memory-info">
+                <span class="memory-tag">🎯 Active Context</span>
+                <span class="memory-text" id="session-memory-text">Travel &bull; Budget &le; ₹5,000 &bull; Active Noise Cancellation</span>
+              </div>
+              <button class="btn-clear-memory" id="btn-clear-memory" title="Clear session context">✕ Clear Context</button>
+            </div>
+
+            <div class="quick-chips-wrap">
+              <span class="chips-label">Try asking or speaking:</span>
+              <button class="prompt-chip" data-prompt="I need headphones under ₹5,000 for travel">Headphones under ₹5,000</button>
+              <button class="prompt-chip" data-prompt="Can you make it ₹4,000?">Can you make it ₹4,000?</button>
+              <button class="prompt-chip" data-prompt="Show me mechanical keyboards with coiled cable">Keyboards &amp; Accessories</button>
+            </div>
+          </div>
+
+          <!-- Chat Stream -->
+          <div class="chat-stream-container" id="chat-stream">
+            <!-- Initial Welcome Message Injected via JS -->
+          </div>
+
+          <!-- Live Voice Listening / Transcription Status Banner -->
+          <div class="voice-status-banner" id="voice-status-banner" style="display: none;">
+            <div class="voice-pulse-indicator">
+              <span class="pulse-ring"></span>
+              <span class="pulse-dot">🎙</span>
+            </div>
+            <div class="voice-status-info">
+              <span class="voice-status-label" id="voice-status-label">LISTENING...</span>
+              <span class="voice-live-text" id="voice-live-text">Speak now...</span>
+            </div>
+            <button class="btn-voice-cancel" id="btn-cancel-voice" title="Cancel voice input">&times;</button>
+          </div>
+
+          <!-- Unified Chat Input Bar with Microphone & Send -->
+          <form id="chat-form" class="chat-input-bar">
+            <input type="text" id="chat-input" class="chat-input-field" placeholder="Ask me anything about products (or tap mic to speak)..." autocomplete="off" aria-label="Chat input">
+            
+            <!-- Microphone Input Button -->
+            <button type="button" class="btn-mic-input" id="btn-toggle-mic" title="Speak to shopping agent" aria-label="Start voice input">
+              <span class="mic-icon" id="mic-icon">🎤</span>
+            </button>
+
+            <!-- Send Button -->
+            <button type="submit" class="btn-send-chat" id="btn-send-message" title="Send message" aria-label="Send message">
+              <span class="send-arrow">➤</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- Dynamic Product Showcase & Recommendations Pane -->
+        <aside class="shopping-showcase-panel">
+          <div class="showcase-header">
+            <h3 class="showcase-title">Interactive Showcase &amp; Negotiation</h3>
+            <span class="badge-ai-feed">✓ Multi-Source Live Feed</span>
+          </div>
+
+          <!-- Dynamic Recommendation Feed -->
+          <div class="showcase-scroll" id="showcase-feed">
+            <!-- Populated dynamically via JS with product cards, upsells, cross-sells, and negotiation boxes -->
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- VIEW 3: MERCHANT AI COMMERCE COMMAND CENTER -->
+  <!-- ============================================================= -->
+  <main id="view-merchant" class="app-view">
+    <div class="merchant-layout">
+      <!-- SIDEBAR NAVIGATION -->
+      <aside class="merchant-sidebar">
+        <div class="sidebar-merchant-card">
+          <div class="merchant-avatar-pill">OM</div>
+          <div class="merchant-info">
+            <span class="merchant-name">OmniGrowth Labs</span>
+            <span class="merchant-plan">Razorpay Test Mode</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="nav-section-title">COMMAND</div>
+          <button class="side-nav-btn active" data-subview="sub-overview">
+            <span class="nav-icon">⚡</span> Overview
+          </button>
+
+          <div class="nav-section-title">GROWTH &amp; INTELLIGENCE</div>
+          <button class="side-nav-btn" data-subview="sub-analytics">
+            <span class="nav-icon">📈</span> Revenue Attribution
+          </button>
+          <button class="side-nav-btn" data-subview="sub-insights">
+            <span class="nav-icon">💡</span> AI Sales Intelligence
+          </button>
+          <button class="side-nav-btn" data-subview="sub-funnel">
+            <span class="nav-icon">🎯</span> Sales Funnel
+          </button>
+          <button class="side-nav-btn" data-subview="sub-experiments">
+            <span class="nav-icon">🧪</span> AI Experiment Lab
+          </button>
+          <button class="side-nav-btn" data-subview="sub-cx">
+            <span class="nav-icon">❤️</span> Customer Experience (CX)
+          </button>
+
+          <div class="nav-section-title">COMMERCE</div>
+          <button class="side-nav-btn" data-subview="sub-products">
+            <span class="nav-icon">📦</span> Product AI Audit
+          </button>
+          <button class="side-nav-btn" data-subview="sub-orders">
+            <span class="nav-icon">🧾</span> Orders &amp; Attribution
+          </button>
+
+          <div class="nav-section-title">CONTROL &amp; TRUST</div>
+          <button class="side-nav-btn" data-subview="sub-policies">
+            <span class="nav-icon">🛡️</span> Policies &amp; NL Builder
+          </button>
+          <button class="side-nav-btn" data-subview="sub-agent">
+            <span class="nav-icon">⚙️</span> Agent Controls
+          </button>
+          <button class="side-nav-btn" data-subview="sub-audit">
+            <span class="nav-icon">📜</span> Audit Trail &amp; Replay
+          </button>
+          <button class="side-nav-btn" data-subview="sub-incidents">
+            <span class="nav-icon">🚨</span> Incident Center
+          </button>
+
+          <div class="nav-section-title">SPECIAL</div>
+          <button class="side-nav-btn special-ai2ai-nav" data-subview="sub-ai2ai">
+            <span class="nav-icon">🤖</span> AI-to-AI Commerce
+          </button>
+        </nav>
+      </aside>
+
+      <!-- MAIN CONTENT AREA -->
+      <section class="merchant-content-area">
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 1: COMMAND CENTER OVERVIEW -->
+        <!-- ========================================================= -->
+        <div id="sub-overview" class="sub-view active">
+          <!-- Command Header -->
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">AI COMMERCE COMMAND CENTER</span>
+              <h2 class="sub-view-title">Welcome back, OmniGrowth Admin</h2>
+              <p class="sub-view-desc">High-level visibility into store revenue, AI growth attribution, agent health, and readiness.</p>
+            </div>
+            <div class="command-header-actions">
+              <button class="btn-secondary" id="btn-reset-demo" title="Reset Demo Baseline State">↺ Reset Demo</button>
+              <button class="btn-refresh-data" id="btn-refresh-overview">Refresh Analytics</button>
+            </div>
+          </div>
+
+          <!-- SECTION 1: REVENUE -->
+          <div class="command-section">
+            <div class="section-title-row">
+              <h3 class="command-section-heading"><span class="section-num">1</span> STORE REVENUE &amp; LIFT</h3>
+              <span class="section-meta-tag">Live Razorpay Test Settlements</span>
+            </div>
+            <div class="kpi-cards-grid">
+              <div class="kpi-card card-blue">
+                <span class="kpi-label">TOTAL STORE REVENUE</span>
+                <div class="kpi-value" id="kpi-total-revenue">₹9,08,996</div>
+                <span class="kpi-subtext text-positive">+18.4% overall store lift</span>
+              </div>
+              <div class="kpi-card card-lavender">
+                <span class="kpi-label">AI-ATTRIBUTED REVENUE</span>
+                <div class="kpi-value" id="kpi-ai-revenue">₹1,76,796</div>
+                <span class="kpi-subtext" id="kpi-ai-orders-count">61 AI-assisted orders</span>
+              </div>
+              <div class="kpi-card card-mint">
+                <span class="kpi-label">AI INCREMENTAL UPLIFT</span>
+                <div class="kpi-value text-positive" id="kpi-incremental-revenue">+₹48,500</div>
+                <span class="kpi-subtext">Upsells &amp; companion cross-sells</span>
+              </div>
+              <div class="kpi-card card-peach">
+                <span class="kpi-label">AVERAGE ORDER VALUE (AOV)</span>
+                <div class="kpi-value" id="kpi-aov">₹2,710</div>
+                <span class="kpi-subtext text-positive" id="kpi-aov-lift">+15.8% lift vs baseline (₹2,340)</span>
+              </div>
+            </div>
+
+            <!-- Revenue Trend Chart in Overview -->
+            <div class="data-card" style="margin-top: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 class="data-card-title">Monthly Revenue Trajectory (Baseline vs AI-Enabled)</h4>
+                <button class="btn-link-action" onclick="switchMerchantSubview('sub-analytics')">View Detailed Attribution &rarr;</button>
+              </div>
+              <div class="chart-bars-wrap" id="overview-revenue-chart">
+                <!-- Bar chart injected via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: AI GROWTH -->
+          <div class="command-section" style="margin-top: 24px;">
+            <div class="section-title-row">
+              <h3 class="command-section-heading"><span class="section-num">2</span> AI GROWTH ATTRIBUTION</h3>
+              <button class="btn-link-action" onclick="switchMerchantSubview('sub-analytics')">Open Revenue Analytics &rarr;</button>
+            </div>
+            <div class="growth-metrics-row">
+              <div class="growth-metric-card">
+                <span class="gm-label">AI CONVERSION RATE</span>
+                <div class="gm-val">23.5%</div>
+                <span class="gm-sub text-positive">Above e-comm benchmark (18%)</span>
+              </div>
+              <div class="growth-metric-card">
+                <span class="gm-label">CROSS-SELL CONVERSIONS</span>
+                <div class="gm-val" id="ov-cross-rate">24%</div>
+                <span class="gm-sub">Companion accessories</span>
+              </div>
+              <div class="growth-metric-card">
+                <span class="gm-label">UPSELL CONVERSIONS</span>
+                <div class="gm-val" id="ov-upsell-rate">18%</div>
+                <span class="gm-sub">Studio edition upgrades</span>
+              </div>
+              <div class="growth-metric-card">
+                <span class="gm-label">REVENUE / AI CONVERSATION</span>
+                <div class="gm-val" id="ov-rev-conv">₹137</div>
+                <span class="gm-sub">Across 1,240 shopping sessions</span>
+              </div>
+            </div>
+
+            <div class="ai-insight-box" style="margin-top: 12px;">
+              <div class="ai-insight-icon">💡</div>
+              <div class="ai-insight-content">
+                <strong>AI Sales Insight:</strong> Travel Case companion cross-sells generate the highest margin efficiency (+₹799/order at 82% margin). Bundle discounts are converting 2.3x better than standalone product discounts.
+              </div>
+              <button class="btn-secondary" onclick="switchMerchantSubview('sub-insights')" style="margin-left: auto;">View All Insights &rarr;</button>
+            </div>
+          </div>
+
+          <!-- SECTION 3: AGENT HEALTH & SAFETY -->
+          <div class="command-section" style="margin-top: 24px;">
+            <div class="section-title-row">
+              <h3 class="command-section-heading"><span class="section-num">3</span> AGENT HEALTH &amp; POLICY STATUS</h3>
+              <button class="btn-link-action" onclick="switchMerchantSubview('sub-agent')">Manage Agent Controls &rarr;</button>
+            </div>
+            <div class="agent-health-grid">
+              <div class="health-card">
+                <div class="health-card-header">
+                  <span class="health-indicator-dot dot-active" id="ov-health-dot"></span>
+                  <span class="font-bold" id="ov-health-status">Active &amp; Authorized</span>
+                </div>
+                <p class="health-card-desc">AI salesperson is actively discovering intent, matching accessories, and negotiating within limits.</p>
+              </div>
+              <div class="health-card">
+                <div class="health-card-header">
+                  <span class="badge-ai-ready font-mono">Policy: ENFORCED</span>
+                </div>
+                <p class="health-card-desc">Transaction Cap: ₹10,000 &bull; Auto-Approval: &lt; ₹2,000 &bull; Margin Floor: ₹500.</p>
+              </div>
+              <div class="health-card">
+                <div class="health-card-header">
+                  <span class="badge-ai-feed font-mono">Velocity: NORMAL</span>
+                </div>
+                <p class="health-card-desc">Operating within normal ₹1,500 - ₹6,000 basket range. 0 unmitigated anomalies.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 4: AI COMMERCE READINESS -->
+          <div class="command-section" style="margin-top: 24px;">
+            <div class="section-title-row">
+              <h3 class="command-section-heading"><span class="section-num">4</span> AI COMMERCE READINESS SCORECARD</h3>
+              <button class="btn-link-action" onclick="switchMerchantSubview('sub-products')">Improve Catalog &rarr;</button>
+            </div>
+            <div class="readiness-score-card">
+              <div class="readiness-header-row">
+                <div class="readiness-score-gauge">
+                  <div class="gauge-circle">
+                    <span class="gauge-number" id="readiness-overall-score">87</span>
+                    <span class="gauge-denom">/100</span>
+                  </div>
+                  <div class="gauge-label-wrap">
+                    <h4 class="readiness-title">AI Commerce Readiness</h4>
+                    <span class="readiness-badge" id="readiness-grade-badge">Grade A &bull; AI-Native Transactable</span>
+                    <p class="readiness-desc">Measures how easily external AI buyer agents can discover, evaluate, negotiate, and transact with your store.</p>
+                  </div>
+                </div>
+                <div class="readiness-action-box">
+                  <span class="readiness-action-title">Actionable Optimizations:</span>
+                  <ul class="readiness-checklist" id="readiness-checklist">
+                    <!-- Populated via JS -->
+                  </ul>
+                </div>
+              </div>
+
+              <!-- 6 Sub-Metric Progress Bars -->
+              <div class="readiness-metrics-grid" id="readiness-submetrics-grid">
+                <!-- Injected dynamically via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 5: RECENT ACTIVITY & AI-TO-AI PROMO -->
+          <div class="command-section" style="margin-top: 24px;">
+            <div class="section-title-row">
+              <h3 class="command-section-heading"><span class="section-num">5</span> RECENT ACTIVITY &amp; REPLAYS</h3>
+              <button class="btn-link-action" onclick="switchMerchantSubview('sub-orders')">View All Orders &rarr;</button>
+            </div>
+            <div class="two-col-grid">
+              <div class="data-card">
+                <h4 class="data-card-title">Top-Performing AI Recommendations</h4>
+                <div class="recommendations-list" id="overview-top-recs">
+                  <!-- Populated via JS -->
+                </div>
+              </div>
+
+              <div class="data-card">
+                <h4 class="data-card-title">Recent AI-Attributed Orders</h4>
+                <div class="recent-orders-list" id="overview-recent-orders">
+                  <!-- Populated via JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Flagship AI-to-AI Experience Promo Banner -->
+            <div class="ai2ai-promo-banner" style="margin-top: 20px;">
+              <div class="ai2ai-promo-content">
+                <span class="badge-ai-ready font-mono">FLAGSHIP DEMONSTRATION</span>
+                <h3 class="ai2ai-promo-title">Autonomous Agent-to-Agent Commerce</h3>
+                <p class="ai2ai-promo-desc">
+                  Experience full end-to-end autonomous negotiation: An external AI Buyer Agent interacts with your Merchant AI Salesperson to discover products, negotiate bundles within policy, and settle via Razorpay test mode.
+                </p>
+              </div>
+              <button class="btn-primary" onclick="switchMerchantSubview('sub-ai2ai')">
+                Launch AI-to-AI Experience &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 2: REVENUE ATTRIBUTION & SIMULATOR -->
+        <!-- ========================================================= -->
+        <div id="sub-analytics" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">GROWTH ANALYTICS</span>
+              <h2 class="sub-view-title">AI Revenue Attribution &amp; Decomposition</h2>
+              <p class="sub-view-desc">Strictly distinguished: AI-assisted revenue vs. AI-attributed incremental revenue (Upsells, Cross-sells, Bundles).</p>
+            </div>
+          </div>
+
+          <!-- AI Revenue Attribution Decomposition Cards -->
+          <div class="attribution-cards-row">
+            <div class="attr-card">
+              <span class="attr-label">TOTAL STORE REVENUE</span>
+              <div class="attr-val font-mono" id="attr-total-store">₹9,08,996</div>
+              <span class="attr-sub">Baseline + All AI Sales</span>
+            </div>
+            <div class="attr-card">
+              <span class="attr-label">AI-ASSISTED REVENUE</span>
+              <div class="attr-val" id="attr-total-ai">₹1,76,796</div>
+              <span class="attr-sub">Total revenue from AI shopping</span>
+            </div>
+            <div class="attr-card attr-card-highlight">
+              <span class="attr-label">AI INCREMENTAL REVENUE</span>
+              <div class="attr-val text-positive" id="attr-incremental-ai">+₹48,500</div>
+              <span class="attr-sub">Upsells, Cross-sells &amp; Bundles</span>
+            </div>
+            <div class="attr-card">
+              <span class="attr-label">UPSELL REVENUE</span>
+              <div class="attr-val" id="attr-upsell-revenue">₹31,996</div>
+              <span class="attr-sub">Studio edition upgrades</span>
+            </div>
+            <div class="attr-card">
+              <span class="attr-label">CROSS-SELL REVENUE</span>
+              <div class="attr-val" id="attr-cross-revenue">₹16,504</div>
+              <span class="attr-sub">Companion accessories added</span>
+            </div>
+          </div>
+
+          <!-- Charts Grid -->
+          <div class="analytics-charts-grid" style="margin-top: 20px;">
+            <div class="data-card">
+              <h3 class="data-card-title">Monthly Revenue Trend (Baseline vs With AI)</h3>
+              <div class="chart-bars-wrap" id="analytics-revenue-chart">
+                <!-- Bar chart injected via JS -->
+              </div>
+            </div>
+
+            <div class="data-card">
+              <h3 class="data-card-title">AOV Uplift Breakdown</h3>
+              <div class="aov-breakdown-card">
+                <div class="aov-stat-row">
+                  <span>Baseline AOV (Before AI):</span>
+                  <span class="font-bold">₹2,340</span>
+                </div>
+                <div class="aov-stat-row">
+                  <span>Current AOV (With AI Agent):</span>
+                  <span class="font-bold text-positive">₹2,710</span>
+                </div>
+                <div class="aov-stat-row highlight">
+                  <span>Total AOV Uplift:</span>
+                  <span class="font-bold text-positive">+15.8%</span>
+                </div>
+                <p class="aov-note">
+                  AOV growth is driven by automated companion cross-sells (e.g. Travel Case with Headphones, Coiled Cable with Keyboards) and bounded bundle negotiation.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================================= -->
+          <!-- CUSTOMER AI REVENUE ATTRIBUTION MATRIX (SHARED TRUTH) -->
+          <!-- ========================================================= -->
+          <div class="data-card" style="margin-top: 20px;">
+            <div class="sub-header-row" style="margin-bottom: 12px;">
+              <div>
+                <span class="sub-view-eyebrow">SINGLE SOURCE OF TRUTH</span>
+                <h3 class="data-card-title">Customer AI Revenue Attribution Matrix</h3>
+                <p class="data-card-sub">Dynamic breakdown attributing total spend, base revenue, and incremental AI conversions (upsells &amp; cross-sells) to actual customer accounts.</p>
+              </div>
+              <span class="badge-ai-ready font-mono" id="attr-sync-indicator">✓ Live Synchronized with Customer Accounts</span>
+            </div>
+
+            <div class="data-table-card" style="margin-top: 8px;">
+              <table class="merchant-table" id="customer-attribution-table">
+                <thead>
+                  <tr>
+                    <th>Customer Name</th>
+                    <th>Account ID</th>
+                    <th>Orders Count</th>
+                    <th>Total Spend</th>
+                    <th>Base Store Spend</th>
+                    <th>AI Upsell Attributed</th>
+                    <th>AI Cross-Sell Attributed</th>
+                    <th>Total AI Incremental</th>
+                    <th>Attribution Breakdown</th>
+                  </tr>
+                </thead>
+                <tbody id="customer-attribution-tbody">
+                  <!-- Populated via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- REVENUE SIMULATOR ("WHAT-IF" ANALYSIS) -->
+          <div class="data-card" style="margin-top: 20px;">
+            <div class="sub-header-row" style="margin-bottom: 12px;">
+              <div>
+                <h3 class="data-card-title">AI Growth Simulator &bull; "What-If" Analysis Engine</h3>
+                <p class="data-card-sub">Simulate revenue uplift by tuning AI cross-sell, upsell, and recommendation rates.</p>
+              </div>
+              <button class="btn-primary" id="btn-apply-strategy">Apply Strategy to Live Agent</button>
+            </div>
+
+            <div class="simulator-layout">
+              <div class="simulator-controls">
+                <div class="sim-slider-group">
+                  <div class="sim-slider-label">
+                    <span>Target Cross-Sell Conversion Rate:</span>
+                    <span class="font-bold text-positive" id="sim-val-cross">30%</span>
+                  </div>
+                  <input type="range" id="sim-range-cross" min="10" max="50" value="30" class="sim-range">
+                  <span class="field-hint">Current baseline: 24%</span>
+                </div>
+
+                <div class="sim-slider-group">
+                  <div class="sim-slider-label">
+                    <span>Target Upsell Conversion Rate:</span>
+                    <span class="font-bold text-positive" id="sim-val-upsell">22%</span>
+                  </div>
+                  <input type="range" id="sim-range-upsell" min="5" max="40" value="22" class="sim-range">
+                  <span class="field-hint">Current baseline: 18%</span>
+                </div>
+
+                <div class="sim-slider-group">
+                  <div class="sim-slider-label">
+                    <span>Recommendation-to-Cart Rate:</span>
+                    <span class="font-bold text-positive" id="sim-val-rec">12%</span>
+                  </div>
+                  <input type="range" id="sim-range-rec" min="5" max="30" value="12" class="sim-range">
+                  <span class="field-hint">Current baseline: 9%</span>
+                </div>
+              </div>
+
+              <div class="simulator-results-box">
+                <div class="sim-result-card">
+                  <span class="sim-res-label">PROJECTED MONTHLY REVENUE</span>
+                  <div class="sim-res-val" id="sim-proj-revenue">₹9,38,000</div>
+                  <span class="sim-res-sub text-positive" id="sim-proj-lift">+₹98,000 projected monthly lift</span>
+                </div>
+                <div class="sim-result-card">
+                  <span class="sim-res-label">PROJECTED AOV</span>
+                  <div class="sim-res-val" id="sim-proj-aov">₹2,840</div>
+                  <span class="sim-res-sub text-positive" id="sim-proj-aov-lift">+21.4% vs baseline</span>
+                </div>
+                <p class="sim-disclaimer font-mono">
+                  * Estimated based on historical and simulated agentic conversion data. Not a guaranteed return.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 3: AI SALES INTELLIGENCE & INSIGHTS -->
+        <!-- ========================================================= -->
+        <div id="sub-insights" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">REVENUE INTELLIGENCE</span>
+              <h2 class="sub-view-title">AI Sales Intelligence &amp; Actionable Insights</h2>
+              <p class="sub-view-desc">Synthesized commercial findings with root-cause context, metric evidence, and recommended merchant actions.</p>
+            </div>
+            <button class="btn-refresh-data" id="btn-refresh-insights">Regenerate Insights</button>
+          </div>
+
+          <div class="insights-grid" id="insights-container">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 4: AI SALES FUNNEL -->
+        <!-- ========================================================= -->
+        <div id="sub-funnel" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">CONVERSION FUNNEL</span>
+              <h2 class="sub-view-title">AI Sales Funnel &amp; Conversions</h2>
+              <p class="sub-view-desc">Track multi-stage drop-off from customer conversation to payment capture.</p>
+            </div>
+          </div>
+
+          <!-- AI Sales Funnel Section -->
+          <div class="data-card">
+            <h3 class="data-card-title">7-Stage AI Sales Conversion Funnel</h3>
+            <p class="data-card-sub">Step-by-step conversion drop-off across 1,240 shopping conversations.</p>
+            <div class="funnel-container" id="ai-funnel-container">
+              <!-- Injected dynamically via JS -->
+            </div>
+          </div>
+
+          <div class="two-col-grid" style="margin-top: 20px;">
+            <div class="data-card">
+              <h3 class="data-card-title">Top-Performing Recommendations Breakdown</h3>
+              <div class="recommendations-list" id="funnel-top-recs">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+
+            <div class="data-card">
+              <h3 class="data-card-title">Funnel Drop-Off Insights</h3>
+              <div class="funnel-insights-list">
+                <div class="insight-item">
+                  <span class="insight-badge text-positive">High Velocity</span>
+                  <p><strong>Add-to-Checkout Rate (77.9%):</strong> Customers who add recommended accessories have an 88.7% final payment conversion rate.</p>
+                </div>
+                <div class="insight-item">
+                  <span class="insight-badge text-warning">Optimization Area</span>
+                  <p><strong>Rec-to-Cart (68.8%):</strong> Clarifying budget leeway early in conversation improves cart additions by +14%.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 5: AI EXPERIMENT LAB -->
+        <!-- ========================================================= -->
+        <div id="sub-experiments" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">GROWTH EXPERIMENTS</span>
+              <h2 class="sub-view-title">AI Sales Experiment Lab</h2>
+              <p class="sub-view-desc">A/B test agentic selling strategies (Conservative vs Balanced vs Growth) and deploy them to live policies in 1 click.</p>
+            </div>
+          </div>
+
+          <div class="experiments-grid" id="experiments-container">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 6: CUSTOMER EXPERIENCE (CX) METRICS -->
+        <!-- ========================================================= -->
+        <div id="sub-cx" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">TRUST &amp; EXPERIENCE</span>
+              <h2 class="sub-view-title">Customer Experience (CX) Metrics &amp; Trust Index</h2>
+              <p class="sub-view-desc">Ensure AI revenue growth does not compromise shopper satisfaction or trigger cart friction.</p>
+            </div>
+          </div>
+
+          <div class="cx-score-card">
+            <div class="cx-header-row">
+              <div class="cx-gauge-box">
+                <div class="cx-gauge-circle">
+                  <span class="cx-gauge-num" id="cx-score-num">92</span>
+                  <span class="cx-gauge-denom">/100</span>
+                </div>
+                <div>
+                  <h3 class="cx-title">Customer Experience Score</h3>
+                  <span class="badge-ai-ready font-mono" id="cx-rating-badge">A+ &bull; Exceptional</span>
+                  <p class="cx-desc">Composite index measuring recommendation relevance, non-intrusive upselling, and checkout completion speed.</p>
+                </div>
+              </div>
+
+              <div class="cx-balance-box">
+                <span class="cx-balance-title">Growth vs. Experience Balance:</span>
+                <p class="cx-balance-text" id="cx-balance-text">
+                  AI upselling and companion matching are accepted naturally without triggering pushy sales friction or cart abandonment.
+                </p>
+                <div style="margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--pastel-mint-text);">
+                  ✓ CSAT Score: 4.8 / 5.0 (Based on 1,240 sessions)
+                </div>
+              </div>
+            </div>
+
+            <div class="cx-metrics-grid" id="cx-metrics-grid">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 7: PRODUCT AI AUDIT (CATALOG) -->
+        <!-- ========================================================= -->
+        <div id="sub-products" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">CATALOG INTELLIGENCE</span>
+              <h2 class="sub-view-title">Product AI Readiness Audit &amp; Optimizer</h2>
+              <p class="sub-view-desc">Audit catalog items for AI discoverability, metadata completeness, and 1-click optimization.</p>
+            </div>
+          </div>
+
+          <div class="data-table-card">
+            <table class="merchant-table" id="products-audit-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Price &amp; Margin</th>
+                  <th>Stock</th>
+                  <th>AI Readiness</th>
+                  <th>Completeness</th>
+                  <th>Upsell / Cross-Sell</th>
+                  <th>Optimization</th>
+                </tr>
+              </thead>
+              <tbody id="products-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 8: ORDERS & ATTRIBUTION -->
+        <!-- ========================================================= -->
+        <div id="sub-orders" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">TRANSACTION LOG</span>
+              <h2 class="sub-view-title">Orders &amp; Attribution Settlements</h2>
+              <p class="sub-view-desc">All customer orders with Razorpay settlement references and visual audit replay links.</p>
+            </div>
+          </div>
+
+          <div class="data-table-card">
+            <table class="merchant-table" id="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Products Purchased</th>
+                  <th>Order Value</th>
+                  <th>AI Assisted</th>
+                  <th>AI Revenue Attribution (Upsell / Cross-Sell)</th>
+                  <th>Payment Status</th>
+                  <th>Audit Replay</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 9: POLICIES & NATURAL LANGUAGE POLICY BUILDER -->
+        <!-- ========================================================= -->
+        <div id="sub-policies" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">GOVERNANCE &amp; GUARDRAILS</span>
+              <h2 class="sub-view-title">Deterministic Policy Engine &amp; NL Builder</h2>
+              <p class="sub-view-desc">Configure spending limits, approval thresholds, margin rules, and author policies using natural language.</p>
+            </div>
+            <button class="btn-save-policy" id="btn-save-policies">Save Policy Changes</button>
+          </div>
+
+          <!-- Natural Language Policy Builder Card -->
+          <div class="data-card" style="margin-bottom: 20px; background-color: var(--lavender-vlight); border: 1px solid var(--lavender-primary);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+              <div>
+                <h3 class="data-card-title" style="color: var(--lavender-dark);">Natural Language Policy Builder</h3>
+                <p class="data-card-sub" style="color: var(--text-primary);">Type merchant rules in plain English. The engine parses them into deterministic, tamper-proof backend constraints.</p>
+              </div>
+              <span class="badge-ai-ready font-mono">NL &rarr; Deterministic JSON</span>
+            </div>
+
+            <div class="nl-policy-input-row">
+              <textarea id="nl-policy-prompt" class="nl-policy-textarea" placeholder="e.g. Don't give more than 10% discount, automatically approve purchases below ₹2,000, and always ask me before selling premium products..."></textarea>
+              <button class="btn-primary" id="btn-parse-nl-policy" style="height: fit-content; padding: 12px 18px;">
+                Parse with AI &rarr;
+              </button>
+            </div>
+
+            <div class="nl-preview-box" id="nl-parsed-preview" style="display: none;">
+              <div class="nl-preview-title font-bold text-positive">✓ Structured Policy Parsed:</div>
+              <ul class="nl-rules-list" id="nl-rules-list"></ul>
+              <button class="btn-widget-action" id="btn-apply-nl-policy" style="margin-top: 10px; background-color: var(--lavender-dark);">
+                Apply to Active Policy Rules
+              </button>
+            </div>
+          </div>
+
+          <form id="policy-form" class="policy-form-grid">
+            <div class="data-card">
+              <h3 class="data-card-title">Spending &amp; Approval Limits</h3>
+              <div class="form-group">
+                <label class="form-label" for="pol-max-tx">Maximum Transaction Limit (₹)</label>
+                <input type="number" id="pol-max-tx" class="form-input" value="10000" step="1000">
+                <span class="field-hint">Transactions above this cap are strictly BLOCKED by policy.</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="pol-auto-appr">Auto-Approval Threshold (₹)</label>
+                <input type="number" id="pol-auto-appr" class="form-input" value="2000" step="500">
+                <span class="field-hint">Purchases exceeding this amount require explicit user confirmation.</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="pol-daily-limit">Daily Spending Limit (₹)</label>
+                <input type="number" id="pol-daily-limit" class="form-input" value="25000" step="5000">
+              </div>
+            </div>
+
+            <div class="data-card">
+              <h3 class="data-card-title">Selling &amp; Negotiation Boundaries</h3>
+              <div class="form-group">
+                <label class="form-label" for="pol-max-discount">Maximum Discount Percentage (%)</label>
+                <input type="number" id="pol-max-discount" class="form-input" value="10" min="0" max="30">
+                <span class="field-hint">Agent cannot offer discounts higher than this ceiling.</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="pol-min-margin">Minimum Allowed Margin (₹)</label>
+                <input type="number" id="pol-min-margin" class="form-input" value="500" step="100">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Negotiation Method</label>
+                <select id="pol-neg-method" class="form-select">
+                  <option value="bundle_discount">Prefer Bundle Discounts</option>
+                  <option value="direct_discount">Direct Price Concession</option>
+                </select>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 10: AGENT CONTROLS & KILL SWITCH -->
+        <!-- ========================================================= -->
+        <div id="sub-agent" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">AGENT CONTROLS</span>
+              <h2 class="sub-view-title">Agent Control Center &amp; Emergency Kill Switch</h2>
+              <p class="sub-view-desc">Manage real-time agent execution, toggle the financial kill switch, and inspect velocity.</p>
+            </div>
+          </div>
+
+          <div class="agent-control-banner">
+            <div class="agent-status-main">
+              <div class="status-indicator-dot" id="agent-kill-dot"></div>
+              <div>
+                <h3 class="agent-status-heading" id="agent-kill-text">AI Agent Status: ACTIVE</h3>
+                <p class="agent-status-sub" id="agent-kill-sub">Agent is currently authorized to converse, recommend products, and initiate gated transactions.</p>
+              </div>
+            </div>
+            <button class="btn-kill-switch" id="btn-toggle-kill-switch">
+              PAUSE AI AGENT (KILL SWITCH)
+            </button>
+          </div>
+
+          <!-- Real-Time Anomaly Monitor Card -->
+          <div class="data-card" style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div>
+                <h3 class="data-card-title">Transaction Velocity &amp; Anomaly Monitor</h3>
+                <span class="field-hint">Normal operating band: ₹1,500 &ndash; ₹6,000. Outliers are flagged for merchant review.</span>
+              </div>
+              <span class="badge-ai-feed font-mono" id="anomaly-status-badge">🟢 Baseline Velocity Normal</span>
+            </div>
+
+            <div class="anomaly-alerts-list" id="anomaly-alerts-list">
+              <!-- Injected dynamically via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 11: AUDIT TRAIL & REPLAY -->
+        <!-- ========================================================= -->
+        <div id="sub-audit" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">AUDIT &amp; TRACEABILITY</span>
+              <h2 class="sub-view-title">Chronological Audit Trail</h2>
+              <p class="sub-view-desc">Auditable record of all agent discovery, recommendations, policy checks, approvals, and Razorpay settlements.</p>
+            </div>
+          </div>
+
+          <div class="data-table-card">
+            <table class="merchant-table" id="audit-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action</th>
+                  <th>Actor</th>
+                  <th>Details &amp; Reason</th>
+                  <th>Status</th>
+                  <th>Visual Replay</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 12: INCIDENT CENTER & GOVERNANCE -->
+        <!-- ========================================================= -->
+        <div id="sub-incidents" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">RISK &amp; SAFETY</span>
+              <h2 class="sub-view-title">Incident Center &amp; Policy Governance</h2>
+              <p class="sub-view-desc">Auditable record of policy limit violations, anomaly alerts, blocked financial actions, and safety mitigations.</p>
+            </div>
+          </div>
+
+          <!-- CORE GOVERNANCE PRINCIPLE BANNER -->
+          <div class="governance-principle-card" style="margin-bottom: 20px;">
+            <div class="gov-principle-badge">AGENT GOVERNANCE PRINCIPLE</div>
+            <div class="gov-principle-text">
+              &ldquo;AI recommends. Policies authorize. Humans approve when required. Payments are verified. Everything is auditable.&rdquo;
+            </div>
+            <span class="field-hint">The LLM recommends and constructs requests, but deterministic backend code strictly gates financial execution.</span>
+          </div>
+
+          <div class="data-card">
+            <h3 class="data-card-title">Security &amp; Policy Incidents Log</h3>
+            <p class="data-card-sub">Real-time alerts for safety violations, unauthorized discount attempts, and velocity spikes.</p>
+            <div class="incidents-log-grid" id="incidents-log-container" style="margin-top: 14px;">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <div class="data-card" style="margin-top: 20px;">
+            <h3 class="data-card-title">Policy Guardrail Enforcements &amp; Blocked Actions</h3>
+            <div class="blocked-history-list" id="blocked-history-list" style="margin-top: 12px;">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SUB-VIEW 13: FLAGSHIP AI-TO-AI COMMERCE EXPERIENCE -->
+        <!-- ========================================================= -->
+        <div id="sub-ai2ai" class="sub-view">
+          <div class="sub-header-row">
+            <div>
+              <span class="sub-view-eyebrow">FLAGSHIP DEMONSTRATION</span>
+              <h2 class="sub-view-title">AI-to-AI Autonomous Commerce Engine</h2>
+              <p class="sub-view-desc">Simulate an autonomous external AI Buyer Agent negotiating and transacting with your Merchant AI Salesperson.</p>
+            </div>
+          </div>
+
+          <!-- Architecture Visual Map -->
+          <div class="ai2ai-flow-map">
+            <div class="flow-node"><span>🤖 AI BUYER</span></div>
+            <div class="flow-arrow">&harr;</div>
+            <div class="flow-node highlight"><span>⚡ MERCHANT AI</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><span>📦 CATALOG</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><span>🛡️ POLICY</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><span>💳 RAZORPAY</span></div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-node"><span>🧾 ORDER</span></div>
+          </div>
+
+          <div class="data-card" style="margin-top: 18px;">
+            <div class="ai2ai-prompt-bar">
+              <input type="text" id="ai2ai-page-intent-input" class="chat-input-field" value="Find headphones under ₹5,000 with noise cancellation for traveling">
+              <button class="btn-primary" id="btn-run-ai2ai-page-sim">Run Simulation &rarr;</button>
+            </div>
+
+            <!-- Terminal Dialogue Stream -->
+            <div class="ai2ai-terminal" id="ai2ai-page-terminal-output">
+              <div style="color: #94a3b8;">Click 'Run Simulation &rarr;' above to execute autonomous agent-to-agent negotiation.</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- VIEW 4: DEDICATED AI-TO-AI COMMERCE ARENA -->
+  <!-- ============================================================= -->
+  <main id="view-ai2ai" class="app-view">
+    <div class="ai2ai-page-wrapper">
+      <!-- Hero Header & Control Bar -->
+      <div class="ai2ai-hero-header">
+        <div class="ai2ai-title-wrap">
+          <div class="ai2ai-badge-pill">
+            <span class="pulse-dot"></span> FLAGSHIP AGENTIC COMMERCE DEMONSTRATION
+          </div>
+          <h1 class="ai2ai-page-heading">AI-to-AI Autonomous Commerce</h1>
+          <p class="ai2ai-page-subtext">
+            Experience end-to-end agentic commerce where an external <strong>AI Buyer Agent</strong> discovers, negotiates bounded deals, passes deterministic <strong>Transaction Guards</strong>, and settles transactions with your <strong>Merchant AI</strong> in test mode.
+          </p>
+        </div>
+
+        <!-- Master Demo Controls & View Mode Selector -->
+        <div class="ai2ai-control-toolbar">
+          <div class="demo-playback-button-group">
+            <button class="btn-demo-ctl btn-demo-run" id="btn-demo-run" title="Run autonomous demo">
+              <span class="ctl-icon">▶</span> Run Demo
+            </button>
+            <button class="btn-demo-ctl btn-demo-pause" id="btn-demo-pause" disabled title="Pause demo execution">
+              <span class="ctl-icon">⏸</span> Pause
+            </button>
+            <button class="btn-demo-ctl btn-demo-restart" id="btn-demo-restart" title="Restart demo from beginning">
+              <span class="ctl-icon">↺</span> Restart Demo
+            </button>
+          </div>
+
+          <!-- View Mode Toggle: Human View vs Technical View -->
+          <div class="view-mode-toggle-wrap">
+            <span class="toggle-tag">View Mode:</span>
+            <div class="view-mode-pill-box">
+              <button class="mode-pill active" id="btn-mode-human" data-mode="human">
+                👤 Human View
+              </button>
+              <button class="mode-pill" id="btn-mode-tech" data-mode="technical">
+                ⚙️ Technical View
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Central Stage Status Indicator (Discovering -> Searching -> Negotiating -> Validating -> Paying -> Completed) -->
+      <div class="ai2ai-stage-stepper-card">
+        <div class="stage-step-box" data-stage="DISCOVERING" id="stage-box-discover">
+          <span class="step-badge">1</span>
+          <span class="step-text">DISCOVERING</span>
+        </div>
+        <div class="stage-flow-line"></div>
+        <div class="stage-step-box" data-stage="SEARCHING" id="stage-box-search">
+          <span class="step-badge">2</span>
+          <span class="step-text">SEARCHING</span>
+        </div>
+        <div class="stage-flow-line"></div>
+        <div class="stage-step-box" data-stage="NEGOTIATING" id="stage-box-negotiate">
+          <span class="step-badge">3</span>
+          <span class="step-text">NEGOTIATING</span>
+        </div>
+        <div class="stage-flow-line"></div>
+        <div class="stage-step-box" data-stage="VALIDATING" id="stage-box-validate">
+          <span class="step-badge">4</span>
+          <span class="step-text">VALIDATING</span>
+        </div>
+        <div class="stage-flow-line"></div>
+        <div class="stage-step-box" data-stage="PAYING" id="stage-box-pay">
+          <span class="step-badge">5</span>
+          <span class="step-text">PAYING</span>
+        </div>
+        <div class="stage-flow-line"></div>
+        <div class="stage-step-box" data-stage="COMPLETED" id="stage-box-complete">
+          <span class="step-badge">6</span>
+          <span class="step-text">COMPLETED</span>
+        </div>
+      </div>
+
+      <!-- 3-Column Arena Grid: LEFT (AI BUYER) | CENTER (TIMELINE) | RIGHT (MERCHANT AI) -->
+      <div class="ai2ai-arena-grid">
+        <!-- LEFT PANEL: AI BUYER AGENT -->
+        <aside class="agent-panel agent-panel-buyer">
+          <div class="agent-panel-header">
+            <div class="agent-avatar avatar-buyer">🤖</div>
+            <div class="agent-header-info">
+              <span class="agent-role-pill role-buyer">AI Buyer</span>
+              <h3 class="agent-title">AI Buyer Agent</h3>
+              <span class="agent-id-caption">Client Procurement Mandate</span>
+            </div>
+          </div>
+
+          <div class="agent-card-section">
+            <div class="spec-table">
+              <div class="spec-row">
+                <span class="spec-k">Intent</span>
+                <span class="spec-v">Wireless Headphones with ANC</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-k">Max Budget</span>
+                <span class="spec-v highlight-price">₹5,000</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-k">Requested Target</span>
+                <span class="spec-v">₹4,000 (Concession)</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-k">Payment Mandate</span>
+                <span class="spec-v status-ok">✓ Razorpay Test Card Ready</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="agent-state-box">
+            <div class="state-box-header">Buyer State:</div>
+            <div class="state-box-content" id="buyer-state-text">Ready to initiate query to merchant</div>
+          </div>
+
+          <!-- Structured Tool Query Output -->
+          <div class="agent-code-box">
+            <div class="code-box-header">Structured Tool Query</div>
+            <pre class="code-box-pre" id="buyer-code-pre">{
+  "action": "search_products",
+  "category": "headphones",
+  "max_price": 5000,
+  "features": "noise cancellation"
+}</pre>
+          </div>
+        </aside>
+
+        <!-- CENTER PANEL: COMMERCE INTERACTION TIMELINE -->
+        <section class="ai2ai-timeline-panel">
+          <div class="timeline-header-card">
+            <div class="timeline-title-row">
+              <h3 class="timeline-heading">Commerce Interaction Timeline</h3>
+              <span class="timeline-counter-pill" id="timeline-step-counter">Ready &bull; 0/11 Steps</span>
+            </div>
+            <span class="timeline-subheading">Step-by-step negotiation, policy gate, transaction guard, and payment settlement</span>
+          </div>
+
+          <!-- Live Messages Stream Container -->
+          <div class="timeline-stream-box" id="ai2ai-stream-box">
+            <div class="timeline-empty-prompt" id="timeline-empty-prompt">
+              <div class="empty-sparkle-icon">🤖 ⚡ 💳</div>
+              <h4>Ready to Run Autonomous AI-to-AI Demo</h4>
+              <p>Click <strong>[Run Demo]</strong> to watch the AI Buyer negotiate with Merchant AI within margin guardrails.</p>
+              <button class="btn-primary btn-run-large" onclick="document.getElementById('btn-demo-run').click()">▶ Run Flagship Demo</button>
+            </div>
+          </div>
+
+          <!-- Pre-Transaction Guard Box (Displayed dynamically during VALIDATING stage) -->
+          <div class="ai2ai-transaction-guard-card" id="ai2ai-transaction-guard-card" style="display: none;">
+            <div class="guard-card-top">
+              <div class="guard-title-group">
+                <span class="guard-badge-icon">🛡️</span>
+                <div>
+                  <h4 class="guard-heading">TRANSACTION GUARD</h4>
+                  <span class="guard-sub-caption">Deterministic Backend Financial Safety Verification</span>
+                </div>
+              </div>
+              <span class="guard-status-pill status-safe" id="guard-status-label">SAFE TO PROCEED</span>
+            </div>
+            <div class="guard-grid">
+              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Customer intent understood</span></div>
+              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Product available (18 in stock)</span></div>
+              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Price verified (₹4,999 recalculated server-side)</span></div>
+              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Discount authorized (10% policy limit respected)</span></div>
+              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Merchant policy &amp; 15% margin protected</span></div>
+              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Transaction limit passed (₹4,999 &le; ₹10,000)</span></div>
+              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Approval requirement handled</span></div>
+              <div class="guard-item"><span class="check-mark">✓</span> <span class="guard-txt">Payment readiness confirmed</span></div>
+            </div>
+          </div>
+
+          <!-- Final Summary Card (Displayed at the end of the demo) -->
+          <div class="ai2ai-complete-card" id="ai2ai-complete-card" style="display: none;">
+            <div class="complete-header-row">
+              <div class="complete-icon-box">🎉</div>
+              <div>
+                <span class="complete-tag">TRANSACTION SUCCESSFUL</span>
+                <h3 class="complete-title">AI-TO-AI TRANSACTION COMPLETE</h3>
+              </div>
+              <span class="complete-pill-status">Verified &amp; Created</span>
+            </div>
+
+            <div class="complete-summary-grid">
+              <div class="summary-cell">
+                <span class="cell-label">Product / Bundle</span>
+                <span class="cell-value" id="comp-product-val">SoundWave ANC + Travel Case</span>
+              </div>
+              <div class="summary-cell">
+                <span class="cell-label">Total Amount</span>
+                <span class="cell-value cell-price" id="comp-total-val">₹4,999</span>
+              </div>
+              <div class="summary-cell">
+                <span class="cell-label">Payment Status</span>
+                <span class="cell-value cell-badge" id="comp-pay-val">Verified (Razorpay Test Mode)</span>
+              </div>
+              <div class="summary-cell">
+                <span class="cell-label">Order Created</span>
+                <span class="cell-value cell-mono" id="comp-order-val">ORD-9428</span>
+              </div>
+            </div>
+
+            <div class="flagship-congratulations-box">
+              <span class="sparkle-gold">✨</span>
+              <div class="flagship-congrats-text">"AI buyer successfully transacted with AI merchant."</div>
+            </div>
+
+            <div class="complete-button-actions">
+              <button class="btn-secondary" id="btn-a2a-go-orders">View Order in Merchant Portal &rarr;</button>
+              <button class="btn-secondary" id="btn-a2a-go-audit">Inspect in Audit Replay &rarr;</button>
+              <button class="btn-primary" id="btn-a2a-restart-demo">↺ Restart Demo</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT PANEL: MERCHANT AI SALESPERSON -->
+        <aside class="agent-panel agent-panel-merchant">
+          <div class="agent-panel-header">
+            <div class="agent-avatar avatar-merchant">⚡</div>
+            <div class="agent-header-info">
+              <span class="agent-role-pill role-merchant">Merchant AI</span>
+              <h3 class="agent-title">Merchant AI Salesperson</h3>
+              <span class="agent-id-caption">OmniGrowth Store #1</span>
+            </div>
+          </div>
+
+          <div class="agent-card-section">
+            <div class="spec-table">
+              <div class="spec-row">
+                <span class="spec-k">Max Discount</span>
+                <span class="spec-v">10% (Hard Rule)</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-k">Min Gross Margin</span>
+                <span class="spec-v">15% Floor Protected</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-k">Max Tx Limit</span>
+                <span class="spec-v">₹10,000</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-k">Auto-Approval Limit</span>
+                <span class="spec-v">₹2,000</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="agent-state-box">
+            <div class="state-box-header">Merchant Decision Rule:</div>
+            <div class="state-box-content" id="merchant-state-text">Direct 11.1% price drop violates 10% policy &rarr; Authorized to offer bundle counter-proposal</div>
+          </div>
+
+          <!-- Structured Catalog API Inspector -->
+          <div class="agent-code-box">
+            <div class="code-box-header">Structured Catalog Response</div>
+            <pre class="code-box-pre" id="merchant-code-pre">{
+  "action": "policy_check",
+  "max_discount_allowed": "10%",
+  "minimum_margin": "Protected",
+  "counter_offer": "Bundle for ₹4,999"
+}</pre>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Agent-Readable Structured Catalog Explorer -->
+      <div class="data-card catalog-inspect-card" style="margin-top: 24px;">
+        <div class="card-header-flex">
+          <div>
+            <h3 class="card-title"><span class="card-icon-pill icon-lavender">📦</span> Agent-Readable Structured Catalog Schema</h3>
+            <p class="card-desc">Machine-readable JSON representation of store catalog queried autonomously by AI buyer agents.</p>
+          </div>
+          <button class="btn-secondary btn-sm" id="btn-toggle-raw-catalog">Inspect Raw JSON Schema</button>
+        </div>
+        <div class="agent-catalog-cards-grid" id="agent-catalog-cards-grid">
+          <!-- Populated dynamically via JS -->
+        </div>
+        <pre class="raw-json-inspector" id="raw-catalog-json" style="display: none;"></pre>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 1: VISUAL AUDIT REPLAY TIMELINE -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="modal-audit-replay">
+    <div class="modal-card modal-replay-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">STEP-BY-STEP VISUAL AUDIT REPLAY</span>
+          <h2 class="modal-title" id="replay-order-title">Transaction Lifecycle Replay</h2>
+        </div>
+        <button class="modal-close" id="btn-close-replay">&times;</button>
+      </div>
+
+      <div class="modal-body modal-replay-body">
+        <div class="replay-timeline" id="replay-timeline-steps">
+          <!-- 9-Step Timeline Injected Dynamically via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 2: HUMAN APPROVAL GATE + TRANSACTION GUARD -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="modal-approval-gate">
+    <div class="modal-card modal-approval-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">POLICY ENGINE // HUMAN APPROVAL REQUIRED</span>
+          <h2 class="modal-title">Confirm Transaction Approval</h2>
+        </div>
+        <button class="modal-close" id="btn-close-approval">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- TRANSACTION SAFETY CENTER (TRANSACTION GUARD) -->
+        <div class="transaction-guard-box">
+          <div class="tg-header">
+            <span class="font-bold font-mono">TRANSACTION GUARD</span>
+            <span class="badge-ai-ready font-mono">Risk: LOW &bull; SAFE TO PROCEED</span>
+          </div>
+          <div class="tg-checklist-grid">
+            <div class="tg-check-item"><span>Customer intent</span> <span class="tg-check-pass">✓</span></div>
+            <div class="tg-check-item"><span>Product availability</span> <span class="tg-check-pass">✓</span></div>
+            <div class="tg-check-item"><span>Price verified</span> <span class="tg-check-pass">✓</span></div>
+            <div class="tg-check-item"><span>Merchant policy</span> <span class="tg-check-pass">✓</span></div>
+            <div class="tg-check-item"><span>Discount authorized</span> <span class="tg-check-pass">✓</span></div>
+            <div class="tg-check-item"><span>Spending limit (&le; ₹10k)</span> <span class="tg-check-pass">✓</span></div>
+            <div class="tg-check-item"><span>Approval status</span> <span class="tg-check-pending">Pending User</span></div>
+            <div class="tg-check-item"><span>Payment status</span> <span class="tg-check-pending">Ready</span></div>
+          </div>
+        </div>
+
+        <div class="approval-order-summary" id="approval-summary-box" style="margin-top: 14px;">
+          <!-- Populated via JS -->
+        </div>
+
+        <div class="approval-policy-notes" style="margin-top: 12px;">
+          <div class="policy-note-badge">Policy Rule Triggered</div>
+          <p id="approval-policy-explanation">
+            Transaction amount exceeds the auto-approval threshold of ₹2,000. Explicit user consent is required before payment initiation.
+          </p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cancel-approval">Cancel Transaction</button>
+        <button class="btn-primary" id="btn-confirm-approval">Approve &amp; Proceed to Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 3: RAZORPAY TEST PAYMENT MODAL -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="modal-razorpay-pay">
+    <div class="modal-card modal-pay-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">RAZORPAY TEST GATEWAY</span>
+          <h2 class="modal-title">Complete Test Payment</h2>
+        </div>
+        <button class="modal-close" id="btn-close-pay">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="pay-amount-box">
+          <span class="pay-amount-label">TOTAL AMOUNT PAYABLE</span>
+          <div class="pay-amount-val" id="pay-modal-amount">₹5,298</div>
+        </div>
+
+        <div class="test-cards-options">
+          <span class="form-label">SELECT TEST PAYMENT SCENARIO:</span>
+          
+          <label class="test-card-radio selected" id="radio-card-success">
+            <input type="radio" name="testcard" value="4111111111111111" checked>
+            <div class="radio-card-info">
+              <span class="card-name font-bold">Standard Test Card (Success)</span>
+              <span class="card-num font-mono">4111 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 1111</span>
+            </div>
+            <span class="badge-success-sim">Captures Payment</span>
+          </label>
+
+          <label class="test-card-radio" id="radio-card-decline">
+            <input type="radio" name="testcard" value="5105105105105100">
+            <div class="radio-card-info">
+              <span class="card-name font-bold">Declined Test Card (Simulation)</span>
+              <span class="card-num font-mono">5105 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 5100</span>
+            </div>
+            <span class="badge-decline-sim">Simulates Bank Decline</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cancel-pay">Cancel</button>
+        <button class="btn-primary" id="btn-execute-pay">Authorize &amp; Pay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 4: AI-TO-AI POPUP MODAL (ACCESSIBLE FROM HEADER) -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="modal-ai-to-ai">
+    <div class="modal-card modal-ai2ai-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">AUTONOMOUS AGENT-TO-AGENT COMMERCE</span>
+          <h2 class="modal-title">AI Buyer &bull; Merchant AI Negotiation Demo</h2>
+        </div>
+        <button class="modal-close" id="btn-close-ai2ai">&times;</button>
+      </div>
+
+      <div class="modal-body modal-ai2ai-body">
+        <div class="ai2ai-prompt-bar">
+          <input type="text" id="ai2ai-intent-input" class="chat-input-field" value="Find headphones under ₹5,000 with noise cancellation for traveling">
+          <button class="btn-primary" id="btn-run-ai2ai-sim">Run Simulation &rarr;</button>
+        </div>
+
+        <!-- Terminal Dialogue Stream -->
+        <div class="ai2ai-terminal" id="ai2ai-terminal-output">
+          <!-- Dialogue & Tool Calls injected via JS -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span class="field-hint" style="margin-right: auto;">Demonstrates autonomous catalog discovery, bounded bundle negotiation, and Razorpay test capture.</span>
+        <button class="btn-primary" id="btn-close-ai2ai-footer">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 5: "WHY THIS?" RECOMMENDATION EXPLAINER MODAL -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="modal-why-this">
+    <div class="modal-card modal-why-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">EXPLAINABLE AI RECOMMENDATION</span>
+          <h2 class="modal-title" id="why-this-prod-title">Why I Recommended This</h2>
+        </div>
+        <button class="modal-close" id="btn-close-why-this">&times;</button>
+      </div>
+
+      <div class="modal-body" id="why-this-body">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- CART DRAWER WITH SMART CART OPTIMIZER -->
+  <!-- ============================================================= -->
+  <div class="cart-drawer-overlay" id="cart-drawer-overlay">
+    <div class="cart-drawer" id="cart-drawer">
+      <div class="cart-drawer-header">
+        <h3 class="cart-title">Your Shopping Cart</h3>
+        <button class="cart-close-btn" id="btn-close-cart">&times;</button>
+      </div>
+
+      <!-- SMART CART PROACTIVE BANNER -->
+      <div class="smart-cart-banner" id="smart-cart-banner" style="display: none;">
+        <!-- Injected dynamically via JS -->
+      </div>
+
+      <div class="cart-items-list" id="cart-items-list">
+        <!-- Injected via JS -->
+      </div>
+
+      <div class="cart-drawer-footer">
+        <div class="cart-summary-row">
+          <span>Subtotal</span>
+          <span class="font-bold" id="cart-subtotal">₹0</span>
+        </div>
+        <div class="cart-summary-row" id="cart-discount-row" style="display: none;">
+          <span class="text-positive">Negotiated Savings</span>
+          <span class="font-bold text-positive" id="cart-discount">-₹0</span>
+        </div>
+        <div class="cart-summary-row total-row">
+          <span>Total</span>
+          <span class="font-bold total-price" id="cart-total">₹0</span>
+        </div>
+
+        <button class="btn-checkout-primary" id="btn-proceed-checkout">
+          Proceed to Checkout &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 6: CUSTOMER ORDER HISTORY & RECEIPTS MODAL -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="modal-customer-orders">
+    <div class="modal-card modal-orders-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">YOUR SHOPPING PROFILE</span>
+          <h2 class="modal-title" id="orders-modal-title">My Orders &amp; Razorpay Test Payments</h2>
+        </div>
+        <button class="modal-close" id="btn-close-customer-orders">&times;</button>
+      </div>
+
+      <div class="modal-body" id="customer-orders-body">
+        <!-- Populated via JS with customer's confirmed orders -->
+      </div>
+
+      <div class="modal-footer">
+        <span class="field-hint" style="margin-right: auto;">Transactions are recorded with deterministic policy validation and Razorpay test mode capture.</span>
+        <button class="btn-primary" id="btn-close-customer-orders-footer">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 7: EDIT CUSTOMER PROFILE MODAL (SHARED SOURCE OF TRUTH) -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="modal-edit-profile">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div>
+          <span class="modal-eyebrow">PROFILE SYNCHRONIZATION</span>
+          <h2 class="modal-title">Edit Customer Profile</h2>
+        </div>
+        <button class="modal-close" id="btn-close-edit-profile">&times;</button>
+      </div>
+
+      <form id="form-edit-customer-profile" style="padding: 20px;">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" for="edit-profile-name">Customer Name</label>
+          <input type="text" id="edit-profile-name" class="form-input" required autocomplete="name">
+          <span class="field-hint" style="display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
+            Updating your name immediately synchronizes across Orders, AI Revenue Attribution, and recent merchant activity.
+          </span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label class="form-label" for="edit-profile-email">Email Address</label>
+          <input type="email" id="edit-profile-email" class="form-input" required autocomplete="email">
+        </div>
+
+        <div class="modal-footer" style="padding: 0; border-top: none; display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn-secondary" id="btn-cancel-edit-profile">Cancel</button>
+          <button type="submit" class="btn-primary" id="btn-save-edit-profile">Save &amp; Sync Everywhere &rarr;</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

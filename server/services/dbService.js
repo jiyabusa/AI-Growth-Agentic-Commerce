@@ -22,7 +22,7 @@ class DatabaseService {
         stock: 24,
         brand: 'AcousticPro',
         rating: 4.8,
-        source: 'OmniGrowth Direct',
+        source: 'Revify Direct',
         source_type: 'MERCHANT_DIRECT',
         features: ['Hybrid Active Noise Cancellation', 'Bluetooth 5.3', '40-Hour Battery Life', 'Foldable Design'],
         compatible_products: ['prod_travel_case', 'prod_headphone_stand', 'prod_bt_adapter'],
@@ -211,7 +211,7 @@ class DatabaseService {
         stock: 22,
         brand: 'OmniDesk',
         rating: 4.7,
-        source: 'OmniGrowth Direct',
+        source: 'Revify Direct',
         source_type: 'MERCHANT_DIRECT',
         features: ['100W Power Delivery', '4K 60Hz HDMI', 'Gigabit Ethernet', 'SD/TF Card Readers'],
         compatible_products: ['prod_desk_mat', 'prod_laptop_stand'],
@@ -440,15 +440,18 @@ class DatabaseService {
     // 2b. Merchant Authentication & Profile Store
     this.merchants = new Map();
 
-    this.merchants.set('merch_omnigrowth', {
-      id: 'merch_omnigrowth',
-      businessName: 'OmniGrowth Labs',
+    const revifyMerchant = {
+      id: 'merch_revify',
+      businessName: 'Revify Labs',
       ownerName: 'Vikram Desai',
-      email: 'admin@omnigrowth.com',
+      email: 'admin@revify.com',
       password: 'password123',
       plan: 'Razorpay Test Mode',
       createdAt: '2026-01-15T09:00:00.000Z'
-    });
+    };
+
+    this.merchants.set('merch_revify', revifyMerchant);
+    this.merchants.set('merch_omnigrowth', { ...revifyMerchant, id: 'merch_omnigrowth' });
 
     this.merchants.set('merch_acousticpro', {
       id: 'merch_acousticpro',
@@ -1050,7 +1053,9 @@ class DatabaseService {
     const normalizedEmail = email.toLowerCase().trim();
     let matched = null;
     for (const m of this.merchants.values()) {
-      if (m.email.toLowerCase() === normalizedEmail) {
+      if (m.email.toLowerCase() === normalizedEmail ||
+          (normalizedEmail === 'admin@omnigrowth.com' && m.email.toLowerCase() === 'admin@revify.com') ||
+          (normalizedEmail === 'admin@revify.com' && m.email.toLowerCase() === 'admin@omnigrowth.com')) {
         matched = m;
         break;
       }

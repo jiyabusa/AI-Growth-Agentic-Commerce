@@ -359,17 +359,45 @@
             </div>
           </form>
 
-          <!-- Voice Listening Status Bar -->
+          <!-- Voice Listening Status Bar with Animated Soundwave & Quick Voice Prompts -->
           <div class="voice-status-banner" id="voice-status-banner" style="display: none;">
             <div class="voice-pulse-indicator">
               <span class="pulse-ring"></span>
               <span class="pulse-dot">🎙</span>
             </div>
-            <div class="voice-status-info">
-              <span class="voice-status-label" id="voice-status-label">LISTENING...</span>
-              <span class="voice-live-text" id="voice-live-text">Speak now...</span>
+            
+            <!-- Animated Soundwave Equalizer Bars -->
+            <div class="voice-soundwave" id="voice-soundwave" aria-hidden="true">
+              <span class="soundwave-bar"></span>
+              <span class="soundwave-bar"></span>
+              <span class="soundwave-bar"></span>
+              <span class="soundwave-bar"></span>
+              <span class="soundwave-bar"></span>
+              <span class="soundwave-bar"></span>
             </div>
-            <button type="button" class="btn-voice-cancel" id="btn-cancel-voice" title="Cancel voice input">&times;</button>
+
+            <div class="voice-status-info">
+              <div class="voice-status-header-line">
+                <span class="voice-status-label" id="voice-status-label">LISTENING...</span>
+                <span class="voice-status-tag">Voice Commerce Active</span>
+              </div>
+              <span class="voice-live-text" id="voice-live-text">Speak your search, discount offer, or "Add to cart"...</span>
+            </div>
+
+            <div class="voice-banner-actions">
+              <button type="button" class="btn-voice-cancel" id="btn-cancel-voice" title="Cancel voice input">&times;</button>
+            </div>
+          </div>
+
+          <!-- Quick Voice Action Suggestions (Visible when voice is toggled or active) -->
+          <div class="voice-quick-prompts-tray" id="voice-quick-prompts-tray" style="display: none;">
+            <span class="voice-prompts-label">Try speaking:</span>
+            <div class="voice-prompts-list">
+              <button type="button" class="btn-voice-prompt" data-voice-cmd="I need wireless headphones under ₹5,000 for travel">🎙️ "Headphones under ₹5,000"</button>
+              <button type="button" class="btn-voice-prompt" data-voice-cmd="Add headphones to cart">🎙️ "Add headphones to cart"</button>
+              <button type="button" class="btn-voice-prompt" data-voice-cmd="Can you make it ₹4,000?">🎙️ "Can you make it ₹4,000?"</button>
+              <button type="button" class="btn-voice-prompt" data-voice-cmd="Proceed to checkout">🎙️ "Proceed to checkout"</button>
+            </div>
           </div>
 
           <!-- Subtle Natural Suggestion Chips -->
@@ -435,7 +463,7 @@
                 <span class="dialogue-icon">💬</span>
                 <div>
                   <h3 class="dialogue-heading">Shopping Conversation</h3>
-                  <span class="dialogue-sub">Ask for advice, feature comparisons, or bundle negotiations</span>
+                  <span class="dialogue-sub">Interactive 1-click cart actions, bundle offers &amp; voice shopping</span>
                 </div>
               </div>
             </div>

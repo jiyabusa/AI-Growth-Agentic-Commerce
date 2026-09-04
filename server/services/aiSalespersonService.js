@@ -500,7 +500,7 @@ class AISalespersonService {
         isPersonalized: false,
         whyThisReasons: [
           `${prod.rating}★ verified satisfaction score`,
-          `Available from configured source: ${prod.source || 'OmniGrowth Direct'}`,
+          `Available from configured source: ${prod.source || 'Revify Direct'}`,
           `In-stock and AI-readable specification verified`,
           `Popular with new shoppers in ${prod.category}`
         ]

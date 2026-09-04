@@ -114,7 +114,7 @@ class RazorpayService {
           description: description || 'Agentic Commerce Order Checkout',
           customer: {
             name: customer.name || 'AI Buyer Agent',
-            email: customer.email || 'agent.buyer@omnigrowth.test',
+            email: customer.email || 'agent.buyer@revify.test',
             contact: customer.contact || '+919876543210'
           },
           notify: {

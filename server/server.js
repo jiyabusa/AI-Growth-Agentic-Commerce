@@ -14,7 +14,6 @@ const readinessService = require('./services/readinessService');
 const anomalyService = require('./services/anomalyService');
 const simulatorService = require('./services/simulatorService');
 const policyParserService = require('./services/policyParserService');
-const aiToAiCommerceService = require('./services/aiToAiCommerceService');
 
 // Retain protocol service utilities
 const mandateService = require('./services/mandateService');
@@ -150,34 +149,6 @@ app.post('/api/merchant/register', (req, res) => {
 app.post('/api/merchant/login', (req, res) => {
   const { email, password } = req.body;
   const result = dbService.loginMerchant({ email, password });
-  if (!result.success) {
-    return res.status(401).json(result);
-  }
-  res.json(result);
-});
-
-// =================================================================
-// 0c. AI-TO-AI COMMERCE AUTHORIZED USER APIS
-// =================================================================
-
-/**
- * AI-to-AI User Sign Up / Registration
- */
-app.post('/api/ai2ai/register', (req, res) => {
-  const { name, email, password } = req.body;
-  const result = dbService.registerAi2aiUser({ name, email, password });
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-});
-
-/**
- * AI-to-AI User Login / Sign In
- */
-app.post('/api/ai2ai/login', (req, res) => {
-  const { email, password } = req.body;
-  const result = dbService.loginAi2aiUser({ email, password });
   if (!result.success) {
     return res.status(401).json(result);
   }
@@ -678,18 +649,6 @@ app.post('/api/merchant/policies/nl-parse', (req, res) => {
   if (!prompt) return res.status(400).json({ error: 'Prompt is required.' });
   const result = policyParserService.parse(prompt);
   res.json(result);
-});
-
-/**
- * AI-to-AI Autonomous Commerce Simulation Endpoint
- */
-app.post('/api/simulation/ai-to-ai', async (req, res) => {
-  try {
-    const simulationResult = await aiToAiCommerceService.runSimulation(req.body);
-    res.json(simulationResult);
-  } catch (err) {
-    res.status(500).json({ error: 'Simulation failed: ' + err.message });
-  }
 });
 
 /**

@@ -393,107 +393,84 @@
   <!-- ============================================================= -->
   <!-- VIEW 3: AI SHOPPING DASHBOARD (LAVENDER + OFF-WHITE) -->
   <!-- ============================================================= -->
+  <!-- ============================================================= -->
+  <!-- VIEW 2: AI SHOPPING ASSISTANT STOREFRONT -->
+  <!-- ============================================================= -->
   <main id="view-shopping" class="app-view">
-    <div class="shopping-container-card">
+    <div class="storefront-wrapper">
 
-      <!-- TOP CUSTOMER STATUS & PERSONALIZATION BAR -->
-      <div class="customer-top-bar" id="shopping-customer-bar">
-        <div class="customer-greeting-col">
-          <div class="customer-avatar-badge" id="customer-avatar-badge">JP</div>
-          <div>
-            <h2 class="customer-greeting-heading" id="shopping-customer-greeting">Hi Jiya, what are you looking for today?</h2>
-            <div class="customer-meta-row">
-              <span class="badge-customer-status" id="customer-status-badge">✨ Authenticated Shopper</span>
-              <span class="customer-session-pill" id="customer-session-pill">Session Active</span>
-              <span class="customer-history-indicator" id="customer-history-indicator">Personalized Recommendations Active</span>
-            </div>
+      <!-- 1. EDITORIAL STOREFRONT HEADER -->
+      <header class="store-header" id="shopping-customer-bar">
+        <div class="store-header-left">
+          <div class="store-account-kicker">
+            <span class="store-account-avatar" id="customer-avatar-badge">JP</span>
+            <span class="store-account-label">Personal Shopper</span>
           </div>
+          <h1 class="store-greeting" id="shopping-customer-greeting">Good afternoon, Priya</h1>
+          <p class="store-context-note" id="customer-history-indicator">Curated for your preferences</p>
+          <!-- Hidden compatibility elements for scripts -->
+          <span id="customer-status-badge" style="display: none;"></span>
+          <span id="customer-session-pill" style="display: none;"></span>
         </div>
 
-        <div class="customer-actions-group">
-          <button class="btn-customer-order-history" id="btn-edit-profile-name" title="Update your customer profile name">
-            ✏️ Edit Profile Name
+        <div class="store-header-right">
+          <button type="button" class="store-nav-action" id="btn-edit-profile-name" title="Update your profile name">
+            <span class="action-icon">✏️</span>
+            <span>Profile</span>
           </button>
-          <button class="btn-customer-order-history" id="btn-open-order-history" title="View past orders &amp; payments">
-            🧾 My Orders (<span id="customer-order-count">0</span>)
+          <button type="button" class="store-nav-action" id="btn-open-order-history" title="View past orders &amp; receipts">
+            <span class="action-icon">🧾</span>
+            <span>Orders (<span id="customer-order-count">0</span>)</span>
           </button>
-          <button class="btn-customer-switch-user" id="btn-switch-user" title="Switch customer account or sign out">
-            ⇄ Switch User
+          <button type="button" class="store-nav-action store-cart-btn" id="btn-header-cart" title="View shopping cart">
+            <span class="action-icon">🛒</span>
+            <span>Cart (<span id="header-cart-count">0</span>)</span>
+          </button>
+          <button type="button" class="store-nav-action store-account-btn" id="btn-switch-user" title="Switch customer account or sign out">
+            <span class="action-icon">⇄</span>
+            <span>Account</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      <!-- ========================================================= -->
-      <!-- TOP SECTION: "RECOMMENDED FOR YOU" (6-8 PRODUCTS) -->
-      <!-- ========================================================= -->
-      <section class="top-recommendations-section" id="top-recommendations-section">
-        <div class="top-rec-header">
-          <div class="top-rec-title-group">
-            <div class="top-rec-title-row">
-              <span class="sparkle-icon">✨</span>
-              <h3 class="top-rec-heading">Recommended for You</h3>
-              <span class="badge-rec-type" id="badge-rec-mode">Personalized Signals</span>
-            </div>
-            <p class="top-rec-sub" id="top-rec-subtitle">
-              Intelligent selections curated across our verified merchant catalog and configured partner networks.
-            </p>
+      <!-- 2. MAIN CONVERSATIONAL SEARCH & AI SHOPPING HERO -->
+      <section class="store-hero-search">
+        <div class="hero-search-inner">
+          <div class="hero-search-tag">
+            <span class="hero-sparkle">✦</span>
+            <span>INTELLIGENT PERSONAL SHOPPER</span>
           </div>
+          
+          <h2 class="hero-search-headline">What are you looking for today?</h2>
 
-          <div class="top-rec-controls">
-            <button class="btn-rec-filter active" data-filter="all">All Sources</button>
-            <button class="btn-rec-filter" data-filter="electronics">Audio &amp; Computing</button>
-            <button class="btn-rec-filter" data-filter="accessories">Accessories</button>
-          </div>
-        </div>
-
-        <!-- 6-8 Recommendations Grid / Horizontal Flow -->
-        <div class="top-recommendations-grid" id="top-recommendations-grid">
-          <!-- Populated dynamically via JS with 6-8 rich product cards with source & explainable reason badges -->
-        </div>
-      </section>
-
-      <!-- ========================================================= -->
-      <!-- MAIN SHOPPING SPLIT LAYOUT: CHAT STREAM + DYNAMIC SHOWCASE -->
-      <!-- ========================================================= -->
-      <div class="shopping-layout">
-        <!-- Chat & Interactive Shopping Panel -->
-        <section class="shopping-chat-panel">
-          <div class="panel-header-bar">
-            <div class="panel-title-group">
-              <div class="panel-title-row">
-                <h3 class="panel-heading"><span class="sparkle-icon">💬</span> AI Conversational Sales Assistant</h3>
-                <!-- SPEAKER / TEXT-TO-SPEECH BUTTON IN HEADER -->
-                <button class="btn-speaker-header" id="btn-toggle-speaker" title="Read latest AI response aloud" aria-label="Read AI response aloud">
-                  <span class="speaker-icon" id="speaker-icon">🔊</span>
-                  <span class="speaker-text" id="speaker-status-text">Listen</span>
-                </button>
-              </div>
-              <span class="panel-sub">Ask for specs, travel compatibility, bundle negotiations, or speak via microphone</span>
+          <!-- Unified Natural Search & Chat Input -->
+          <form id="chat-form" class="hero-search-box">
+            <div class="search-input-wrap">
+              <span class="search-leading-icon">🔍</span>
+              <input type="text" id="chat-input" class="hero-search-input" placeholder="Search by product, feature, budget, or speak to your assistant..." autocomplete="off" aria-label="Search or ask anything">
             </div>
 
-            <!-- Session Shopping Memory Banner -->
-            <div class="session-memory-banner" id="session-memory-banner">
-              <div class="memory-info">
-                <span class="memory-tag">🎯 Active Context</span>
-                <span class="memory-text" id="session-memory-text">Travel &bull; Budget &le; ₹5,000 &bull; Active Noise Cancellation</span>
-              </div>
-              <button class="btn-clear-memory" id="btn-clear-memory" title="Clear session context">✕ Clear Context</button>
+            <div class="hero-search-actions">
+              <!-- Voice Microphone Button -->
+              <button type="button" class="btn-hero-mic" id="btn-toggle-mic" title="Speak to shopping assistant" aria-label="Voice input">
+                <span class="mic-icon" id="mic-icon">🎤</span>
+                <span class="mic-label">Voice</span>
+              </button>
+
+              <!-- Text-to-Speech Speaker Button -->
+              <button type="button" class="btn-hero-speaker" id="btn-toggle-speaker" title="Listen to assistant response" aria-label="Read response aloud">
+                <span class="speaker-icon" id="speaker-icon">🔊</span>
+                <span class="speaker-label" id="speaker-status-text">Listen</span>
+              </button>
+
+              <!-- Send / Search Button -->
+              <button type="submit" class="btn-hero-send" id="btn-send-message" title="Search or send message" aria-label="Submit search">
+                <span class="send-arrow">Search</span>
+              </button>
             </div>
+          </form>
 
-            <div class="quick-chips-wrap">
-              <span class="chips-label">Try asking or speaking:</span>
-              <button class="prompt-chip" data-prompt="I need headphones under ₹5,000 for travel">Headphones under ₹5,000</button>
-              <button class="prompt-chip" data-prompt="Can you make it ₹4,000?">Can you make it ₹4,000?</button>
-              <button class="prompt-chip" data-prompt="Show me mechanical keyboards with coiled cable">Keyboards &amp; Accessories</button>
-            </div>
-          </div>
-
-          <!-- Chat Stream -->
-          <div class="chat-stream-container" id="chat-stream">
-            <!-- Initial Welcome Message Injected via JS -->
-          </div>
-
-          <!-- Live Voice Listening / Transcription Status Banner -->
+          <!-- Voice Listening Status Bar -->
           <div class="voice-status-banner" id="voice-status-banner" style="display: none;">
             <div class="voice-pulse-indicator">
               <span class="pulse-ring"></span>
@@ -503,38 +480,98 @@
               <span class="voice-status-label" id="voice-status-label">LISTENING...</span>
               <span class="voice-live-text" id="voice-live-text">Speak now...</span>
             </div>
-            <button class="btn-voice-cancel" id="btn-cancel-voice" title="Cancel voice input">&times;</button>
+            <button type="button" class="btn-voice-cancel" id="btn-cancel-voice" title="Cancel voice input">&times;</button>
           </div>
 
-          <!-- Unified Chat Input Bar with Microphone & Send -->
-          <form id="chat-form" class="chat-input-bar">
-            <input type="text" id="chat-input" class="chat-input-field" placeholder="Ask me anything about products (or tap mic to speak)..." autocomplete="off" aria-label="Chat input">
-            
-            <!-- Microphone Input Button -->
-            <button type="button" class="btn-mic-input" id="btn-toggle-mic" title="Speak to shopping agent" aria-label="Start voice input">
-              <span class="mic-icon" id="mic-icon">🎤</span>
-            </button>
-
-            <!-- Send Button -->
-            <button type="submit" class="btn-send-chat" id="btn-send-message" title="Send message" aria-label="Send message">
-              <span class="send-arrow">➤</span>
-            </button>
-          </form>
-        </section>
-
-        <!-- Dynamic Product Showcase & Recommendations Pane -->
-        <aside class="shopping-showcase-panel">
-          <div class="showcase-header">
-            <h3 class="showcase-title">Interactive Showcase &amp; Negotiation</h3>
-            <span class="badge-ai-feed">✓ Multi-Source Live Feed</span>
+          <!-- Subtle Natural Suggestion Chips -->
+          <div class="hero-suggestions">
+            <span class="suggestions-label">Popular searches:</span>
+            <div class="suggestion-chips">
+              <button type="button" class="prompt-chip" data-prompt="I need wireless headphones under ₹5,000 for travel">Headphones under ₹5,000</button>
+              <button type="button" class="prompt-chip" data-prompt="Show me travel accessories">Travel accessories</button>
+              <button type="button" class="prompt-chip" data-prompt="Mechanical keyboards with coiled cable">Keyboards &amp; desk setup</button>
+              <button type="button" class="prompt-chip" data-prompt="Can you make it ₹4,000?">Negotiate bundle price</button>
+            </div>
           </div>
 
-          <!-- Dynamic Recommendation Feed -->
-          <div class="showcase-scroll" id="showcase-feed">
-            <!-- Populated dynamically via JS with product cards, upsells, cross-sells, and negotiation boxes -->
+          <!-- Subtle Active Context Line -->
+          <div class="session-context-line" id="session-memory-banner">
+            <span class="context-label">Active Focus:</span>
+            <span class="context-text" id="session-memory-text">Travel &bull; Budget &le; ₹5,000 &bull; Active Noise Cancellation</span>
+            <button type="button" class="btn-clear-memory" id="btn-clear-memory" title="Reset focus">Reset</button>
           </div>
-        </aside>
-      </div>
+        </div>
+      </section>
+
+      <!-- 3. HORIZONTAL RECOMMENDATION RAIL (RECOMMENDED FOR YOU) -->
+      <section class="store-rail-section" id="top-recommendations-section">
+        <div class="rail-header">
+          <div class="rail-header-titles">
+            <span class="rail-kicker">CURATED SELECTION</span>
+            <h3 class="rail-heading">Recommended for You</h3>
+            <span id="badge-rec-mode" style="display: none;"></span>
+            <p class="rail-sub" id="top-rec-subtitle">Handpicked products based on verified ratings, stock, and your shopping preferences.</p>
+          </div>
+
+          <div class="rail-header-actions">
+            <!-- Filter Tabs -->
+            <div class="rail-filter-tabs">
+              <button type="button" class="btn-rec-filter active" data-filter="all">All</button>
+              <button type="button" class="btn-rec-filter" data-filter="electronics">Audio &amp; Computing</button>
+              <button type="button" class="btn-rec-filter" data-filter="accessories">Accessories</button>
+            </div>
+
+            <!-- Carousel Navigation Arrows -->
+            <div class="rail-nav-arrows">
+              <button type="button" class="btn-rail-arrow" id="btn-rec-prev" aria-label="Previous products">&#8249;</button>
+              <button type="button" class="btn-rail-arrow" id="btn-rec-next" aria-label="Next products">&#8250;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Horizontal Product Rail -->
+        <div class="store-products-rail" id="top-recommendations-grid">
+          <!-- Dynamically populated with genuine e-commerce cards: Hero image, title, source, rating, price, subtle recommendation reason, Add to Cart -->
+        </div>
+      </section>
+
+      <!-- 4. CONVERSATIONAL DISCOVERY & INTERACTIVE COMMERCE SPLIT -->
+      <section class="store-discovery-section">
+        <div class="discovery-grid">
+
+          <!-- Left: Conversational Shopping Companion -->
+          <div class="discovery-dialogue-col">
+            <div class="dialogue-card-header">
+              <div class="dialogue-title-wrap">
+                <span class="dialogue-icon">💬</span>
+                <div>
+                  <h3 class="dialogue-heading">Shopping Conversation</h3>
+                  <span class="dialogue-sub">Ask for advice, feature comparisons, or bundle negotiations</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dialogue Stream -->
+            <div class="store-chat-stream" id="chat-stream">
+              <!-- Message bubbles injected via JS -->
+            </div>
+          </div>
+
+          <!-- Right: Search Results, Discovered Items, Contextual Upsells & Cross-sells -->
+          <div class="discovery-results-col">
+            <div class="showcase-card-header">
+              <span class="showcase-kicker">DISCOVERED ITEMS &amp; COMPANIONS</span>
+              <h3 class="showcase-heading">Live Product Matches</h3>
+            </div>
+
+            <div class="showcase-content-feed" id="showcase-feed">
+              <!-- Dynamically populated with discovered products, "Complete your setup" companion items, and special bundle offers -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
     </div>
   </main>
 

@@ -195,6 +195,13 @@ async function runVerification() {
   assert.strictEqual(updatedAaravAttr.customer_name, 'Aarav V. Sharma', 'Attribution matrix should reflect updated profile name');
   console.log(`  ✓ Attribution Matrix immediately reflects updated name: ${updatedAaravAttr.customer_name}`);
 
+  // Restore name back for idempotence
+  await request('POST', '/api/customer/profile/update', {
+    customerId: aarav.id,
+    name: 'Aarav Sharma',
+    email: 'aarav@example.com'
+  });
+
   // STEP 7: Check regression safety (Policy engine, Voice, Replay)
   console.log('\nStep 7: Validating Existing Core Features (Zero Regressions)...');
   const polRes = await request('GET', '/api/merchant/policies');

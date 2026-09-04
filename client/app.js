@@ -1,5 +1,5 @@
 // =============================================================
-// OMNIGROWTH PLATFORM FRONTEND CONTROLLER // LIGHT PASTEL SPA
+// REVIFY PLATFORM FRONTEND CONTROLLER // LIGHT PASTEL SPA
 // AI Commerce Command Center + AI Shopping + Merchant Intelligence
 // =============================================================
 
@@ -15,7 +15,7 @@ let currentSmartCartOpportunity = null;
 // Customer Authentication & Profile State
 let currentCustomer = null;
 try {
-  const saved = localStorage.getItem('omnigrowth_customer');
+  const saved = localStorage.getItem('revify_customer') || localStorage.getItem('omnigrowth_customer');
   if (saved) currentCustomer = JSON.parse(saved);
 } catch (e) {
   currentCustomer = null;
@@ -24,7 +24,7 @@ try {
 // Merchant Authentication & Profile State
 let currentMerchant = null;
 try {
-  const saved = localStorage.getItem('omnigrowth_merchant');
+  const saved = localStorage.getItem('revify_merchant') || localStorage.getItem('omnigrowth_merchant');
   if (saved) currentMerchant = JSON.parse(saved);
 } catch (e) {
   currentMerchant = null;
@@ -350,7 +350,7 @@ function setupCustomerAuth() {
 function setAuthenticatedCustomer(customer) {
   currentCustomer = customer;
   try {
-    localStorage.setItem('omnigrowth_customer', JSON.stringify(customer));
+    localStorage.setItem('revify_customer', JSON.stringify(customer));
   } catch (e) {}
 
   updateCustomerUI();
@@ -362,6 +362,7 @@ function setAuthenticatedCustomer(customer) {
 function logoutCustomer() {
   currentCustomer = null;
   try {
+    localStorage.removeItem('revify_customer');
     localStorage.removeItem('omnigrowth_customer');
   } catch (e) {}
 
@@ -551,8 +552,9 @@ function setupMerchantAuth() {
   });
 
   // 1-Click Demo Merchant Profiles
-  document.getElementById('btn-fill-demo-omnigrowth')?.addEventListener('click', () => {
-    document.getElementById('merchant-login-email').value = 'admin@omnigrowth.com';
+  const btnDemoRevify = document.getElementById('btn-fill-demo-revify') || document.getElementById('btn-fill-demo-omnigrowth');
+  btnDemoRevify?.addEventListener('click', () => {
+    document.getElementById('merchant-login-email').value = 'admin@revify.com';
     document.getElementById('merchant-login-password').value = 'password123';
     // Switch to login tab if on signup
     tabLogin?.click();
@@ -570,7 +572,7 @@ function setupMerchantAuth() {
 function setAuthenticatedMerchant(merchant) {
   currentMerchant = merchant;
   try {
-    localStorage.setItem('omnigrowth_merchant', JSON.stringify(merchant));
+    localStorage.setItem('revify_merchant', JSON.stringify(merchant));
   } catch (e) {}
   updateMerchantUI();
 }
@@ -578,6 +580,7 @@ function setAuthenticatedMerchant(merchant) {
 function logoutMerchant() {
   currentMerchant = null;
   try {
+    localStorage.removeItem('revify_merchant');
     localStorage.removeItem('omnigrowth_merchant');
   } catch (e) {}
   updateMerchantUI();
@@ -594,7 +597,7 @@ function updateMerchantUI() {
     if (merchantPlanEl) merchantPlanEl.textContent = currentMerchant.plan || 'Razorpay Test Mode';
     if (merchantAvatarEl) {
       const initials = currentMerchant.businessName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      merchantAvatarEl.textContent = initials || 'OM';
+      merchantAvatarEl.textContent = initials || 'RV';
     }
   }
 }
@@ -676,7 +679,7 @@ function renderTopRecommendations() {
     const p = rec.product;
     const imgUrl = getProductImageUrl(p.id);
     const naturalNote = getNaturalRecNote(rec);
-    const merchant = p.source || 'OmniDirect';
+    const merchant = p.source || 'Revify Direct';
 
     return `
       <article class="store-product-card" data-product-id="${p.id}">
@@ -1102,7 +1105,7 @@ function appendAssistantChatResponse(data) {
   // 1. In-Bubble Interactive Product Card
   if (p) {
     const imgUrl = getProductImageUrl(p.id);
-    const brand = p.source || p.brand || 'OmniDirect';
+    const brand = p.source || p.brand || 'Revify Direct';
     const rating = p.rating || '4.8';
     const priceFormatted = `₹${p.price.toLocaleString('en-IN')}`;
 
@@ -1700,7 +1703,7 @@ function renderShowcaseFeed(chatResponse) {
       const p = rec.product;
       const imgUrl = getProductImageUrl(p.id);
       const naturalNote = rec.explanation || 'Recommended for your preferences';
-      const merchant = p.source || p.brand || 'OmniDirect';
+      const merchant = p.source || p.brand || 'Revify Direct';
 
       return `
         <div class="discovered-product-card" data-product-id="${p.id}">

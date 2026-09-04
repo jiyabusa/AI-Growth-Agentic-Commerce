@@ -1,0 +1,3264 @@
+// =============================================================
+// OMNIGROWTH PLATFORM FRONTEND CONTROLLER // LIGHT PASTEL SPA
+// AI Commerce Command Center + AI Shopping + Merchant Intelligence
+// =============================================================
+
+let currentSessionId = 'sess_' + Math.random().toString(36).substring(2, 8);
+let cartData = { items: [], subtotal: 0, total: 0, appliedDiscount: 0 };
+let currentPolicyEvaluation = null;
+let lastUserIntent = 'I need headphones under ₹5,000 for travel';
+let latestAIResponseText = '';
+let latestRecommendedCrossSell = null;
+let currentProductsList = [];
+let currentSmartCartOpportunity = null;
+
+// Customer Authentication & Profile State
+let currentCustomer = null;
+try {
+  const saved = localStorage.getItem('omnigrowth_customer');
+  if (saved) currentCustomer = JSON.parse(saved);
+} catch (e) {
+  currentCustomer = null;
+}
+
+// Merchant Authentication & Profile State
+let currentMerchant = null;
+try {
+  const saved = localStorage.getItem('omnigrowth_merchant');
+  if (saved) currentMerchant = JSON.parse(saved);
+} catch (e) {
+  currentMerchant = null;
+}
+
+// AI-to-AI Commerce Authorized User State
+let currentAi2aiUser = null;
+try {
+  const saved = localStorage.getItem('omnigrowth_ai2ai_user');
+  if (saved) currentAi2aiUser = JSON.parse(saved);
+} catch (e) {
+  currentAi2aiUser = null;
+}
+
+let topRecommendationsList = [];
+let currentRecFilter = 'all';
+
+// Speech-to-Text (STT) and Text-to-Speech (TTS) state
+let isListening = false;
+let isSpeaking = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+  setupNavigation();
+  setupCustomerAuth();
+  setupMerchantAuth();
+  setupAi2aiAuth();
+  setupTopRecommendations();
+  setupCustomerOrdersModal();
+  setupEditProfileModal();
+  setupMerchantSubviews();
+  setupShoppingChat();
+  setupSessionMemory();
+  setupVoiceAndSpeakerControls();
+  setupCartDrawer();
+  setupCheckoutModals();
+  setupMerchantControls();
+  setupSimulatorControls();
+  setupNLPolicyBuilder();
+  setupAIToAIDemo();
+
+  // Initial customer state & data fetches
+  updateCustomerUI();
+  updateMerchantUI();
+  refreshCart();
+  refreshMerchantData();
+  refreshSessionMemory();
+  loadTopRecommendations();
+});
+
+// =============================================================
+// 1. SPA ROUTING & NAVIGATION
+// =============================================================
+function setupNavigation() {
+  const switchBtns = document.querySelectorAll('.nav-switch-btn');
+  const appViews = document.querySelectorAll('.app-view');
+
+  window.switchAppView = function(targetViewId, updateHash = true) {
+    // Role-based access control: redirect to appropriate login if not authenticated
+    if (targetViewId === 'view-shopping' && !currentCustomer) {
+      targetViewId = 'view-customer-auth';
+    }
+    if (targetViewId === 'view-merchant' && !currentMerchant) {
+      targetViewId = 'view-merchant-auth';
+    }
+    if (targetViewId === 'view-ai2ai' && !currentAi2aiUser) {
+      targetViewId = 'view-ai2ai-auth';
+    }
+
+    appViews.forEach(view => view.classList.remove('active'));
+    switchBtns.forEach(btn => btn.classList.remove('active'));
+
+    const targetView = document.getElementById(targetViewId);
+    if (targetView) targetView.classList.add('active');
+
+    // Sync active nav button — map auth views to their parent nav button
+    let navBtnTarget = targetViewId;
+    if (targetViewId === 'view-customer-auth') navBtnTarget = 'view-shopping';
+    if (targetViewId === 'view-merchant-auth') navBtnTarget = 'view-merchant';
+    if (targetViewId === 'view-ai2ai-auth') navBtnTarget = 'view-ai2ai';
+    const activeBtn = document.querySelector(`.nav-switch-btn[data-target="${navBtnTarget}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // Update URL hash
+    if (updateHash) {
+      const hashMap = {
+        'view-landing': '',
+        'view-customer-auth': '#customer-login',
+        'view-shopping': '#shopping',
+        'view-merchant-auth': '#merchant-login',
+        'view-merchant': '#merchant',
+        'view-ai2ai-auth': '#ai2ai-login',
+        'view-ai2ai': '#ai2ai'
+      };
+      if (hashMap[targetViewId] !== undefined) {
+        history.replaceState(null, '', window.location.pathname + (hashMap[targetViewId] || ''));
+      }
+    }
+
+    if (targetViewId === 'view-merchant') {
+      refreshMerchantData();
+      updateMerchantUI();
+    } else if (targetViewId === 'view-ai2ai') {
+      renderAgentCatalogSchema();
+    } else if (targetViewId === 'view-shopping') {
+      loadTopRecommendations();
+      updateCustomerGreeting();
+    }
+  };
+
+  switchBtns.forEach(btn => {
+    btn.addEventListener('click', () => window.switchAppView(btn.dataset.target));
+  });
+
+  document.getElementById('nav-brand-home')?.addEventListener('click', () => window.switchAppView('view-landing'));
+
+  // Landing page portal card click handlers — always go through auth first
+  document.getElementById('card-enter-shopping')?.addEventListener('click', () => {
+    window.switchAppView(currentCustomer ? 'view-shopping' : 'view-customer-auth');
+  });
+  document.getElementById('card-enter-merchant')?.addEventListener('click', () => {
+    window.switchAppView(currentMerchant ? 'view-merchant' : 'view-merchant-auth');
+  });
+  document.getElementById('card-enter-ai2ai')?.addEventListener('click', () => {
+    window.switchAppView(currentAi2aiUser ? 'view-ai2ai' : 'view-ai2ai-auth');
+  });
+  document.getElementById('btn-launch-ai2ai')?.addEventListener('click', () => {
+    window.switchAppView(currentAi2aiUser ? 'view-ai2ai' : 'view-ai2ai-auth');
+  });
+
+  // Navbar Customer Account button
+  document.getElementById('btn-nav-customer')?.addEventListener('click', () => {
+    if (currentCustomer) {
+      openCustomerOrderHistory();
+    } else {
+      window.switchAppView('view-customer-auth');
+    }
+  });
+
+  // URL Hash Routing Support
+  function handleRouteHash() {
+    const hash = (window.location.hash || '').replace('#', '').trim().toLowerCase();
+    if (['login', 'auth', 'customer-auth', 'customer-login', 'signin', 'signup'].includes(hash)) {
+      window.switchAppView('view-customer-auth', false);
+    } else if (hash === 'shopping') {
+      window.switchAppView('view-shopping', false);
+    } else if (['merchant-login', 'merchant-auth', 'merchant-signin'].includes(hash)) {
+      window.switchAppView('view-merchant-auth', false);
+    } else if (hash === 'merchant' || hash === 'command') {
+      window.switchAppView('view-merchant', false);
+    } else if (['ai2ai-login', 'ai2ai-auth', 'arena-login'].includes(hash)) {
+      window.switchAppView('view-ai2ai-auth', false);
+    } else if (hash === 'ai2ai' || hash === 'arena') {
+      window.switchAppView('view-ai2ai', false);
+    } else if (hash === 'landing' || hash === 'home') {
+      window.switchAppView('view-landing', false);
+    }
+  }
+
+  window.addEventListener('hashchange', handleRouteHash);
+  if (window.location.hash) {
+    handleRouteHash();
+  }
+}
+
+// =============================================================
+// 1.1 CUSTOMER AUTHENTICATION CONTROLLER (SIGN UP & LOGIN)
+// =============================================================
+function setupCustomerAuth() {
+  const tabSignUp = document.getElementById('tab-auth-signup');
+  const tabLogin = document.getElementById('tab-auth-login');
+  const formSignUp = document.getElementById('form-customer-signup');
+  const formLogin = document.getElementById('form-customer-login');
+
+  tabSignUp?.addEventListener('click', () => {
+    tabSignUp.classList.add('active');
+    tabLogin.classList.remove('active');
+    formSignUp.classList.add('active');
+    formLogin.classList.remove('active');
+  });
+
+  tabLogin?.addEventListener('click', () => {
+    tabLogin.classList.add('active');
+    tabSignUp.classList.remove('active');
+    formLogin.classList.add('active');
+    formSignUp.classList.remove('active');
+  });
+
+  // Sign Up Form Submit (New Customer)
+  formSignUp?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+
+    const btn = document.getElementById('btn-submit-signup');
+    btn.disabled = true;
+    btn.textContent = 'Registering Account...';
+
+    try {
+      const res = await fetch('/api/customer/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = 'Create Account & Start Shopping →';
+
+      if (data.success && data.customer) {
+        setAuthenticatedCustomer(data.customer);
+        window.switchAppView('view-shopping');
+      } else {
+        alert(data.error || 'Registration failed. Please try again.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Create Account & Start Shopping →';
+      alert('Network error during registration: ' + err.message);
+    }
+  });
+
+  // Log In Form Submit (Returning Customer)
+  formLogin?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    const btn = document.getElementById('btn-submit-login');
+    btn.disabled = true;
+    btn.textContent = 'Authenticating...';
+
+    try {
+      const res = await fetch('/api/customer/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = 'Log In & Continue →';
+
+      if (data.success && data.customer) {
+        setAuthenticatedCustomer(data.customer);
+        window.switchAppView('view-shopping');
+      } else {
+        alert(data.error || 'Login failed. Please verify your credentials.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Log In & Continue →';
+      alert('Network error during login: ' + err.message);
+    }
+  });
+
+  // 1-Click Demo Profiles (Indian Customer Accounts)
+  document.getElementById('btn-fill-demo-aarav')?.addEventListener('click', () => {
+    document.getElementById('login-email').value = 'aarav@example.com';
+    document.getElementById('login-password').value = 'password123';
+    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
+  });
+
+  document.getElementById('btn-fill-demo-priya')?.addEventListener('click', () => {
+    document.getElementById('login-email').value = 'priya@example.com';
+    document.getElementById('login-password').value = 'password123';
+    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
+  });
+
+  document.getElementById('btn-fill-demo-rohan')?.addEventListener('click', () => {
+    document.getElementById('login-email').value = 'rohan@example.com';
+    document.getElementById('login-password').value = 'password123';
+    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
+  });
+
+  document.getElementById('btn-fill-demo-ananya')?.addEventListener('click', () => {
+    document.getElementById('login-email').value = 'ananya@example.com';
+    document.getElementById('login-password').value = 'password123';
+    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
+  });
+
+  // Legacy demo buttons fallback
+  document.getElementById('btn-fill-demo-jiya')?.addEventListener('click', () => {
+    document.getElementById('login-email').value = 'jiya@example.com';
+    document.getElementById('login-password').value = 'password123';
+    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
+  });
+
+  document.getElementById('btn-fill-demo-rahul')?.addEventListener('click', () => {
+    document.getElementById('login-email').value = 'rohan@example.com';
+    document.getElementById('login-password').value = 'password123';
+    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
+  });
+
+  // Switch User / Logout button inside Shopping view
+  document.getElementById('btn-switch-user')?.addEventListener('click', () => {
+    if (confirm('Switch customer account or sign out?')) {
+      logoutCustomer();
+    }
+  });
+
+  document.getElementById('btn-open-order-history')?.addEventListener('click', openCustomerOrderHistory);
+}
+
+function setAuthenticatedCustomer(customer) {
+  currentCustomer = customer;
+  try {
+    localStorage.setItem('omnigrowth_customer', JSON.stringify(customer));
+  } catch (e) {}
+
+  updateCustomerUI();
+  updateCustomerGreeting();
+  loadTopRecommendations();
+  refreshCustomerOrdersCount();
+}
+
+function logoutCustomer() {
+  currentCustomer = null;
+  try {
+    localStorage.removeItem('omnigrowth_customer');
+  } catch (e) {}
+
+  updateCustomerUI();
+  window.switchAppView('view-customer-auth');
+}
+
+function updateCustomerUI() {
+  const navCustomerName = document.getElementById('nav-customer-name');
+  const navCustomerAvatar = document.getElementById('nav-customer-avatar');
+  const customerBadge = document.getElementById('customer-avatar-badge');
+  const statusBadge = document.getElementById('customer-status-badge');
+  const historyIndicator = document.getElementById('customer-history-indicator');
+
+  if (currentCustomer) {
+    const firstName = currentCustomer.name.split(' ')[0];
+    const initials = currentCustomer.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+    if (navCustomerName) navCustomerName.textContent = currentCustomer.name;
+    if (navCustomerAvatar) navCustomerAvatar.textContent = initials || '👤';
+    if (customerBadge) customerBadge.textContent = initials || '👤';
+
+    const isReturning = currentCustomer.isReturning || (currentCustomer.purchaseHistory && currentCustomer.purchaseHistory.length > 0) || (currentCustomer.searchHistory && currentCustomer.searchHistory.length > 0);
+    if (statusBadge) {
+      statusBadge.textContent = isReturning ? '✨ Returning Customer' : '✨ New Customer Account';
+      statusBadge.className = isReturning ? 'badge-customer-status font-bold' : 'badge-customer-status font-bold new-acc';
+    }
+    if (historyIndicator) {
+      historyIndicator.textContent = isReturning 
+        ? `Personalized Signals Active (${(currentCustomer.searchHistory || []).length} searches, ${(currentCustomer.purchaseHistory || []).length} orders)`
+        : 'Transparent Trending Feed (No Prior History)';
+    }
+
+    refreshCustomerOrdersCount();
+  } else {
+    if (navCustomerName) navCustomerName.textContent = 'Sign In / Sign Up';
+    if (navCustomerAvatar) navCustomerAvatar.textContent = '👤';
+    if (customerBadge) customerBadge.textContent = '👤';
+    if (statusBadge) statusBadge.textContent = 'Guest Mode';
+    if (historyIndicator) historyIndicator.textContent = 'Transparent Trending Feed';
+  }
+
+  updateCustomerGreeting();
+}
+
+function updateCustomerGreeting() {
+  const greetingEl = document.getElementById('shopping-customer-greeting');
+  const chatStream = document.getElementById('chat-stream');
+
+  const name = currentCustomer ? currentCustomer.name.split(' ')[0] : 'there';
+  const greetingText = `Hi ${name}, what are you looking for today?`;
+
+  if (greetingEl) {
+    greetingEl.textContent = greetingText;
+  }
+
+  // Set default initial assistant welcome message
+  const isReturning = currentCustomer && (currentCustomer.isReturning || currentCustomer.purchaseHistory?.length > 0);
+  let welcomeDetails = '';
+  if (isReturning) {
+    welcomeDetails = `Welcome back! I can help you discover products matching your audio & travel setup, compare compatible accessories, and negotiate bundle pricing within store policy.`;
+  } else {
+    welcomeDetails = `I can help you explore our agent-readable catalog, explain why each item fits your needs, recommend compatible companion accessories, and negotiate special bundle pricing within our store policies.`;
+  }
+
+  latestAIResponseText = `${greetingText} ${welcomeDetails}`;
+
+  if (chatStream && chatStream.children.length <= 1) {
+    chatStream.innerHTML = `
+      <div class="chat-bubble bubble-assistant">
+        <div class="bubble-sender">AI Shopping Salesperson</div>
+        <div class="bubble-text">
+          <strong>${greetingText}</strong><br>${welcomeDetails}
+        </div>
+      </div>
+    `;
+  }
+}
+
+async function refreshCustomerOrdersCount() {
+  const countEl = document.getElementById('customer-order-count');
+  if (!countEl || !currentCustomer) return;
+
+  try {
+    const res = await fetch(`/api/customer/orders?customerId=${currentCustomer.id}`);
+    const data = await res.json();
+    if (data.orders) {
+      countEl.textContent = data.orders.length;
+    }
+  } catch (e) {
+    console.error('Fetch customer orders count error:', e);
+  }
+}
+
+// =============================================================
+// 1.1b MERCHANT AUTHENTICATION CONTROLLER
+// =============================================================
+function setupMerchantAuth() {
+  const tabLogin = document.getElementById('tab-merchant-login');
+  const tabSignup = document.getElementById('tab-merchant-signup');
+  const formLogin = document.getElementById('form-merchant-login');
+  const formSignup = document.getElementById('form-merchant-signup');
+
+  tabLogin?.addEventListener('click', () => {
+    tabLogin.classList.add('active');
+    tabSignup.classList.remove('active');
+    formLogin.classList.add('active');
+    formSignup.classList.remove('active');
+  });
+
+  tabSignup?.addEventListener('click', () => {
+    tabSignup.classList.add('active');
+    tabLogin.classList.remove('active');
+    formSignup.classList.add('active');
+    formLogin.classList.remove('active');
+  });
+
+  // Merchant Login Form
+  formLogin?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('merchant-login-email').value.trim();
+    const password = document.getElementById('merchant-login-password').value;
+    const btn = document.getElementById('btn-submit-merchant-login');
+    btn.disabled = true;
+    btn.textContent = 'Authenticating...';
+
+    try {
+      const res = await fetch('/api/merchant/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = 'Log In to Command Center →';
+
+      if (data.success && data.merchant) {
+        setAuthenticatedMerchant(data.merchant);
+        window.switchAppView('view-merchant');
+      } else {
+        alert(data.error || 'Merchant login failed. Please try again.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Log In to Command Center →';
+      alert('Network error during merchant login: ' + err.message);
+    }
+  });
+
+  // Merchant Sign Up Form
+  formSignup?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const businessName = document.getElementById('merchant-signup-business').value.trim();
+    const ownerName = document.getElementById('merchant-signup-owner').value.trim();
+    const email = document.getElementById('merchant-signup-email').value.trim();
+    const password = document.getElementById('merchant-signup-password').value;
+    const btn = document.getElementById('btn-submit-merchant-signup');
+    btn.disabled = true;
+    btn.textContent = 'Creating Account...';
+
+    try {
+      const res = await fetch('/api/merchant/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessName, ownerName, email, password })
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = 'Create Merchant Account →';
+
+      if (data.success && data.merchant) {
+        setAuthenticatedMerchant(data.merchant);
+        window.switchAppView('view-merchant');
+      } else {
+        alert(data.error || 'Merchant registration failed. Please try again.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Create Merchant Account →';
+      alert('Network error during merchant registration: ' + err.message);
+    }
+  });
+
+  // 1-Click Demo Merchant Profiles
+  document.getElementById('btn-fill-demo-omnigrowth')?.addEventListener('click', () => {
+    document.getElementById('merchant-login-email').value = 'admin@omnigrowth.com';
+    document.getElementById('merchant-login-password').value = 'password123';
+    // Switch to login tab if on signup
+    tabLogin?.click();
+    formLogin?.dispatchEvent(new Event('submit'));
+  });
+
+  document.getElementById('btn-fill-demo-acousticpro')?.addEventListener('click', () => {
+    document.getElementById('merchant-login-email').value = 'meera@acousticpro.com';
+    document.getElementById('merchant-login-password').value = 'password123';
+    tabLogin?.click();
+    formLogin?.dispatchEvent(new Event('submit'));
+  });
+}
+
+function setAuthenticatedMerchant(merchant) {
+  currentMerchant = merchant;
+  try {
+    localStorage.setItem('omnigrowth_merchant', JSON.stringify(merchant));
+  } catch (e) {}
+  updateMerchantUI();
+}
+
+function logoutMerchant() {
+  currentMerchant = null;
+  try {
+    localStorage.removeItem('omnigrowth_merchant');
+  } catch (e) {}
+  updateMerchantUI();
+  window.switchAppView('view-merchant-auth');
+}
+
+function updateMerchantUI() {
+  const merchantNameEl = document.querySelector('.merchant-name');
+  const merchantPlanEl = document.querySelector('.merchant-plan');
+  const merchantAvatarEl = document.querySelector('.merchant-avatar-pill');
+
+  if (currentMerchant) {
+    if (merchantNameEl) merchantNameEl.textContent = currentMerchant.businessName;
+    if (merchantPlanEl) merchantPlanEl.textContent = currentMerchant.plan || 'Razorpay Test Mode';
+    if (merchantAvatarEl) {
+      const initials = currentMerchant.businessName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      merchantAvatarEl.textContent = initials || 'OM';
+    }
+  }
+}
+
+// =============================================================
+// 1.1c AI-TO-AI COMMERCE AUTHENTICATION CONTROLLER
+// =============================================================
+function setupAi2aiAuth() {
+  const tabLogin = document.getElementById('tab-ai2ai-login');
+  const tabSignup = document.getElementById('tab-ai2ai-signup');
+  const formLogin = document.getElementById('form-ai2ai-login');
+  const formSignup = document.getElementById('form-ai2ai-signup');
+
+  tabLogin?.addEventListener('click', () => {
+    tabLogin.classList.add('active');
+    tabSignup.classList.remove('active');
+    formLogin.classList.add('active');
+    formSignup.classList.remove('active');
+  });
+
+  tabSignup?.addEventListener('click', () => {
+    tabSignup.classList.add('active');
+    tabLogin.classList.remove('active');
+    formSignup.classList.add('active');
+    formLogin.classList.remove('active');
+  });
+
+  // AI-to-AI Login Form
+  formLogin?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('ai2ai-login-email').value.trim();
+    const password = document.getElementById('ai2ai-login-password').value;
+    const btn = document.getElementById('btn-submit-ai2ai-login');
+    btn.disabled = true;
+    btn.textContent = 'Authenticating...';
+
+    try {
+      const res = await fetch('/api/ai2ai/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = 'Enter AI-to-AI Arena →';
+
+      if (data.success && data.user) {
+        setAuthenticatedAi2aiUser(data.user);
+        window.switchAppView('view-ai2ai');
+      } else {
+        alert(data.error || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Enter AI-to-AI Arena →';
+      alert('Network error during login: ' + err.message);
+    }
+  });
+
+  // AI-to-AI Sign Up Form
+  formSignup?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('ai2ai-signup-name').value.trim();
+    const email = document.getElementById('ai2ai-signup-email').value.trim();
+    const password = document.getElementById('ai2ai-signup-password').value;
+    const btn = document.getElementById('btn-submit-ai2ai-signup');
+    btn.disabled = true;
+    btn.textContent = 'Creating Account...';
+
+    try {
+      const res = await fetch('/api/ai2ai/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      btn.disabled = false;
+      btn.textContent = 'Create Account & Launch Arena →';
+
+      if (data.success && data.user) {
+        setAuthenticatedAi2aiUser(data.user);
+        window.switchAppView('view-ai2ai');
+      } else {
+        alert(data.error || 'Registration failed. Please try again.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Create Account & Launch Arena →';
+      alert('Network error during registration: ' + err.message);
+    }
+  });
+
+  // 1-Click Demo AI-to-AI Profiles
+  document.getElementById('btn-fill-demo-operator')?.addEventListener('click', () => {
+    document.getElementById('ai2ai-login-email').value = 'operator@omnigrowth.com';
+    document.getElementById('ai2ai-login-password').value = 'password123';
+    tabLogin?.click();
+    formLogin?.dispatchEvent(new Event('submit'));
+  });
+
+  document.getElementById('btn-fill-demo-agentadmin')?.addEventListener('click', () => {
+    document.getElementById('ai2ai-login-email').value = 'agent-admin@omnigrowth.com';
+    document.getElementById('ai2ai-login-password').value = 'password123';
+    tabLogin?.click();
+    formLogin?.dispatchEvent(new Event('submit'));
+  });
+}
+
+function setAuthenticatedAi2aiUser(user) {
+  currentAi2aiUser = user;
+  try {
+    localStorage.setItem('omnigrowth_ai2ai_user', JSON.stringify(user));
+  } catch (e) {}
+}
+
+function logoutAi2aiUser() {
+  currentAi2aiUser = null;
+  try {
+    localStorage.removeItem('omnigrowth_ai2ai_user');
+  } catch (e) {}
+  window.switchAppView('view-ai2ai-auth');
+}
+
+// =============================================================
+// 1.2 TOP "RECOMMENDED FOR YOU" (6-8 PRODUCTS) ENGINE
+// =============================================================
+function setupTopRecommendations() {
+  const filterBtns = document.querySelectorAll('.btn-rec-filter');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRecFilter = btn.dataset.filter;
+      renderTopRecommendations();
+    });
+  });
+}
+
+async function loadTopRecommendations() {
+  try {
+    const customerId = currentCustomer ? currentCustomer.id : '';
+    const res = await fetch(`/api/shopping/recommendations/top?customerId=${customerId}`);
+    const data = await res.json();
+    topRecommendationsList = data.recommendations || [];
+
+    const badgeRecType = document.getElementById('badge-rec-mode');
+    const subtitle = document.getElementById('top-rec-subtitle');
+
+    if (badgeRecType) {
+      badgeRecType.textContent = data.isPersonalized ? '🎯 Personalized Signals' : '🔥 Multi-Source Trending';
+    }
+
+    if (subtitle) {
+      if (data.isPersonalized && currentCustomer) {
+        subtitle.textContent = `Personalized for ${currentCustomer.name} based on previous searches, viewed products, and companion compatibility across our catalog.`;
+      } else {
+        subtitle.textContent = `Top-rated and trending selections curated across configured merchant direct and verified partner networks.`;
+      }
+    }
+
+    renderTopRecommendations();
+  } catch (err) {
+    console.error('Error loading top recommendations:', err);
+  }
+}
+
+function renderTopRecommendations() {
+  const grid = document.getElementById('top-recommendations-grid');
+  if (!grid) return;
+
+  let filtered = topRecommendationsList;
+  if (currentRecFilter && currentRecFilter !== 'all') {
+    filtered = topRecommendationsList.filter(rec => {
+      if (currentRecFilter === 'electronics') return rec.product.category === 'electronics';
+      if (currentRecFilter === 'accessories') return rec.product.category === 'accessories';
+      return true;
+    });
+  }
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 24px;">No products found in this category.</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(rec => {
+    const p = rec.product;
+    const isPersonalized = rec.isPersonalized;
+    const reasonClass = isPersonalized ? 'top-rec-reason-badge' : 'top-rec-reason-badge trending-badge';
+
+    return `
+      <div class="top-rec-card">
+        <div class="top-rec-card-top">
+          <div class="top-rec-source-row">
+            <span class="top-rec-source-pill">🌐 ${p.source || 'OmniGrowth Direct'}</span>
+            <span class="top-rec-rating">★ ${p.rating}</span>
+          </div>
+          
+          <h4 class="top-rec-title">${p.name}</h4>
+          
+          <div class="${reasonClass}">
+            <span>${isPersonalized ? '🎯' : '🔥'}</span>
+            <span>${rec.reasonBadge}</span>
+          </div>
+
+          <div class="top-rec-features">
+            ${(p.features || []).slice(0, 2).map(f => `<span class="top-rec-feature-tag">${f}</span>`).join('')}
+          </div>
+        </div>
+
+        <div class="top-rec-footer">
+          <div class="top-rec-price-box">
+            <span class="top-rec-price-label">Price</span>
+            <span class="top-rec-price-val">₹${p.price.toLocaleString('en-IN')}</span>
+          </div>
+          
+          <div class="top-rec-actions-wrap">
+            <button class="btn-rec-why-link" onclick="openWhyThisModal('${p.id}', '${encodeURIComponent(JSON.stringify(rec.whyThisReasons || []))}')">Why this?</button>
+            <button class="btn-rec-add-cart" onclick="addItemToCart('${p.id}', 1, false, false)">
+              + Add
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// =============================================================
+// 1.3 CUSTOMER ORDER HISTORY MODAL CONTROLLER
+// =============================================================
+function setupCustomerOrdersModal() {
+  const closeBtn = document.getElementById('btn-close-customer-orders');
+  const footerCloseBtn = document.getElementById('btn-close-customer-orders-footer');
+  const modal = document.getElementById('modal-customer-orders');
+
+  closeBtn?.addEventListener('click', () => modal?.classList.remove('active'));
+  footerCloseBtn?.addEventListener('click', () => modal?.classList.remove('active'));
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('active');
+  });
+}
+
+function setupEditProfileModal() {
+  const modal = document.getElementById('modal-edit-profile');
+  const openBtn = document.getElementById('btn-edit-profile-name');
+  const closeBtn = document.getElementById('btn-close-edit-profile');
+  const cancelBtn = document.getElementById('btn-cancel-edit-profile');
+  const form = document.getElementById('form-edit-customer-profile');
+  const nameInput = document.getElementById('edit-profile-name');
+  const emailInput = document.getElementById('edit-profile-email');
+
+  openBtn?.addEventListener('click', () => {
+    if (!currentCustomer) {
+      alert('Please sign in or sign up first.');
+      window.switchAppView('view-customer-auth');
+      return;
+    }
+    if (nameInput) nameInput.value = currentCustomer.name || '';
+    if (emailInput) emailInput.value = currentCustomer.email || '';
+    modal?.classList.add('active');
+  });
+
+  closeBtn?.addEventListener('click', () => modal?.classList.remove('active'));
+  cancelBtn?.addEventListener('click', () => modal?.classList.remove('active'));
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('active');
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentCustomer) return;
+
+    const newName = nameInput.value.trim();
+    const newEmail = emailInput.value.trim();
+    if (!newName) return alert('Customer name cannot be empty.');
+
+    const saveBtn = document.getElementById('btn-save-edit-profile');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving & Syncing...';
+    }
+
+    try {
+      const res = await fetch('/api/customer/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: currentCustomer.id,
+          name: newName,
+          email: newEmail
+        })
+      });
+      const data = await res.json();
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save & Sync Everywhere →';
+      }
+
+      if (data.success && data.customer) {
+        modal?.classList.remove('active');
+        setAuthenticatedCustomer(data.customer);
+        await refreshMerchantData();
+        alert(`Profile Synchronized!\n\n${data.message}`);
+      } else {
+        alert(data.error || 'Failed to update customer profile.');
+      }
+    } catch (err) {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save & Sync Everywhere →';
+      }
+      alert('Network error updating profile: ' + err.message);
+    }
+  });
+}
+
+async function openCustomerOrderHistory() {
+  const modal = document.getElementById('modal-customer-orders');
+  const body = document.getElementById('customer-orders-body');
+  const title = document.getElementById('orders-modal-title');
+  if (!modal || !body) return;
+
+  if (!currentCustomer) {
+    alert('Please sign in or create an account to view your order history.');
+    window.switchAppView('view-customer-auth');
+    return;
+  }
+
+  if (title) title.textContent = `${currentCustomer.name}'s Orders & Razorpay Settlements`;
+  body.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted);">Loading confirmed orders...</div>`;
+  modal.classList.add('active');
+
+  try {
+    const res = await fetch(`/api/customer/orders?customerId=${currentCustomer.id}`);
+    const data = await res.json();
+    const orders = data.orders || [];
+
+    if (orders.length === 0) {
+      body.innerHTML = `
+        <div style="text-align: center; padding: 36px 12px; color: var(--text-muted);">
+          <span style="font-size: 32px; display: block; margin-bottom: 8px;">🛒</span>
+          <p class="font-bold" style="font-size: 15px; margin-bottom: 4px;">No orders placed yet</p>
+          <p style="font-size: 13px;">Add products from our recommendations or conversational AI assistant to experience test checkout!</p>
+        </div>
+      `;
+      return;
+    }
+
+    body.innerHTML = `
+      <div class="order-history-list">
+        ${orders.map(o => `
+          <div class="order-history-card">
+            <div class="oh-header">
+              <div>
+                <span class="oh-id">#${o.id}</span>
+                <span class="oh-date">&bull; ${new Date(o.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              </div>
+              <span class="oh-status">✓ ${o.payment_status || 'PAID'}</span>
+            </div>
+
+            <div class="oh-items-list">
+              ${(o.items || []).map(i => `
+                <div class="oh-item-row">
+                  <span>${i.name} &times; ${i.quantity || 1}</span>
+                  <span class="font-mono font-bold">₹${((i.price || 0) * (i.quantity || 1)).toLocaleString('en-IN')}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="oh-total-row">
+              <div>
+                <span class="oh-payment-badge">Method: ${o.payment_method || 'Razorpay Test Card'}</span>
+                ${o.razorpay_payment_id ? `<div class="font-mono" style="font-size: 10.5px; color: var(--text-muted);">Payment ID: ${o.razorpay_payment_id}</div>` : ''}
+              </div>
+              <div class="font-mono" style="font-size: 16px; color: var(--purple-deep);">Total: ₹${(o.total || 0).toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } catch (err) {
+    body.innerHTML = `<div style="color: var(--pastel-crimson-text); padding: 16px;">Error loading order history: ${err.message}</div>`;
+  }
+}
+
+// Global subview switcher for navigation links
+window.switchMerchantSubview = function(subviewId) {
+  if (subviewId === 'sub-ai2ai') {
+    window.switchAppView('view-ai2ai');
+    return;
+  }
+
+  const sideNavBtns = document.querySelectorAll('.side-nav-btn');
+  const subViews = document.querySelectorAll('.sub-view');
+
+  sideNavBtns.forEach(b => b.classList.remove('active'));
+  subViews.forEach(v => v.classList.remove('active'));
+
+  const targetBtn = document.querySelector(`.side-nav-btn[data-subview="${subviewId}"]`);
+  if (targetBtn) targetBtn.classList.add('active');
+
+  const targetSub = document.getElementById(subviewId);
+  if (targetSub) targetSub.classList.add('active');
+
+  // If switching to view-merchant from another view, ensure view-merchant is active
+  const merchantView = document.getElementById('view-merchant');
+  if (merchantView && !merchantView.classList.contains('active')) {
+    document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-switch-btn').forEach(b => b.classList.remove('active'));
+    merchantView.classList.add('active');
+    document.getElementById('btn-nav-merchant')?.classList.add('active');
+  }
+};
+
+// =============================================================
+// 2. MERCHANT PORTAL SUB-VIEWS
+// =============================================================
+function setupMerchantSubviews() {
+  const sideNavBtns = document.querySelectorAll('.side-nav-btn');
+
+  sideNavBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      window.switchMerchantSubview(btn.dataset.subview);
+    });
+  });
+
+  document.getElementById('btn-refresh-overview')?.addEventListener('click', refreshMerchantData);
+  document.getElementById('btn-refresh-insights')?.addEventListener('click', refreshMerchantData);
+  document.getElementById('btn-reset-demo')?.addEventListener('click', async () => {
+    if (confirm('Reset store demo state back to seeded baseline?')) {
+      try {
+        await fetch('/api/merchant/reset', { method: 'POST' });
+        refreshMerchantData();
+        refreshCart();
+        alert('Demo state reset successfully.');
+      } catch (e) {
+        console.error('Reset error:', e);
+      }
+    }
+  });
+}
+
+// =============================================================
+// 3. AI SHOPPING EXPERIENCE (CHAT, MEMORY & RECOMMENDATIONS)
+// =============================================================
+function setupShoppingChat() {
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+  const promptChips = document.querySelectorAll('.prompt-chip');
+
+  if (chatForm) {
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleUserMessageSubmission(chatInput.value);
+    });
+  }
+
+  promptChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      handleUserMessageSubmission(chip.dataset.prompt);
+    });
+  });
+}
+
+function setupSessionMemory() {
+  const clearBtn = document.getElementById('btn-clear-memory');
+  clearBtn?.addEventListener('click', async () => {
+    try {
+      await fetch(`/api/shopping/session/context?sessionId=${currentSessionId}`, { method: 'DELETE' });
+      refreshSessionMemory();
+      appendChatBubble('AI Salesperson', 'Shopping context reset. Feel free to ask about any category of electronics!', 'assistant');
+    } catch (e) {
+      console.error('Clear memory error:', e);
+    }
+  });
+}
+
+async function refreshSessionMemory() {
+  try {
+    const res = await fetch(`/api/shopping/session/context?sessionId=${currentSessionId}`);
+    const mem = await res.json();
+    const textEl = document.getElementById('session-memory-text');
+    if (textEl && mem) {
+      textEl.innerHTML = `${mem.useCase || 'General'} &bull; Budget &le; ₹${(mem.budget || 5000).toLocaleString('en-IN')} &bull; ${mem.priority || 'High Quality'}`;
+    }
+  } catch (e) {
+    console.error('Session memory fetch error:', e);
+  }
+}
+
+/**
+ * Main Message Dispatcher (Used by both Typed text and Voice input)
+ */
+async function handleUserMessageSubmission(messageText) {
+  if (!messageText || !messageText.trim()) return;
+  const cleanMsg = messageText.trim();
+  lastUserIntent = cleanMsg;
+
+  const chatInput = document.getElementById('chat-input');
+  if (chatInput) chatInput.value = '';
+
+  // Append user bubble
+  appendChatBubble('You', cleanMsg, 'user');
+
+  // Check for conversational add-to-cart commands (e.g. "yes add it", "add the case")
+  const lower = cleanMsg.toLowerCase();
+  if ((lower.includes('add it') || lower.includes('add the case') || lower.includes('add companion') || lower.includes('add accessory')) && latestRecommendedCrossSell) {
+    await window.addItemToCart(latestRecommendedCrossSell.id, 1, false, true);
+    const reply = `I have added the **${latestRecommendedCrossSell.name}** (₹${latestRecommendedCrossSell.price.toLocaleString('en-IN')}) to your cart! You can review your cart or proceed to checkout anytime.`;
+    latestAIResponseText = reply;
+    appendChatBubble('AI Salesperson', reply, 'assistant');
+    return;
+  }
+
+  // Contextual loading indicator
+  const loadingId = appendChatBubble('AI Salesperson', 'Searching catalog & evaluating recommendations...', 'assistant');
+
+  try {
+    const res = await fetch('/api/shopping/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: cleanMsg,
+        sessionId: currentSessionId,
+        customerId: currentCustomer ? currentCustomer.id : null
+      })
+    });
+
+    const data = await res.json();
+    removeChatBubble(loadingId);
+
+    // Update Agent status pill
+    updateAgentStatusPill(data.agentStatus);
+
+    // Save latest AI response for text-to-speech
+    latestAIResponseText = data.reply || '';
+
+    // Cache latest recommended cross-sell for conversational follow-ups
+    if (data.upsellAndCrossSell?.crossSells && data.upsellAndCrossSell.crossSells.length > 0) {
+      latestRecommendedCrossSell = data.upsellAndCrossSell.crossSells[0].product;
+    }
+
+    currentSmartCartOpportunity = data.smartCartOpportunity;
+
+    // Render conversational reply with confidence tag
+    let confidenceTag = '';
+    if (data.intent && data.intent.confidence) {
+      confidenceTag = `<span class="badge-ai-ready font-mono" style="font-size: 10px; margin-left: 6px;">✓ Intent Understood (${data.intent.confidence}% Conf)</span>`;
+    }
+
+    appendChatBubble('AI Salesperson', `${data.reply} ${confidenceTag}`, 'assistant');
+
+    // Refresh active session memory display
+    refreshSessionMemory();
+
+    // Dynamically refresh top recommendations as new signals arrive
+    loadTopRecommendations();
+
+    // Render Dynamic Showcase cards
+    renderShowcaseFeed(data);
+  } catch (err) {
+    removeChatBubble(loadingId);
+    appendChatBubble('AI Salesperson', 'Sorry, I encountered an issue connecting to the merchant feed. Please try again.', 'assistant');
+  }
+}
+
+function appendChatBubble(sender, text, type) {
+  const stream = document.getElementById('chat-stream');
+  if (!stream) return null;
+
+  const bubbleId = 'bubble_' + Date.now();
+  const bubble = document.createElement('div');
+  bubble.id = bubbleId;
+  bubble.className = `chat-bubble bubble-${type}`;
+  bubble.innerHTML = `
+    <div class="bubble-sender">${sender}</div>
+    <div class="bubble-text">${formatMarkdown(text)}</div>
+  `;
+
+  stream.appendChild(bubble);
+  stream.scrollTop = stream.scrollHeight;
+  return bubbleId;
+}
+
+function removeChatBubble(bubbleId) {
+  const el = document.getElementById(bubbleId);
+  if (el) el.remove();
+}
+
+function formatMarkdown(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+// =============================================================
+// 4. SPEECH-TO-TEXT (STT) & TEXT-TO-SPEECH (TTS)
+// =============================================================
+class RobustVoiceInputController {
+  constructor() {
+    this.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    this.recognition = null;
+    this.state = 'IDLE';
+
+    this.accumulatedFinal = '';
+    this.currentInterim = '';
+    this.silenceTimer = null;
+    this.silenceDurationMs = 1750;
+    this.hasDispatched = false;
+    this.preferredLang = 'en-IN';
+
+    this.micBtn = document.getElementById('btn-toggle-mic');
+    this.micIcon = document.getElementById('mic-icon');
+    this.voiceBanner = document.getElementById('voice-status-banner');
+    this.voiceLabel = document.getElementById('voice-status-label');
+    this.voiceLiveText = document.getElementById('voice-live-text');
+    this.cancelBtn = document.getElementById('btn-cancel-voice');
+    this.chatInput = document.getElementById('chat-input');
+
+    this.setupListeners();
+  }
+
+  isSupported() {
+    return !!this.SpeechRecognition;
+  }
+
+  setupListeners() {
+    this.micBtn?.addEventListener('click', () => {
+      if (this.state === 'LISTENING') {
+        this.stopAndFinalize();
+      } else {
+        this.startListening();
+      }
+    });
+
+    this.cancelBtn?.addEventListener('click', () => {
+      this.cancelListening();
+    });
+  }
+
+  startListening() {
+    if (!this.isSupported()) {
+      alert('Speech recognition is not natively supported in this browser. You can use standard text chat.');
+      return;
+    }
+
+    if (this.recognition) {
+      try { this.recognition.abort(); } catch (e) {}
+      this.recognition = null;
+    }
+
+    try {
+      this.recognition = new this.SpeechRecognition();
+      this.recognition.continuous = true;
+      this.recognition.interimResults = true;
+      this.recognition.maxAlternatives = 1;
+      this.recognition.lang = this.preferredLang;
+
+      this.accumulatedFinal = '';
+      this.currentInterim = '';
+      this.hasDispatched = false;
+
+      this.recognition.onstart = () => {
+        this.setState('LISTENING');
+        this.resetSilenceTimer();
+        this.updateLiveDisplay('Listening... Speak now');
+      };
+
+      this.recognition.onresult = (event) => {
+        this.resetSilenceTimer();
+
+        let finalConcat = '';
+        let interimConcat = '';
+
+        for (let i = 0; i < event.results.length; ++i) {
+          const res = event.results[i];
+          const transcript = res[0].transcript;
+          if (res.isFinal) {
+            finalConcat += ' ' + transcript;
+          } else {
+            interimConcat += ' ' + transcript;
+          }
+        }
+
+        this.accumulatedFinal = finalConcat.trim();
+        this.currentInterim = interimConcat.trim();
+
+        const fullDisplay = (this.accumulatedFinal + ' ' + this.currentInterim).trim();
+        if (fullDisplay) {
+          this.updateLiveDisplay(`"${fullDisplay}"`);
+          if (this.chatInput) this.chatInput.value = fullDisplay;
+        }
+      };
+
+      this.recognition.onerror = (event) => {
+        if (event.error === 'no-speech') {
+          if (!this.accumulatedFinal) {
+            this.setState('IDLE');
+          }
+          return;
+        }
+
+        if (event.error === 'language-not-supported' && this.preferredLang === 'en-IN') {
+          this.preferredLang = 'en-US';
+          this.startListening();
+          return;
+        }
+
+        this.clearSilenceTimer();
+        this.setState('ERROR');
+        
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          alert('Microphone access is disabled. You can continue using text chat.');
+        }
+      };
+
+      this.recognition.onend = () => {
+        this.clearSilenceTimer();
+        if (this.state === 'LISTENING' || this.state === 'PROCESSING') {
+          this.finalizeAndDispatch();
+        } else {
+          this.setState('IDLE');
+        }
+      };
+
+      this.recognition.start();
+    } catch (err) {
+      this.setState('ERROR');
+    }
+  }
+
+  resetSilenceTimer() {
+    this.clearSilenceTimer();
+    this.silenceTimer = setTimeout(() => {
+      if (this.state === 'LISTENING') {
+        this.stopAndFinalize();
+      }
+    }, this.silenceDurationMs);
+  }
+
+  clearSilenceTimer() {
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer);
+      this.silenceTimer = null;
+    }
+  }
+
+  stopAndFinalize() {
+    this.clearSilenceTimer();
+    this.setState('PROCESSING');
+
+    if (this.recognition) {
+      try {
+        this.recognition.stop();
+      } catch (e) {
+        this.finalizeAndDispatch();
+      }
+    } else {
+      this.finalizeAndDispatch();
+    }
+  }
+
+  finalizeAndDispatch() {
+    if (this.hasDispatched) return;
+
+    this.clearSilenceTimer();
+    const rawTranscript = (this.accumulatedFinal + ' ' + this.currentInterim).trim();
+
+    if (!rawTranscript || rawTranscript.length < 2 || !/[a-zA-Z0-9]/.test(rawTranscript)) {
+      this.setState('IDLE');
+      return;
+    }
+
+    this.hasDispatched = true;
+    this.setState('SENDING');
+
+    const cleanMessage = sanitizeCommerceVoiceTranscript(rawTranscript);
+    handleUserMessageSubmission(cleanMessage);
+
+    setTimeout(() => {
+      this.setState('IDLE');
+    }, 400);
+  }
+
+  cancelListening() {
+    this.hasDispatched = true;
+    this.clearSilenceTimer();
+    if (this.recognition) {
+      try { this.recognition.abort(); } catch (e) {}
+      this.recognition = null;
+    }
+    this.accumulatedFinal = '';
+    this.currentInterim = '';
+    if (this.chatInput) this.chatInput.value = '';
+    this.setState('IDLE');
+  }
+
+  setState(newState) {
+    this.state = newState;
+
+    if (newState === 'LISTENING') {
+      if (this.micBtn) this.micBtn.classList.add('listening');
+      if (this.micIcon) this.micIcon.textContent = '🎙';
+      if (this.voiceBanner) this.voiceBanner.style.display = 'flex';
+      if (this.voiceLabel) this.voiceLabel.textContent = 'LISTENING...';
+    } else if (newState === 'PROCESSING') {
+      if (this.micBtn) this.micBtn.classList.remove('listening');
+      if (this.micIcon) this.micIcon.textContent = '◌';
+      if (this.voiceLabel) this.voiceLabel.textContent = 'FINALIZING...';
+    } else if (newState === 'SENDING') {
+      if (this.micBtn) this.micBtn.classList.remove('listening');
+      if (this.micIcon) this.micIcon.textContent = '↑';
+      if (this.voiceLabel) this.voiceLabel.textContent = 'SENDING...';
+    } else {
+      if (this.micBtn) this.micBtn.classList.remove('listening');
+      if (this.micIcon) this.micIcon.textContent = '🎤';
+      if (this.voiceBanner) this.voiceBanner.style.display = 'none';
+    }
+  }
+
+  updateLiveDisplay(text) {
+    if (this.voiceLiveText) {
+      this.voiceLiveText.textContent = text;
+    }
+  }
+}
+
+function sanitizeCommerceVoiceTranscript(raw) {
+  if (!raw) return '';
+  let text = raw.trim();
+
+  text = text.replace(/\b(\w+)(?:\s+\1\b)+/gi, '$1');
+
+  const phoneticReplacements = [
+    [/\b(?:why\s*are\s*less|wide\s*headphone|wire\s*less|wirelesss)\b/gi, 'wireless'],
+    [/\b(?:head\s*phones?|ear\s*phones?)\b/gi, 'headphones'],
+    [/\b(?:a\s*n\s*c|a\s*and\s*c|and\s*c)\b/gi, 'ANC'],
+    [/\b(?:noise\s*cancel(?:l?ation)?|noise\s*cancelling|noise\s*canceling)\b/gi, 'noise cancellation'],
+    [/\b(?:travel\s*keys|travel\s*chase|trouble\s*case|travel\s*casing)\b/gi, 'travel case'],
+    [/\b(?:called\s*cable|cold\s*cable|coyled\s*cable|coil\s*cable)\b/gi, 'coiled cable'],
+    [/\b(?:desk\s*met|desk\s*match|deskmate)\b/gi, 'desk mat'],
+    [/\b(?:type\s*c|usb\s*c\s*hub|docking\s*station)\b/gi, 'USB-C hub'],
+    [/\b(?:key\s*craft|key\s*board|mech\s*keyboard)\b/gi, 'mechanical keyboard'],
+    [/\bfive\s*thousand\s*(?:rupees|inr|rs)?\b/gi, '₹5,000'],
+    [/\bfour\s*thousand\s*(?:rupees|inr|rs)?\b/gi, '₹4,000'],
+    [/\bthree\s*thousand\s*(?:rupees|inr|rs)?\b/gi, '₹3,000'],
+    [/\btwo\s*thousand\s*(?:rupees|inr|rs)?\b/gi, '₹2,000'],
+    [/\bten\s*thousand\s*(?:rupees|inr|rs)?\b/gi, '₹10,000'],
+    [/\bfifteen\s*thousand\s*(?:rupees|inr|rs)?\b/gi, '₹15,000'],
+    [/\btwenty\s*thousand\s*(?:rupees|inr|rs)?\b/gi, '₹20,000'],
+    [/\bfifteen\s*hundred\b/gi, '₹1,500'],
+    [/\beight\s*hundred\b/gi, '₹800'],
+    [/\bfive\s*hundred\b/gi, '₹500'],
+    [/\bseven\s*hundred\s*ninety\s*nine\b/gi, '₹799'],
+    [/\bforty\s*four\s*ninety\s*nine\b/gi, '₹4,499']
+  ];
+
+  for (const [pattern, replacement] of phoneticReplacements) {
+    text = text.replace(pattern, replacement);
+  }
+
+  text = text.replace(/\s+/g, ' ').trim();
+  if (text.length > 0) {
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+  }
+  return text;
+}
+
+let voiceControllerInstance = null;
+
+function setupVoiceAndSpeakerControls() {
+  voiceControllerInstance = new RobustVoiceInputController();
+
+  const speakerBtn = document.getElementById('btn-toggle-speaker');
+  const speakerIcon = document.getElementById('speaker-icon');
+  const speakerStatusText = document.getElementById('speaker-status-text');
+
+  speakerBtn?.addEventListener('click', () => {
+    if (!window.speechSynthesis) {
+      alert('Voice playback (Text-to-Speech) is not supported in this browser.');
+      return;
+    }
+
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      stopSpeaking();
+      return;
+    }
+
+    if (!latestAIResponseText) {
+      alert('No AI response available to read aloud.');
+      return;
+    }
+
+    const speechText = cleanTextForSpeech(latestAIResponseText);
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.lang === 'en-IN') || voices.find(v => v.lang.startsWith('en')) || null;
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    utterance.onstart = () => {
+      isSpeaking = true;
+      if (speakerBtn) speakerBtn.classList.add('speaking');
+      if (speakerIcon) speakerIcon.textContent = '🔊';
+      if (speakerStatusText) speakerStatusText.textContent = 'Playing...';
+    };
+
+    utterance.onend = () => {
+      stopSpeaking();
+    };
+
+    utterance.onerror = () => {
+      stopSpeaking();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  });
+
+  function stopSpeaking() {
+    isSpeaking = false;
+    if (speakerBtn) speakerBtn.classList.remove('speaking');
+    if (speakerIcon) speakerIcon.textContent = '🔊';
+    if (speakerStatusText) speakerStatusText.textContent = 'Listen';
+  }
+
+  function cleanTextForSpeech(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/₹(\d+[\d,]*)/g, '$1 rupees')
+      .replace(/•/g, '')
+      .replace(/&bull;/g, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/\(.*?\)/g, '')
+      .replace(/#\w+/g, '')
+      .replace(/(\r\n|\n|\r)/gm, ' ')
+      .trim();
+  }
+}
+
+// =============================================================
+// 5. DYNAMIC PRODUCT SHOWCASE & "WHY THIS?" EXPLAINER
+// =============================================================
+function renderShowcaseFeed(chatResponse) {
+  const container = document.getElementById('showcase-feed');
+  if (!container) return;
+
+  if (chatResponse.agentStatus === 'PAUSED') {
+    container.innerHTML = `
+      <div class="companion-widget" style="background-color: var(--pastel-crimson-bg); border-color: var(--pastel-crimson-border);">
+        <div class="widget-eyebrow text-danger">AGENT KILL SWITCH ENGAGED</div>
+        <div class="widget-title" style="color: var(--pastel-crimson-text);">Purchasing Paused by Merchant</div>
+        <div class="widget-desc" style="color: var(--pastel-crimson-text);">The merchant has temporarily paused autonomous purchasing. Catalog browsing is available, but transactions are blocked.</div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+
+  // 1. Render Product Recommendations with "Why this?"
+  if (chatResponse.recommendations && chatResponse.recommendations.length > 0) {
+    html += chatResponse.recommendations.map(rec => {
+      const p = rec.product;
+      return `
+        <div class="rec-product-card">
+          <div class="rec-card-top">
+            <div>
+              <span class="rec-badge-ai">AI Match: ${rec.recommendationScore}/100</span>
+              <h4 class="rec-prod-name">${p.name}</h4>
+              <span class="text-muted font-mono" style="font-size: 11.5px;">${p.brand} &bull; ${p.category} &bull; ${p.rating}&#9733;</span>
+            </div>
+            <div class="rec-prod-price">₹${p.price.toLocaleString('en-IN')}</div>
+          </div>
+
+          <div class="rec-explanation-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong>Why Recommended:</strong>
+              <button class="btn-link-action" onclick="openWhyThisModal('${p.id}', '${encodeURIComponent(JSON.stringify(rec.whyThisReasons || []))}')">Why this? &rarr;</button>
+            </div>
+            <span>${rec.explanation}</span>
+          </div>
+
+          <div class="rec-features-row">
+            ${(p.features || []).map(f => `<span class="feature-tag">${f}</span>`).join('')}
+          </div>
+
+          <div class="rec-card-actions">
+            <button class="btn-add-cart-primary" onclick="addItemToCart('${p.id}', 1, false, false)">
+              Add to Cart (₹${p.price.toLocaleString('en-IN')})
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 2. Render Companion Cross-Sell / Upsell
+  if (chatResponse.upsellAndCrossSell) {
+    const { upsell, crossSells } = chatResponse.upsellAndCrossSell;
+
+    if (crossSells && crossSells.length > 0) {
+      const cs = crossSells[0];
+      html += `
+        <div class="companion-widget">
+          <div class="widget-eyebrow">COMPATIBLE COMPANION ACCESSORY</div>
+          <div class="widget-title">${cs.product.name} (+₹${cs.product.price.toLocaleString('en-IN')})</div>
+          <div class="widget-desc">${cs.explanation}</div>
+          <button class="btn-widget-action" onclick="addItemToCart('${cs.product.id}', 1, false, true)">
+            + Add Companion Accessory (₹${cs.product.price.toLocaleString('en-IN')})
+          </button>
+        </div>
+      `;
+    }
+
+    if (upsell) {
+      html += `
+        <div class="companion-widget" style="background: linear-gradient(135deg, var(--lavender-light), #ffffff); border-color: var(--lavender-primary);">
+          <div class="widget-eyebrow" style="color: var(--lavender-dark);">INTELLIGENT UPGRADE OPTION</div>
+          <div class="widget-title" style="color: var(--purple-deep);">${upsell.headline}</div>
+          <div class="widget-desc">${upsell.explanation}</div>
+          <button class="btn-widget-action" style="background-color: var(--lavender-dark);" onclick="addItemToCart('${upsell.product.id}', 1, true, false)">
+            Choose Flagship Edition (₹${upsell.product.price.toLocaleString('en-IN')})
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  // 3. Render Negotiation Result
+  if (chatResponse.negotiation) {
+    const neg = chatResponse.negotiation;
+    if (neg.bundleAlternative) {
+      const b = neg.bundleAlternative;
+      html += `
+        <div class="negotiation-widget">
+          <div class="widget-eyebrow" style="color: var(--lavender-dark);">MERCHANT-BOUNDED BUNDLE COUNTER-OFFER</div>
+          <div class="neg-title">${b.bundleName}</div>
+          <div class="neg-desc">${b.explanation}</div>
+          <button class="btn-widget-action" style="background-color: var(--lavender-dark);" onclick="applyBundleDiscount('${b.bundleItems[0].id}', '${b.bundleItems[1].id}', ${b.totalSavings})">
+            Accept Special Bundle (₹${b.specialBundlePrice.toLocaleString('en-IN')})
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+// "Why this?" Modal Explainer Handler
+window.openWhyThisModal = function(productId, reasonsEncoded) {
+  const modal = document.getElementById('modal-why-this');
+  const titleEl = document.getElementById('why-this-prod-title');
+  const bodyEl = document.getElementById('why-this-body');
+  if (!modal || !bodyEl) return;
+
+  const reasons = JSON.parse(decodeURIComponent(reasonsEncoded) || '[]');
+  const prod = currentProductsList.find(p => p.id === productId) || { name: 'Recommended Product', price: 4499 };
+
+  if (titleEl) titleEl.textContent = `Why I Recommended: ${prod.name}`;
+
+  bodyEl.innerHTML = `
+    <div style="background-color: var(--lavender-vlight); border: 1px solid var(--lavender-primary); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+      <h4 class="font-bold" style="font-size: 14px; margin-bottom: 10px; color: var(--lavender-dark);">Safe Business Recommendation Criteria</h4>
+      ${reasons.map(r => `
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 6px;">
+          <span class="text-positive font-bold">✓</span> <span>${r}</span>
+        </div>
+      `).join('')}
+    </div>
+    <p style="font-size: 12px; color: var(--text-muted);">
+      This recommendation was evaluated against real-time stock levels, margin compliance, travel form factor constraints, and rating thresholds.
+    </p>
+  `;
+
+  modal.classList.add('active');
+};
+
+document.getElementById('btn-close-why-this')?.addEventListener('click', () => {
+  document.getElementById('modal-why-this')?.classList.remove('active');
+});
+
+// Global Actions for Showcase Buttons
+window.addItemToCart = async function(productId, quantity = 1, isUpsell = false, isCrossSell = false) {
+  try {
+    const res = await fetch('/api/shopping/cart/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: currentSessionId, productId, quantity, isUpsell, isCrossSell })
+    });
+    const data = await res.json();
+    if (data.success) {
+      cartData = data.cart;
+      updateCartBadge();
+      openCartDrawer();
+      const addedMsg = `Added **${productId.replace(/prod_/g, '').replace(/_/g, ' ')}** to your cart. Total is now **₹${cartData.total.toLocaleString('en-IN')}**.`;
+      latestAIResponseText = addedMsg;
+      appendChatBubble('AI Salesperson', addedMsg, 'assistant');
+    }
+  } catch (err) {
+    console.error('Cart add error:', err);
+  }
+};
+
+window.applyBundleDiscount = async function(mainId, crossId, savings) {
+  await window.addItemToCart(mainId, 1, false, false);
+  await window.addItemToCart(crossId, 1, false, true);
+
+  await fetch('/api/shopping/cart/discount', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: currentSessionId, discountAmount: savings, reason: 'Travel Companion Bundle Special' })
+  });
+
+  await refreshCart();
+  const bundleMsg = `Applied special **₹${savings.toLocaleString('en-IN')} bundle discount** to your cart! Your bundle total is **₹${cartData.total.toLocaleString('en-IN')}**.`;
+  latestAIResponseText = bundleMsg;
+  appendChatBubble('AI Salesperson', bundleMsg, 'assistant');
+};
+
+// =============================================================
+// 6. CART DRAWER & SMART CART OPTIMIZER
+// =============================================================
+function setupCartDrawer() {
+  const openBtn = document.getElementById('btn-open-cart');
+  const closeBtn = document.getElementById('btn-close-cart');
+  const overlay = document.getElementById('cart-drawer-overlay');
+
+  openBtn?.addEventListener('click', openCartDrawer);
+  closeBtn?.addEventListener('click', closeCartDrawer);
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) closeCartDrawer();
+  });
+}
+
+function openCartDrawer() {
+  const overlay = document.getElementById('cart-drawer-overlay');
+  if (overlay) overlay.classList.add('active');
+  renderCartDrawer();
+}
+
+function closeCartDrawer() {
+  const overlay = document.getElementById('cart-drawer-overlay');
+  if (overlay) overlay.classList.remove('active');
+}
+
+async function refreshCart() {
+  try {
+    const res = await fetch(`/api/shopping/cart?sessionId=${currentSessionId}`);
+    cartData = await res.json();
+    updateCartBadge();
+  } catch (err) {
+    console.error('Fetch cart error:', err);
+  }
+}
+
+function updateCartBadge() {
+  const badge = document.getElementById('nav-cart-count');
+  if (badge) {
+    const totalItems = (cartData.items || []).reduce((sum, i) => sum + i.quantity, 0);
+    badge.textContent = totalItems;
+  }
+}
+
+function renderCartDrawer() {
+  const container = document.getElementById('cart-items-list');
+  const subtotalEl = document.getElementById('cart-subtotal');
+  const totalEl = document.getElementById('cart-total');
+  const discountRow = document.getElementById('cart-discount-row');
+  const discountEl = document.getElementById('cart-discount');
+  const smartCartBanner = document.getElementById('smart-cart-banner');
+
+  if (!container) return;
+
+  // Render Smart Cart Proactive Alert
+  if (smartCartBanner) {
+    if (cartData.items && cartData.items.length > 0 && currentSmartCartOpportunity) {
+      smartCartBanner.style.display = 'flex';
+      smartCartBanner.innerHTML = `
+        <span class="sc-title">✨ Smart Cart Optimizer</span>
+        <p class="sc-desc">${currentSmartCartOpportunity.message}</p>
+        ${currentSmartCartOpportunity.suggestedProduct ? `
+          <button class="btn-sc-action" onclick="addItemToCart('${currentSmartCartOpportunity.suggestedProduct.id}', 1, false, true)">
+            ${currentSmartCartOpportunity.actionLabel}
+          </button>
+        ` : ''}
+      `;
+    } else {
+      smartCartBanner.style.display = 'none';
+    }
+  }
+
+  if (!cartData.items || cartData.items.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
+        <p class="font-bold" style="font-size: 15px; margin-bottom: 6px;">Your cart is empty</p>
+        <p style="font-size: 13px;">Ask or speak to the AI assistant to discover products.</p>
+      </div>
+    `;
+    if (subtotalEl) subtotalEl.textContent = '₹0';
+    if (totalEl) totalEl.textContent = '₹0';
+    if (discountRow) discountRow.style.display = 'none';
+    return;
+  }
+
+  container.innerHTML = cartData.items.map(item => `
+    <div class="cart-item-row">
+      <div>
+        <span class="font-bold">${item.name}</span>
+        <div class="text-muted" style="font-size: 11.5px;">Qty: ${item.quantity} &bull; ₹${item.price.toLocaleString('en-IN')} each ${item.isCrossSell ? '<span class="badge-ai-feed">+Companion</span>' : ''}</div>
+      </div>
+      <div class="font-bold font-mono">₹${(item.price * item.quantity).toLocaleString('en-IN')}</div>
+    </div>
+  `).join('');
+
+  if (subtotalEl) subtotalEl.textContent = `₹${cartData.subtotal.toLocaleString('en-IN')}`;
+  if (totalEl) totalEl.textContent = `₹${cartData.total.toLocaleString('en-IN')}`;
+
+  if (cartData.appliedDiscount > 0) {
+    if (discountRow) discountRow.style.display = 'flex';
+    if (discountEl) discountEl.textContent = `-₹${cartData.appliedDiscount.toLocaleString('en-IN')}`;
+  } else {
+    if (discountRow) discountRow.style.display = 'none';
+  }
+}
+
+// =============================================================
+// 7. CHECKOUT FLOW (POLICY EVALUATION -> APPROVAL -> RAZORPAY)
+// =============================================================
+function setupCheckoutModals() {
+  const proceedBtn = document.getElementById('btn-proceed-checkout');
+  const cancelApprovalBtn = document.getElementById('btn-cancel-approval');
+  const closeApprovalBtn = document.getElementById('btn-close-approval');
+  const confirmApprovalBtn = document.getElementById('btn-confirm-approval');
+
+  const cancelPayBtn = document.getElementById('btn-cancel-pay');
+  const closePayBtn = document.getElementById('btn-close-pay');
+  const executePayBtn = document.getElementById('btn-execute-pay');
+
+  const radioSuccess = document.getElementById('radio-card-success');
+  const radioDecline = document.getElementById('radio-card-decline');
+
+  radioSuccess?.addEventListener('click', () => {
+    radioSuccess.classList.add('selected');
+    radioDecline.classList.remove('selected');
+    radioSuccess.querySelector('input').checked = true;
+  });
+
+  radioDecline?.addEventListener('click', () => {
+    radioDecline.classList.add('selected');
+    radioSuccess.classList.remove('selected');
+    radioDecline.querySelector('input').checked = true;
+  });
+
+  // Proceed Checkout Button
+  proceedBtn?.addEventListener('click', async () => {
+    if (!cartData.items || cartData.items.length === 0) {
+      alert('Your cart is empty.');
+      return;
+    }
+
+    closeCartDrawer();
+
+    try {
+      const custName = currentCustomer ? currentCustomer.name : 'Customer';
+      const res = await fetch('/api/shopping/checkout/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: currentSessionId,
+          customerId: currentCustomer ? currentCustomer.id : null,
+          customerName: custName
+        })
+      });
+
+      const evalData = await res.json();
+      currentPolicyEvaluation = evalData.policyEvaluation;
+
+      // Handle BLOCKED / PAUSED
+      if (!currentPolicyEvaluation.authorized) {
+        alert(`POLICY ENGINE BLOCKED:\n\n${currentPolicyEvaluation.reason}\n\nPayment was NOT initiated and no order was created.`);
+        appendChatBubble('AI Salesperson', `[POLICY BLOCKED] I couldn't initiate this payment: ${currentPolicyEvaluation.reason}`, 'assistant');
+        return;
+      }
+
+      // Handle APPROVAL REQUIRED
+      if (currentPolicyEvaluation.approvalRequired) {
+        openApprovalModal(evalData.cart, currentPolicyEvaluation);
+      } else {
+        openRazorpayModal(evalData.cart.total);
+      }
+    } catch (err) {
+      console.error('Checkout evaluate error:', err);
+    }
+  });
+
+  // Approval Modal Handlers
+  cancelApprovalBtn?.addEventListener('click', closeApprovalModal);
+  closeApprovalBtn?.addEventListener('click', closeApprovalModal);
+  confirmApprovalBtn?.addEventListener('click', () => {
+    closeApprovalModal();
+    openRazorpayModal(cartData.total);
+  });
+
+  // Razorpay Pay Modal Handlers
+  cancelPayBtn?.addEventListener('click', closeRazorpayModal);
+  closePayBtn?.addEventListener('click', closeRazorpayModal);
+
+  executePayBtn?.addEventListener('click', async () => {
+    const selectedCard = document.querySelector('input[name="testcard"]:checked')?.value || '4111111111111111';
+    executePayBtn.disabled = true;
+    executePayBtn.textContent = 'Verifying & Charging Gateway...';
+
+    try {
+      const custName = currentCustomer ? currentCustomer.name : 'Customer';
+      const res = await fetch('/api/shopping/checkout/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: currentSessionId,
+          customerId: currentCustomer ? currentCustomer.id : null,
+          customerName: custName,
+          cardNumber: selectedCard,
+          userApproved: true,
+          originalIntentText: lastUserIntent
+        })
+      });
+
+      const payData = await res.json();
+      executePayBtn.disabled = false;
+      executePayBtn.textContent = 'Authorize & Pay';
+      closeRazorpayModal();
+
+      if (payData.success) {
+        const confText = `Payment Successful! Order **#${payData.order.id}** confirmed for **₹${payData.order.total.toLocaleString('en-IN')}**. Stock updated and merchant revenue attributed!`;
+        latestAIResponseText = confText;
+        appendChatBubble('AI Salesperson', confText, 'assistant');
+
+        alert(`Payment Captured Successfully!\n\nOrder Confirmed: #${payData.order.id}\nAmount: ₹${payData.order.total.toLocaleString('en-IN')}`);
+        await refreshCart();
+        refreshCustomerOrdersCount();
+        loadTopRecommendations();
+        refreshMerchantData();
+      } else {
+        const failText = `Your payment wasn't completed (${payData.reason}), so your order has not been confirmed. Your cart is still safely preserved.`;
+        latestAIResponseText = failText;
+        appendChatBubble('AI Salesperson', failText, 'assistant');
+
+        alert(`Payment Failed:\n\n${payData.reason}\n\nYour cart has been preserved.`);
+      }
+    } catch (err) {
+      executePayBtn.disabled = false;
+      executePayBtn.textContent = 'Authorize & Pay';
+      alert(`Network error during payment: ${err.message}`);
+    }
+  });
+}
+
+function openApprovalModal(cart, policyEval) {
+  const modal = document.getElementById('modal-approval-gate');
+  const summaryBox = document.getElementById('approval-summary-box');
+  const expBox = document.getElementById('approval-policy-explanation');
+
+  if (summaryBox) {
+    summaryBox.innerHTML = `
+      <div style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Order Summary (Total: ₹${cart.total.toLocaleString('en-IN')})</div>
+      ${cart.items.map(i => `<div style="font-size: 12.5px; margin-bottom: 4px;">&bull; ${i.name} (Qty: ${i.quantity}) &mdash; ₹${(i.price * i.quantity).toLocaleString('en-IN')}</div>`).join('')}
+    `;
+  }
+
+  if (expBox) {
+    expBox.textContent = policyEval.reason;
+  }
+
+  if (modal) modal.classList.add('active');
+}
+
+function closeApprovalModal() {
+  const modal = document.getElementById('modal-approval-gate');
+  if (modal) modal.classList.remove('active');
+}
+
+function openRazorpayModal(totalAmount) {
+  const modal = document.getElementById('modal-razorpay-pay');
+  const amountEl = document.getElementById('pay-modal-amount');
+  if (amountEl) amountEl.textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
+  if (modal) modal.classList.add('active');
+}
+
+function closeRazorpayModal() {
+  const modal = document.getElementById('modal-razorpay-pay');
+  if (modal) modal.classList.remove('active');
+}
+
+// =============================================================
+// 8. MERCHANT CONTROLS, POLICIES & SIMULATOR
+// =============================================================
+function setupMerchantControls() {
+  const killSwitchBtn = document.getElementById('btn-toggle-kill-switch');
+  const savePolicyBtn = document.getElementById('btn-save-policies');
+  const closeReplayBtn = document.getElementById('btn-close-replay');
+
+  // Emergency Kill Switch
+  killSwitchBtn?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/merchant/agent/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      const data = await res.json();
+      updateAgentStatusPill(data.agent_status);
+      refreshMerchantData();
+    } catch (err) {
+      console.error('Kill switch error:', err);
+    }
+  });
+
+  // Save Policies
+  savePolicyBtn?.addEventListener('click', async () => {
+    const maxTx = Number(document.getElementById('pol-max-tx').value) || 10000;
+    const autoAppr = Number(document.getElementById('pol-auto-appr').value) || 2000;
+    const dailyLimit = Number(document.getElementById('pol-daily-limit').value) || 25000;
+    const maxDiscount = Number(document.getElementById('pol-max-discount').value) || 10;
+    const minMargin = Number(document.getElementById('pol-min-margin').value) || 500;
+    const negMethod = document.getElementById('pol-neg-method').value;
+
+    try {
+      await fetch('/api/merchant/policies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          spending_controls: { max_transaction_limit: maxTx, auto_approval_threshold: autoAppr, daily_spending_limit: dailyLimit },
+          selling_controls: { max_discount_percentage: maxDiscount, min_allowed_margin: minMargin, preferred_negotiation_method: negMethod }
+        })
+      });
+      alert('Merchant policies successfully updated and enforced.');
+    } catch (err) {
+      alert(`Policy save error: ${err.message}`);
+    }
+  });
+
+  closeReplayBtn?.addEventListener('click', () => {
+    const modal = document.getElementById('modal-audit-replay');
+    if (modal) modal.classList.remove('active');
+  });
+}
+
+function setupSimulatorControls() {
+  const crossRange = document.getElementById('sim-range-cross');
+  const upsellRange = document.getElementById('sim-range-upsell');
+  const recRange = document.getElementById('sim-range-rec');
+
+  const crossVal = document.getElementById('sim-val-cross');
+  const upsellVal = document.getElementById('sim-val-upsell');
+  const recVal = document.getElementById('sim-val-rec');
+
+  const applyBtn = document.getElementById('btn-apply-strategy');
+
+  async function updateSimulation() {
+    const cRate = Number(crossRange.value);
+    const uRate = Number(upsellRange.value);
+    const rRate = Number(recRange.value);
+
+    crossVal.textContent = `${cRate}%`;
+    upsellVal.textContent = `${uRate}%`;
+    recVal.textContent = `${rRate}%`;
+
+    try {
+      const res = await fetch('/api/merchant/simulator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ crossSellRate: cRate, upsellRate: uRate, recConversionRate: rRate })
+      });
+      const data = await res.json();
+
+      document.getElementById('sim-proj-revenue').textContent = `₹${data.simulatedMonthlyRevenue.toLocaleString('en-IN')}`;
+      document.getElementById('sim-proj-lift').textContent = `+₹${data.projectedIncrementalRevenue.toLocaleString('en-IN')} projected monthly lift`;
+      document.getElementById('sim-proj-aov').textContent = `₹${data.projectedAOV.toLocaleString('en-IN')}`;
+      document.getElementById('sim-proj-aov-lift').textContent = `+${data.projectedAOVLiftPercentage}% vs baseline`;
+    } catch (err) {
+      console.error('Simulator error:', err);
+    }
+  }
+
+  crossRange?.addEventListener('input', updateSimulation);
+  upsellRange?.addEventListener('input', updateSimulation);
+  recRange?.addEventListener('input', updateSimulation);
+
+  applyBtn?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/merchant/simulator/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          crossSellRate: Number(crossRange.value),
+          upsellRate: Number(upsellRange.value),
+          recConversionRate: Number(recRange.value)
+        })
+      });
+      const data = await res.json();
+      alert(data.message);
+      refreshMerchantData();
+    } catch (err) {
+      alert(`Apply strategy error: ${err.message}`);
+    }
+  });
+}
+
+function setupNLPolicyBuilder() {
+  const parseBtn = document.getElementById('btn-parse-nl-policy');
+  const applyBtn = document.getElementById('btn-apply-nl-policy');
+  const promptInput = document.getElementById('nl-policy-prompt');
+  const previewBox = document.getElementById('nl-parsed-preview');
+  const rulesList = document.getElementById('nl-rules-list');
+
+  let currentParsedPolicy = null;
+
+  parseBtn?.addEventListener('click', async () => {
+    const prompt = promptInput.value.trim();
+    if (!prompt) return;
+
+    parseBtn.disabled = true;
+    parseBtn.textContent = 'Parsing...';
+
+    try {
+      const res = await fetch('/api/merchant/policies/nl-parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+      currentParsedPolicy = data.parsedPolicy;
+
+      rulesList.innerHTML = (data.explanations || []).map(e => `<li>&bull; ${e}</li>`).join('');
+      previewBox.style.display = 'block';
+
+      parseBtn.disabled = false;
+      parseBtn.textContent = 'Parse with AI →';
+    } catch (err) {
+      parseBtn.disabled = false;
+      parseBtn.textContent = 'Parse with AI →';
+      alert(`Policy parse error: ${err.message}`);
+    }
+  });
+
+  applyBtn?.addEventListener('click', async () => {
+    if (!currentParsedPolicy) return;
+    try {
+      await fetch('/api/merchant/policies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentParsedPolicy)
+      });
+      alert('Natural language policy successfully converted to structured rules and enforced!');
+      previewBox.style.display = 'none';
+      promptInput.value = '';
+      refreshMerchantData();
+    } catch (err) {
+      alert(`Apply error: ${err.message}`);
+    }
+  });
+}
+
+// =============================================================
+// 9. AI-TO-AI AUTONOMOUS COMMERCE DEMONSTRATION CONTROLLER
+// =============================================================
+let a2aDemoState = {
+  isRunning: false,
+  isPaused: false,
+  currentStepIndex: 0,
+  steps: [],
+  simulationData: null,
+  viewMode: 'human', // 'human' | 'technical'
+  timer: null
+};
+
+function setupAIToAIDemo() {
+  const btnRun = document.getElementById('btn-demo-run');
+  const btnPause = document.getElementById('btn-demo-pause');
+  const btnRestart = document.getElementById('btn-demo-restart');
+  const btnModeHuman = document.getElementById('btn-mode-human');
+  const btnModeTech = document.getElementById('btn-mode-tech');
+  const btnToggleRawCatalog = document.getElementById('btn-toggle-raw-catalog');
+
+  // Playback Control Listeners
+  btnRun?.addEventListener('click', startAIToAIDemo);
+  btnPause?.addEventListener('click', pauseAIToAIDemo);
+  btnRestart?.addEventListener('click', restartAIToAIDemo);
+
+  // View Mode Switchers
+  btnModeHuman?.addEventListener('click', () => setAIToAIViewMode('human'));
+  btnModeTech?.addEventListener('click', () => setAIToAIViewMode('technical'));
+
+  // Final Action Links
+  document.getElementById('btn-a2a-go-orders')?.addEventListener('click', () => {
+    window.switchMerchantSubview('sub-orders');
+  });
+
+  document.getElementById('btn-a2a-go-audit')?.addEventListener('click', () => {
+    if (a2aDemoState.simulationData?.finalOrder?.id) {
+      openVisualAuditReplay(a2aDemoState.simulationData.finalOrder.id);
+    } else {
+      window.switchMerchantSubview('sub-audit');
+    }
+  });
+
+  document.getElementById('btn-a2a-restart-demo')?.addEventListener('click', restartAIToAIDemo);
+  btnToggleRawCatalog?.addEventListener('click', toggleRawCatalogJson);
+
+  // Initial load of agent catalog schema
+  renderAgentCatalogSchema();
+}
+
+function setAIToAIViewMode(mode) {
+  a2aDemoState.viewMode = mode;
+  document.getElementById('btn-mode-human')?.classList.toggle('active', mode === 'human');
+  document.getElementById('btn-mode-tech')?.classList.toggle('active', mode === 'technical');
+
+  // Re-render rendered cards with active view mode
+  reRenderTimelineMessages();
+}
+
+async function startAIToAIDemo() {
+  const btnRun = document.getElementById('btn-demo-run');
+  const btnPause = document.getElementById('btn-demo-pause');
+
+  if (a2aDemoState.isPaused) {
+    a2aDemoState.isPaused = false;
+    a2aDemoState.isRunning = true;
+    btnRun.disabled = true;
+    btnPause.disabled = false;
+    playNextA2AStep();
+    return;
+  }
+
+  // Fresh run: fetch simulation data from backend
+  btnRun.disabled = true;
+  btnRun.innerHTML = '<span class="ctl-icon">⏳</span> Initializing...';
+  
+  // Hide empty state prompt
+  const emptyState = document.getElementById('timeline-empty-prompt');
+  if (emptyState) emptyState.style.display = 'none';
+
+  // Reset guard box and complete card
+  document.getElementById('ai2ai-transaction-guard-card').style.display = 'none';
+  document.getElementById('ai2ai-complete-card').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/simulation/ai-to-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ buyerIntent: 'I need wireless headphones under ₹5,000 with noise cancellation.' })
+    });
+    const data = await res.json();
+    a2aDemoState.simulationData = data;
+    a2aDemoState.steps = data.dialogueSteps || [];
+    a2aDemoState.currentStepIndex = 0;
+    a2aDemoState.isRunning = true;
+    a2aDemoState.isPaused = false;
+
+    // Clear stream
+    const streamBox = document.getElementById('ai2ai-stream-box');
+    if (streamBox) streamBox.innerHTML = '';
+
+    btnRun.disabled = true;
+    btnRun.innerHTML = '<span class="ctl-icon">▶</span> Running...';
+    btnPause.disabled = false;
+
+    playNextA2AStep();
+  } catch (err) {
+    alert(`Demo failed to initialize: ${err.message}`);
+    btnRun.disabled = false;
+    btnRun.innerHTML = '<span class="ctl-icon">▶</span> Run Demo';
+  }
+}
+
+function pauseAIToAIDemo() {
+  if (!a2aDemoState.isRunning) return;
+  a2aDemoState.isPaused = true;
+  a2aDemoState.isRunning = false;
+  clearTimeout(a2aDemoState.timer);
+
+  const btnRun = document.getElementById('btn-demo-run');
+  const btnPause = document.getElementById('btn-demo-pause');
+  btnRun.disabled = false;
+  btnRun.innerHTML = '<span class="ctl-icon">▶</span> Resume Demo';
+  btnPause.disabled = true;
+}
+
+function restartAIToAIDemo() {
+  clearTimeout(a2aDemoState.timer);
+  a2aDemoState.isRunning = false;
+  a2aDemoState.isPaused = false;
+  a2aDemoState.currentStepIndex = 0;
+
+  const btnRun = document.getElementById('btn-demo-run');
+  const btnPause = document.getElementById('btn-demo-pause');
+  btnRun.disabled = false;
+  btnRun.innerHTML = '<span class="ctl-icon">▶</span> Run Demo';
+  btnPause.disabled = true;
+
+  // Reset UI components
+  const streamBox = document.getElementById('ai2ai-stream-box');
+  if (streamBox) {
+    streamBox.innerHTML = `
+      <div class="timeline-empty-prompt" id="timeline-empty-prompt">
+        <div class="empty-sparkle-icon">🤖 ⚡ 💳</div>
+        <h4>Ready to Run Autonomous AI-to-AI Demo</h4>
+        <p>Click <strong>[Run Demo]</strong> to watch the AI Buyer negotiate with Merchant AI within margin guardrails.</p>
+        <button class="btn-primary btn-run-large" onclick="document.getElementById('btn-demo-run').click()">▶ Run Flagship Demo</button>
+      </div>
+    `;
+  }
+
+  document.getElementById('ai2ai-transaction-guard-card').style.display = 'none';
+  document.getElementById('ai2ai-complete-card').style.display = 'none';
+  document.getElementById('timeline-step-counter').textContent = 'Ready • 0/11 Steps';
+
+  // Reset side panels
+  document.getElementById('buyer-state-text').textContent = 'Ready to initiate query to merchant';
+  document.getElementById('merchant-state-text').textContent = 'Policy guard active: Direct 11.1% discount blocked, Bundle counter-offer enabled';
+
+  // Reset stage stepper
+  updateStageStepper('DISCOVERING', true);
+}
+
+function playNextA2AStep() {
+  if (!a2aDemoState.isRunning || a2aDemoState.isPaused) return;
+
+  if (a2aDemoState.currentStepIndex >= a2aDemoState.steps.length) {
+    finishAIToAIDemo();
+    return;
+  }
+
+  const step = a2aDemoState.steps[a2aDemoState.currentStepIndex];
+  renderTimelineStep(step);
+  updateSidePanelsForStep(step);
+  updateStageStepper(step.stage);
+
+  // Counter
+  document.getElementById('timeline-step-counter').textContent = `Step ${step.step} / ${a2aDemoState.steps.length}`;
+
+  // If Step 8 (TRANSACTION_GUARD), display the Pre-Transaction Guard Box prominently
+  if (step.action === 'TRANSACTION_GUARD') {
+    const guardBox = document.getElementById('ai2ai-transaction-guard-card');
+    if (guardBox) guardBox.style.display = 'block';
+  }
+
+  a2aDemoState.currentStepIndex++;
+
+  // Schedule next step (approx 1.2s delay for pleasant viewing pacing)
+  a2aDemoState.timer = setTimeout(() => {
+    playNextA2AStep();
+  }, 1200);
+}
+
+function renderTimelineStep(step) {
+  const streamBox = document.getElementById('ai2ai-stream-box');
+  if (!streamBox) return;
+
+  let roleClass = 'system-card';
+  if (step.speakerRole === 'buyer') roleClass = 'buyer-card';
+  else if (step.speakerRole === 'merchant') roleClass = 'merchant-card';
+
+  const card = document.createElement('div');
+  card.className = `timeline-msg-card ${roleClass}`;
+  card.dataset.stepIndex = step.step;
+
+  card.innerHTML = buildStepCardHTML(step, a2aDemoState.viewMode);
+  streamBox.appendChild(card);
+  streamBox.scrollTop = streamBox.scrollHeight;
+}
+
+function buildStepCardHTML(step, viewMode) {
+  const actionTagClass = `tag-${step.action.toLowerCase().replace(/_/g, '-')}`;
+
+  if (viewMode === 'technical') {
+    return `
+      <div class="msg-top-row">
+        <div class="msg-speaker-group">
+          <span class="msg-speaker-name">${escapeHTML(step.speaker)}</span>
+          <span class="msg-action-tag ${actionTagClass}">${escapeHTML(step.action)}</span>
+        </div>
+        <span class="msg-step-num">Step ${step.step}</span>
+      </div>
+      <div class="msg-tech-box">
+        <div class="tech-action-name">ACTION: ${escapeHTML(step.technicalAction || step.action)}</div>
+        <pre class="tech-params-pre">${escapeHTML(JSON.stringify(step.technicalParams || {}, null, 2))}</pre>
+        ${step.technicalResult ? `<pre class="tech-params-pre" style="color: #4ade80; margin-top: 6px;">RESULT: ${escapeHTML(JSON.stringify(step.technicalResult, null, 2))}</pre>` : ''}
+      </div>
+    `;
+  } else {
+    // Human View (Conversational)
+    return `
+      <div class="msg-top-row">
+        <div class="msg-speaker-group">
+          <span class="msg-speaker-name">${escapeHTML(step.speaker)}</span>
+          <span class="msg-action-tag ${actionTagClass}">${escapeHTML(step.action)}</span>
+        </div>
+        <span class="msg-step-num">Step ${step.step}</span>
+      </div>
+      <div class="msg-human-body">
+        "${escapeHTML(step.humanMessage || step.message)}"
+      </div>
+    `;
+  }
+}
+
+function reRenderTimelineMessages() {
+  const streamBox = document.getElementById('ai2ai-stream-box');
+  if (!streamBox) return;
+
+  const cards = streamBox.querySelectorAll('.timeline-msg-card');
+  cards.forEach(card => {
+    const stepIdx = parseInt(card.dataset.stepIndex, 10);
+    const step = a2aDemoState.steps.find(s => s.step === stepIdx);
+    if (step) {
+      card.innerHTML = buildStepCardHTML(step, a2aDemoState.viewMode);
+    }
+  });
+}
+
+function updateSidePanelsForStep(step) {
+  const buyerState = document.getElementById('buyer-state-text');
+  const buyerQuery = document.getElementById('buyer-code-pre');
+  const merchantState = document.getElementById('merchant-state-text');
+  const merchantSnippet = document.getElementById('merchant-code-pre');
+
+  if (step.speakerRole === 'buyer') {
+    if (buyerState) buyerState.textContent = `Action: ${step.action} — ${step.humanMessage.slice(0, 75)}...`;
+    if (buyerQuery && step.technicalParams) {
+      buyerQuery.textContent = JSON.stringify({ action: step.technicalAction, ...step.technicalParams }, null, 2);
+    }
+  } else if (step.speakerRole === 'merchant') {
+    if (merchantState) merchantState.textContent = `Response: ${step.action} — ${step.humanMessage.slice(0, 75)}...`;
+    if (merchantSnippet && step.technicalParams) {
+      merchantSnippet.textContent = JSON.stringify({ policy_evaluation: step.action, ...step.technicalParams }, null, 2);
+    }
+  } else if (step.speakerRole === 'system') {
+    if (merchantState) merchantState.textContent = `Deterministic Engine: ${step.action} Executed & Authorized`;
+  }
+}
+
+function updateStageStepper(currentStage, isReset = false) {
+  const stages = ['DISCOVERING', 'SEARCHING', 'NEGOTIATING', 'VALIDATING', 'PAYING', 'COMPLETED'];
+  const stageBoxes = [
+    document.getElementById('stage-box-discover'),
+    document.getElementById('stage-box-search'),
+    document.getElementById('stage-box-negotiate'),
+    document.getElementById('stage-box-validate'),
+    document.getElementById('stage-box-pay'),
+    document.getElementById('stage-box-complete')
+  ];
+
+  if (isReset) {
+    stageBoxes.forEach(b => {
+      if (b) {
+        b.className = 'stage-step-box';
+      }
+    });
+    return;
+  }
+
+  const activeIdx = stages.indexOf(currentStage);
+  stageBoxes.forEach((b, idx) => {
+    if (!b) return;
+    if (idx < activeIdx) {
+      b.className = 'stage-step-box completed';
+    } else if (idx === activeIdx) {
+      b.className = 'stage-step-box active';
+    } else {
+      b.className = 'stage-step-box';
+    }
+  });
+}
+
+function finishAIToAIDemo() {
+  a2aDemoState.isRunning = false;
+  a2aDemoState.isPaused = false;
+
+  const btnRun = document.getElementById('btn-demo-run');
+  const btnPause = document.getElementById('btn-demo-pause');
+  btnRun.disabled = false;
+  btnRun.innerHTML = '<span class="ctl-icon">↺</span> Run Again';
+  btnPause.disabled = true;
+
+  updateStageStepper('COMPLETED');
+
+  // Display Complete Summary Card
+  const compCard = document.getElementById('ai2ai-complete-card');
+  if (compCard && a2aDemoState.simulationData) {
+    const summary = a2aDemoState.simulationData.summary || {};
+    document.getElementById('comp-product-val').textContent = summary.product || 'SoundWave ANC + Travel Case';
+    document.getElementById('comp-total-val').textContent = `₹${(summary.total || 4999).toLocaleString('en-IN')}`;
+    document.getElementById('comp-pay-val').textContent = summary.paymentStatus || 'Verified (Razorpay Test Mode)';
+    document.getElementById('comp-order-val').textContent = summary.orderId || (a2aDemoState.simulationData.finalOrder ? a2aDemoState.simulationData.finalOrder.id : 'ORD-9428');
+
+    compCard.style.display = 'flex';
+    compCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Refresh background merchant analytics so new order shows up immediately
+  refreshMerchantData();
+}
+
+async function renderAgentCatalogSchema() {
+  const container = document.getElementById('agent-catalog-cards-grid');
+  const rawPre = document.getElementById('raw-catalog-json');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/merchant/products');
+    const data = await res.json();
+    const products = data.products || [];
+
+    if (rawPre) {
+      rawPre.textContent = JSON.stringify(products, null, 2);
+    }
+
+    container.innerHTML = products.slice(0, 6).map(p => `
+      <div class="agent-catalog-item-card">
+        <div class="catalog-item-header">
+          <span class="catalog-item-name">${escapeHTML(p.name)}</span>
+          <span class="catalog-item-price">₹${p.price.toLocaleString('en-IN')}</span>
+        </div>
+        <div class="catalog-schema-tags">
+          <span class="schema-tag">Category: ${escapeHTML(p.category || 'Audio')}</span>
+          <span class="schema-tag">Stock: ${p.stockCount || 15}</span>
+          <span class="schema-tag">Rating: ${p.rating || 4.8}★</span>
+          ${p.features ? p.features.slice(0, 2).map(f => `<span class="schema-tag">${escapeHTML(f)}</span>`).join('') : ''}
+          <span class="schema-tag highlight" style="color: var(--lavender-text); font-weight: 800;">AI Readiness: 96%</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.warn('Failed to load agent catalog schema', err);
+  }
+}
+
+function toggleRawCatalogJson() {
+  const rawPre = document.getElementById('raw-catalog-json');
+  const btn = document.getElementById('btn-toggle-raw-catalog');
+  if (!rawPre || !btn) return;
+
+  if (rawPre.style.display === 'none') {
+    rawPre.style.display = 'block';
+    btn.textContent = 'Hide Raw JSON Schema';
+  } else {
+    rawPre.style.display = 'none';
+    btn.textContent = 'Inspect Raw JSON Schema';
+  }
+}
+
+// =============================================================
+// 10. REFRESH & RENDER MERCHANT DATA (SHARED APPLICATION STATE)
+// =============================================================
+async function refreshMerchantData() {
+  try {
+    // 1. Analytics & Attribution
+    const aRes = await fetch('/api/merchant/analytics');
+    const analytics = await aRes.json();
+    renderOverviewAnalytics(analytics);
+
+    // 2. AI Sales Intelligence Insights
+    const insRes = await fetch('/api/merchant/intelligence/insights');
+    const insData = await insRes.json();
+    renderSalesInsights(insData.insights || []);
+
+    // 3. Product AI Audit
+    const auditRes = await fetch('/api/merchant/products/audit');
+    const auditData = await auditRes.json();
+    renderProductsAuditTable(auditData.products || []);
+
+    // 4. AI Experiment Lab Strategies
+    const expRes = await fetch('/api/merchant/experiments');
+    const expData = await expRes.json();
+    renderExperimentStrategies(expData);
+
+    // 5. Customer Experience (CX) Metrics
+    const cxRes = await fetch('/api/merchant/cx');
+    const cxData = await cxRes.json();
+    renderCustomerExperienceMetrics(cxData);
+
+    // 6. AI Readiness Scorecard
+    const rRes = await fetch('/api/merchant/readiness');
+    const readiness = await rRes.json();
+    renderReadinessScorecard(readiness);
+
+    // 7. Orders
+    const oRes = await fetch('/api/merchant/orders');
+    const orderData = await oRes.json();
+    renderOrdersTable(orderData.orders || []);
+
+    // 8. Policies
+    const polRes = await fetch('/api/merchant/policies');
+    const polData = await polRes.json();
+    updatePolicyInputs(polData);
+
+    // 9. Anomalies
+    const anomRes = await fetch('/api/merchant/anomalies');
+    const anomData = await anomRes.json();
+    renderAnomalies(anomData);
+
+    // 10. Audit Trail, Incidents & Blocked Attempts
+    const audRes = await fetch('/api/merchant/audit');
+    const audData = await audRes.json();
+    renderAuditTable(audData.events || []);
+    renderBlockedList(audData.blockedAttempts || []);
+
+    const incRes = await fetch('/api/merchant/incidents');
+    const incData = await incRes.json();
+    renderIncidentsList(incData.incidents || []);
+  } catch (err) {
+    console.error('Merchant refresh error:', err);
+  }
+}
+
+function renderOverviewAnalytics(a) {
+  // Command Center Overview KPIs
+  const totalRev = document.getElementById('kpi-total-revenue');
+  const aiRev = document.getElementById('kpi-ai-revenue');
+  const incRev = document.getElementById('kpi-incremental-revenue');
+  const aov = document.getElementById('kpi-aov');
+  const aovLift = document.getElementById('kpi-aov-lift');
+  const aiOrdersCount = document.getElementById('kpi-ai-orders-count');
+
+  if (totalRev) totalRev.textContent = `₹${a.totalRevenue.toLocaleString('en-IN')}`;
+  if (aiRev) aiRev.textContent = `₹${a.aiAttributedRevenue.toLocaleString('en-IN')}`;
+  if (incRev) incRev.textContent = `+₹${(a.aiIncrementalRevenue || 48500).toLocaleString('en-IN')}`;
+  if (aov) aov.textContent = `₹${a.aovWithAI.toLocaleString('en-IN')}`;
+  if (aovLift) aovLift.textContent = `+${a.aovChangePercentage}% lift vs baseline (₹${a.aovBeforeAI.toLocaleString('en-IN')})`;
+  if (aiOrdersCount) aiOrdersCount.textContent = `${a.aiAssistedOrdersCount} AI-assisted orders`;
+
+  // Overview Growth Section
+  const ovCross = document.getElementById('ov-cross-rate');
+  const ovUpsell = document.getElementById('ov-upsell-rate');
+  const ovRevConv = document.getElementById('ov-rev-conv');
+  if (ovCross) ovCross.textContent = `${a.crossSellConversionRate}%`;
+  if (ovUpsell) ovUpsell.textContent = `${a.upsellConversionRate}%`;
+  if (ovRevConv) ovRevConv.textContent = `₹${a.revenuePerConversation || 137}`;
+
+  // Attribution Cards in Analytics tab
+  const attrStore = document.getElementById('attr-total-store');
+  const attrTotal = document.getElementById('attr-total-ai');
+  const attrInc = document.getElementById('attr-incremental-ai');
+  const attrUp = document.getElementById('attr-upsell-revenue');
+  const attrCross = document.getElementById('attr-cross-revenue');
+
+  if (attrStore) attrStore.textContent = `₹${a.totalRevenue.toLocaleString('en-IN')}`;
+  if (attrTotal) attrTotal.textContent = `₹${a.aiAttributedRevenue.toLocaleString('en-IN')}`;
+  if (attrInc) attrInc.textContent = `+₹${(a.aiIncrementalRevenue || 48500).toLocaleString('en-IN')}`;
+  if (attrUp) attrUp.textContent = `₹${(a.upsellRevenue || 31996).toLocaleString('en-IN')}`;
+  if (attrCross) attrCross.textContent = `₹${(a.crossSellRevenue || 16504).toLocaleString('en-IN')}`;
+
+  // Customer-Level AI Revenue Attribution Matrix (Single Source of Truth)
+  renderCustomerAttributionTable(a.customerAttribution || []);
+
+  // Funnel
+  const funnelContainer = document.getElementById('ai-funnel-container');
+  if (funnelContainer && a.funnel) {
+    const f = a.funnel;
+    funnelContainer.innerHTML = `
+      <div class="funnel-stage-card">
+        <span class="funnel-stage-name">Conversations</span>
+        <span class="funnel-stage-count">${f.conversations}</span>
+        <span class="funnel-stage-pct">100% Base</span>
+      </div>
+      <span class="funnel-arrow">&rarr;</span>
+      <div class="funnel-stage-card">
+        <span class="funnel-stage-name">Searches</span>
+        <span class="funnel-stage-count">${f.searches}</span>
+        <span class="funnel-stage-pct">${f.conversionRates.convToSearch}</span>
+      </div>
+      <span class="funnel-arrow">&rarr;</span>
+      <div class="funnel-stage-card">
+        <span class="funnel-stage-name">Recs Viewed</span>
+        <span class="funnel-stage-count">${f.recommendationsViewed}</span>
+        <span class="funnel-stage-pct">${f.conversionRates.searchToRec}</span>
+      </div>
+      <span class="funnel-arrow">&rarr;</span>
+      <div class="funnel-stage-card">
+        <span class="funnel-stage-name">Added to Cart</span>
+        <span class="funnel-stage-count">${f.productsAdded}</span>
+        <span class="funnel-stage-pct">${f.conversionRates.recToAdd}</span>
+      </div>
+      <span class="funnel-arrow">&rarr;</span>
+      <div class="funnel-stage-card">
+        <span class="funnel-stage-name">Checkout</span>
+        <span class="funnel-stage-count">${f.checkoutStarted}</span>
+        <span class="funnel-stage-pct">${f.conversionRates.addToCheckout}</span>
+      </div>
+      <span class="funnel-arrow">&rarr;</span>
+      <div class="funnel-stage-card">
+        <span class="funnel-stage-name">Paid</span>
+        <span class="funnel-stage-count">${f.successfulPurchases}</span>
+        <span class="funnel-stage-pct">${f.conversionRates.checkoutToPurchase}</span>
+      </div>
+      <span class="funnel-arrow">&rarr;</span>
+      <div class="funnel-stage-card" style="border-color: var(--lavender-primary); background: var(--lavender-light);">
+        <span class="funnel-stage-name" style="color: var(--lavender-dark);">Orders</span>
+        <span class="funnel-stage-count" style="color: var(--lavender-dark);">${f.successfulPurchases}</span>
+        <span class="funnel-stage-pct" style="color: var(--lavender-dark); font-weight: 800;">${f.conversionRates.overallRate} Conv</span>
+      </div>
+    `;
+  }
+
+  // Top Recommendations
+  const recsContainer = document.getElementById('overview-top-recs');
+  const funnelRecs = document.getElementById('funnel-top-recs');
+  const recsHtml = (a.topPerformingRecommendations || []).map(r => `
+    <div class="rec-list-item">
+      <div>
+        <span class="font-bold">${r.product}</span>
+        <span class="badge-ai-feed font-mono" style="margin-left: 6px;">${r.category}</span>
+      </div>
+      <div class="font-bold text-positive">+₹${r.revenue.toLocaleString('en-IN')} (${r.conversions} sold)</div>
+    </div>
+  `).join('');
+
+  if (recsContainer) recsContainer.innerHTML = recsHtml;
+  if (funnelRecs) funnelRecs.innerHTML = recsHtml;
+
+  // Monthly Charts
+  const renderChartHtml = (trend) => {
+    const maxVal = 1100000;
+    return trend.map(m => `
+      <div class="chart-bar-group">
+        <div class="bars-pair">
+          <div class="bar-base" style="height: ${(m.baseline / maxVal) * 110}px;" title="Baseline: ₹${m.baseline.toLocaleString('en-IN')}"></div>
+          <div class="bar-ai" style="height: ${(m.withAI / maxVal) * 110}px;" title="With AI: ₹${m.withAI.toLocaleString('en-IN')}"></div>
+        </div>
+        <span class="chart-month-label">${m.month}</span>
+      </div>
+    `).join('');
+  };
+
+  const overviewChart = document.getElementById('overview-revenue-chart');
+  const analyticsChart = document.getElementById('analytics-revenue-chart');
+  if (overviewChart && a.monthlyRevenueTrend) overviewChart.innerHTML = renderChartHtml(a.monthlyRevenueTrend);
+  if (analyticsChart && a.monthlyRevenueTrend) analyticsChart.innerHTML = renderChartHtml(a.monthlyRevenueTrend);
+}
+
+// 1. Render Sales Intelligence Insights
+function renderSalesInsights(insights) {
+  const container = document.getElementById('insights-container');
+  if (!container) return;
+
+  container.innerHTML = insights.map(ins => `
+    <div class="insight-intel-card">
+      <div class="insight-intel-header">
+        <span class="insight-category-tag">${ins.category}</span>
+        <span class="insight-impact-badge">${ins.impactScore}</span>
+      </div>
+
+      <h4 class="insight-headline">${ins.headline}</h4>
+
+      <div class="insight-intel-body">
+        <div class="insight-section-row"><strong>What Happened:</strong> ${ins.whatHappened}</div>
+        <div class="insight-section-row"><strong>Why It Matters:</strong> ${ins.whyItMatters}</div>
+        <div class="insight-evidence-box"><strong>Evidence:</strong> ${ins.evidence}</div>
+      </div>
+
+      <div class="insight-action-box">
+        <span>💡</span> <strong>Action:</strong> ${ins.suggestedAction}
+      </div>
+    </div>
+  `).join('');
+}
+
+// 2. Render AI Sales Experiments
+function renderExperimentStrategies(expData) {
+  const container = document.getElementById('experiments-container');
+  if (!container) return;
+
+  const activeStrat = expData.activeStrategy || 'balanced';
+
+  container.innerHTML = expData.strategies.map(s => {
+    const isCurrent = s.id === activeStrat;
+    return `
+      <div class="experiment-card ${isCurrent ? 'active-strat' : ''}">
+        <div class="experiment-header">
+          <div>
+            <h4 class="experiment-title">${s.name}</h4>
+            <span class="experiment-tag tag-${s.id}">${s.tag}</span>
+          </div>
+          ${isCurrent ? '<span class="badge-ai-ready font-mono">ACTIVE DEPLOYMENT</span>' : ''}
+        </div>
+
+        <p class="experiment-desc">${s.description}</p>
+
+        <div class="experiment-params-box">
+          <div class="param-item"><span>Max Discount:</span> <strong>${s.parameters.maxDiscount}%</strong></div>
+          <div class="param-item"><span>Auto-Approval:</span> <strong>&le; ₹${s.parameters.autoApprovalLimit.toLocaleString('en-IN')}</strong></div>
+          <div class="param-item"><span>Target Cross-Sell:</span> <strong>${s.parameters.crossSellTargetRate}%</strong></div>
+        </div>
+
+        <div class="experiment-projections">
+          <div class="proj-stat-cell">
+            <span class="proj-label">Projected Rev</span>
+            <span class="proj-val text-positive">${s.projections.projectedMonthlyRevenue}</span>
+          </div>
+          <div class="proj-stat-cell">
+            <span class="proj-label">Projected AOV</span>
+            <span class="proj-val">${s.projections.projectedAOV}</span>
+          </div>
+          <div class="proj-stat-cell">
+            <span class="proj-label">Conversion Rate</span>
+            <span class="proj-val">${s.projections.conversionRate}</span>
+          </div>
+          <div class="proj-stat-cell">
+            <span class="proj-label">CX Score</span>
+            <span class="proj-val text-positive">${s.projections.cxScore}</span>
+          </div>
+        </div>
+
+        <button class="btn-deploy-strat ${isCurrent ? 'deployed' : ''}" onclick="deployExperiment('${s.id}')" ${isCurrent ? 'disabled' : ''}>
+          ${isCurrent ? '✓ Active Strategy' : 'Deploy Strategy &rarr;'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+window.deployExperiment = async function(strategyId) {
+  try {
+    const res = await fetch('/api/merchant/experiments/deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ strategy: strategyId })
+    });
+    const data = await res.json();
+    alert(data.message);
+    refreshMerchantData();
+  } catch (err) {
+    alert(`Deploy error: ${err.message}`);
+  }
+};
+
+// 3. Render Customer Experience Metrics
+function renderCustomerExperienceMetrics(cx) {
+  const scoreNum = document.getElementById('cx-score-num');
+  const ratingBadge = document.getElementById('cx-rating-badge');
+  const balanceText = document.getElementById('cx-balance-text');
+  const metricsGrid = document.getElementById('cx-metrics-grid');
+
+  if (scoreNum) scoreNum.textContent = cx.cxScore;
+  if (ratingBadge) ratingBadge.textContent = cx.ratingGrade;
+  if (balanceText && cx.growthVsExperienceBalance) balanceText.textContent = cx.growthVsExperienceBalance.summary;
+
+  if (metricsGrid && cx.metrics) {
+    metricsGrid.innerHTML = `
+      <div class="cx-metric-card">
+        <span class="cx-m-label">Rec Acceptance</span>
+        <span class="cx-m-val">${cx.metrics.recommendationAcceptance.rate}</span>
+        <span class="cx-m-sub">${cx.metrics.recommendationAcceptance.status}</span>
+      </div>
+      <div class="cx-metric-card">
+        <span class="cx-m-label">Rec Dismissal</span>
+        <span class="cx-m-val">${cx.metrics.recommendationDismissal.rate}</span>
+        <span class="cx-m-sub">${cx.metrics.recommendationDismissal.status}</span>
+      </div>
+      <div class="cx-metric-card">
+        <span class="cx-m-label">Abandonment</span>
+        <span class="cx-m-val">${cx.metrics.checkoutAbandonment.rate}</span>
+        <span class="cx-m-sub">${cx.metrics.checkoutAbandonment.status}</span>
+      </div>
+      <div class="cx-metric-card">
+        <span class="cx-m-label">Decision Speed</span>
+        <span class="cx-m-val">${cx.metrics.averageDecisionTime.duration}</span>
+        <span class="cx-m-sub">${cx.metrics.averageDecisionTime.status}</span>
+      </div>
+      <div class="cx-metric-card">
+        <span class="cx-m-label">Transparency</span>
+        <span class="cx-m-val">${cx.metrics.policyTransparencyScore.score}</span>
+        <span class="cx-m-sub">${cx.metrics.policyTransparencyScore.status}</span>
+      </div>
+    `;
+  }
+}
+
+// 4. Render Product AI Audit & Optimization Table
+function renderProductsAuditTable(products) {
+  const tbody = document.getElementById('products-tbody');
+  if (!tbody) return;
+
+  currentProductsList = products;
+
+  tbody.innerHTML = products.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong><br><span class="text-muted" style="font-size: 11px;">${p.brand}</span></td>
+      <td>${p.category}</td>
+      <td>
+        <span class="font-mono font-bold">₹${p.price.toLocaleString('en-IN')}</span><br>
+        <span class="text-positive font-mono" style="font-size: 11.5px;">Margin: ₹${p.margin_inr.toLocaleString('en-IN')}</span>
+      </td>
+      <td>${p.stock} units</td>
+      <td>
+        <span class="badge-ai-ready font-mono font-bold">${p.aiReadiness}%</span>
+      </td>
+      <td>
+        <span class="font-mono">${p.metadataCompleteness}%</span>
+        ${(p.missingFields || []).map(m => `<span class="missing-field-tag">${m}</span>`).join('')}
+      </td>
+      <td>
+        <span class="badge-ai-feed font-mono">Upsell: ${p.upsellPotential}</span><br>
+        <span class="text-muted" style="font-size: 11px;">Cross-Sell: ${p.crossSellPotential}</span>
+      </td>
+      <td>
+        ${p.optimizedForAI ? '<span class="badge-ai-ready">✓ 100% AI Ready</span>' : `
+          <button class="btn-optimize-ai" onclick="optimizeProduct('${p.id}')">
+            Optimize for AI &rarr;
+          </button>
+        `}
+      </td>
+    </tr>
+  `).join('');
+}
+
+window.optimizeProduct = async function(productId) {
+  try {
+    const res = await fetch('/api/merchant/products/optimize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productId })
+    });
+    const data = await res.json();
+    alert(data.message);
+    refreshMerchantData();
+  } catch (err) {
+    alert(`Optimization error: ${err.message}`);
+  }
+};
+
+function renderReadinessScorecard(r) {
+  const scoreEl = document.getElementById('readiness-overall-score');
+  const gradeEl = document.getElementById('readiness-grade-badge');
+  const checklistEl = document.getElementById('readiness-checklist');
+  const submetricsGrid = document.getElementById('readiness-submetrics-grid');
+
+  if (scoreEl) scoreEl.textContent = r.overallScore;
+  if (gradeEl) gradeEl.textContent = r.grade;
+
+  if (checklistEl && r.actionableRecommendations) {
+    checklistEl.innerHTML = r.actionableRecommendations.map(rec => `
+      <li class="readiness-check-item">
+        <span>&bull; ${rec.title}</span>
+        <span class="badge-ai-ready font-mono">${rec.impact}</span>
+      </li>
+    `).join('');
+  }
+
+  if (submetricsGrid && r.breakdown) {
+    submetricsGrid.innerHTML = Object.values(r.breakdown).map(b => `
+      <div class="submetric-card">
+        <div class="submetric-header">
+          <span>${b.label}</span>
+          <span class="font-mono text-positive font-bold">${b.score}%</span>
+        </div>
+        <div class="submetric-bar-bg">
+          <div class="submetric-bar-fill" style="width: ${b.score}%;"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function renderAnomalies(anomData) {
+  const badge = document.getElementById('anomaly-status-badge');
+  const list = document.getElementById('anomaly-alerts-list');
+
+  if (badge) {
+    badge.textContent = anomData.status === 'ANOMALY_DETECTED' ? '🔴 High Risk Outlier Active' : '🟢 Baseline Velocity Normal';
+    badge.style.backgroundColor = anomData.status === 'ANOMALY_DETECTED' ? 'var(--pastel-crimson-bg)' : 'var(--pastel-mint-bg)';
+    badge.style.color = anomData.status === 'ANOMALY_DETECTED' ? 'var(--pastel-crimson-text)' : 'var(--pastel-mint-text)';
+  }
+
+  if (list && anomData.anomalies) {
+    list.innerHTML = anomData.anomalies.map(a => `
+      <div class="anomaly-alert-card">
+        <div>
+          <span class="font-bold" style="color: var(--pastel-crimson-text);">${a.message}</span>
+          <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">
+            Deviation: ${a.deviationFactor} &bull; Operating Band: ${a.normalRange} &bull; Status: ${a.status}
+          </div>
+        </div>
+        ${!a.mitigated ? `
+          <button class="btn-mitigate-anomaly" onclick="mitigateAnomaly('${a.id}')">
+            Pause Agent (Mitigate) &rarr;
+          </button>
+        ` : '<span class="badge-ai-ready">✓ Mitigated</span>'}
+      </div>
+    `).join('');
+  }
+}
+
+window.mitigateAnomaly = async function(anomalyId) {
+  try {
+    const res = await fetch('/api/merchant/anomalies/mitigate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anomalyId })
+    });
+    const data = await res.json();
+    alert(data.message);
+    refreshMerchantData();
+  } catch (err) {
+    alert(`Mitigate error: ${err.message}`);
+  }
+};
+
+function renderOrdersTable(orders) {
+  const tbody = document.getElementById('orders-tbody');
+  const overviewOrders = document.getElementById('overview-recent-orders');
+  if (!tbody) return;
+
+  tbody.innerHTML = orders.map(o => {
+    let attributionBadges = '';
+    const upsell = o.upsell_revenue || (o.upsell_converted ? 3500 : 0);
+    const crossSell = o.cross_sell_revenue || (o.cross_sell_converted ? 799 : 0);
+
+    if (upsell > 0 && crossSell > 0) {
+      attributionBadges = `
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <span class="badge-ai-ready font-mono" style="font-size: 11px;">+₹${upsell.toLocaleString('en-IN')} Upsell</span>
+          <span class="badge-ai-feed font-mono" style="font-size: 11px;">+₹${crossSell.toLocaleString('en-IN')} Cross-Sell</span>
+        </div>
+      `;
+    } else if (upsell > 0) {
+      attributionBadges = `<span class="badge-ai-ready font-mono" style="font-size: 11px;">+₹${upsell.toLocaleString('en-IN')} Upsell</span>`;
+    } else if (crossSell > 0) {
+      attributionBadges = `<span class="badge-ai-feed font-mono" style="font-size: 11px;">+₹${crossSell.toLocaleString('en-IN')} Cross-Sell</span>`;
+    } else {
+      attributionBadges = `<span class="text-muted font-mono" style="font-size: 11.5px;">Base Catalog (₹${o.total.toLocaleString('en-IN')})</span>`;
+    }
+
+    const itemsSummary = (o.items || []).map(i => {
+      let tag = '';
+      if (i.isUpsell) tag = ' <span class="badge-ai-ready" style="font-size: 9.5px; padding: 1px 4px;">Upsell</span>';
+      if (i.isCrossSell) tag = ' <span class="badge-ai-feed" style="font-size: 9.5px; padding: 1px 4px;">Cross-Sell</span>';
+      return `${i.name} (x${i.quantity || 1})${tag}`;
+    }).join('<br>');
+
+    const initials = (o.customer_name || 'C').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+    return `
+      <tr>
+        <td class="font-mono font-bold">${o.id}</td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--lavender-light); color: var(--lavender-dark); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+              ${initials}
+            </div>
+            <div>
+              <strong style="color: var(--text-primary); font-size: 13.5px;">${o.customer_name}</strong>
+              <div class="text-muted font-mono" style="font-size: 10.5px;">${o.customer_id || 'cust_guest'}</div>
+            </div>
+          </div>
+        </td>
+        <td style="font-size: 12.5px; line-height: 1.4;">${itemsSummary}</td>
+        <td class="font-mono font-bold" style="font-size: 13.5px;">₹${o.total.toLocaleString('en-IN')}</td>
+        <td>${o.ai_assisted ? '<span class="badge-ai-ready">✓ AI Assisted</span>' : '<span class="text-muted">Direct Store</span>'}</td>
+        <td>${attributionBadges}</td>
+        <td><span class="badge-ai-feed font-mono">${o.payment_status}</span></td>
+        <td><button class="btn-replay-link" onclick="openAuditReplayModal('${o.id}')">View Replay &rarr;</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  if (overviewOrders) {
+    overviewOrders.innerHTML = orders.slice(0, 5).map(o => `
+      <div class="order-list-item" style="padding: 10px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--lavender-light); color: var(--lavender-dark); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+            ${(o.customer_name || 'C').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">${o.customer_name}</div>
+            <div class="text-muted font-mono" style="font-size: 11px;">${o.id} &bull; ${o.items[0]?.name || 'Product'} ${o.items.length > 1 ? `+${o.items.length - 1} more` : ''}</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div class="font-bold font-mono" style="font-size: 13.5px;">₹${o.total.toLocaleString('en-IN')}</div>
+          ${(o.cross_sell_revenue > 0 || o.cross_sell_converted) ? '<span class="text-positive font-mono" style="font-size: 10.5px;">+₹' + (o.cross_sell_revenue || 799).toLocaleString('en-IN') + ' Cross-Sell</span>' : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function renderCustomerAttributionTable(customerAttribution) {
+  const tbody = document.getElementById('customer-attribution-tbody');
+  if (!tbody) return;
+
+  if (!customerAttribution || customerAttribution.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">No customer order attribution records yet.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = customerAttribution.map(c => {
+    let breakdownHtml = '';
+    if (c.incremental_revenue > 0) {
+      breakdownHtml = `
+        <span class="badge-ai-ready font-mono" style="font-size: 11px;">
+          Base: ₹${c.base_revenue.toLocaleString('en-IN')}
+          ${c.upsell_revenue > 0 ? ` + Upsell: ₹${c.upsell_revenue.toLocaleString('en-IN')}` : ''}
+          ${c.cross_sell_revenue > 0 ? ` + Cross-Sell: ₹${c.cross_sell_revenue.toLocaleString('en-IN')}` : ''}
+        </span>
+      `;
+    } else {
+      breakdownHtml = `<span class="text-muted font-mono" style="font-size: 11px;">100% Base Catalog Spend</span>`;
+    }
+
+    const initials = (c.customer_name || 'C').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+    return `
+      <tr>
+        <td>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--lavender-light); color: var(--lavender-dark); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center;">
+              ${initials}
+            </div>
+            <div>
+              <strong style="color: var(--text-primary); font-size: 13.5px;">${c.customer_name}</strong>
+              <div class="text-muted" style="font-size: 11px;">${c.customer_email}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="font-mono text-muted" style="font-size: 11.5px;">${c.customer_id}</span></td>
+        <td class="font-mono font-bold">${c.total_orders}</td>
+        <td class="font-mono font-bold" style="font-size: 13.5px;">₹${c.total_spend.toLocaleString('en-IN')}</td>
+        <td class="font-mono">₹${c.base_revenue.toLocaleString('en-IN')}</td>
+        <td class="font-mono ${c.upsell_revenue > 0 ? 'text-positive font-bold' : 'text-muted'}">
+          ${c.upsell_revenue > 0 ? `+₹${c.upsell_revenue.toLocaleString('en-IN')}` : '₹0'}
+        </td>
+        <td class="font-mono ${c.cross_sell_revenue > 0 ? 'text-positive font-bold' : 'text-muted'}">
+          ${c.cross_sell_revenue > 0 ? `+₹${c.cross_sell_revenue.toLocaleString('en-IN')}` : '₹0'}
+        </td>
+        <td class="font-mono font-bold text-positive" style="font-size: 13.5px;">
+          ${c.incremental_revenue > 0 ? `+₹${c.incremental_revenue.toLocaleString('en-IN')}` : '₹0'}
+        </td>
+        <td>${breakdownHtml}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderAuditTable(events) {
+  const tbody = document.getElementById('audit-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = events.map(e => `
+    <tr>
+      <td class="font-mono" style="font-size: 11px;">${new Date(e.timestamp).toLocaleTimeString()}</td>
+      <td class="font-bold">${e.action}</td>
+      <td>${e.actor}</td>
+      <td>${e.reason}</td>
+      <td><span class="badge-ai-ready">${e.status}</span></td>
+      <td>${e.replayId ? `<button class="btn-replay-link" onclick="openAuditReplayModal('${e.replayId}')">Replay &rarr;</button>` : '&mdash;'}</td>
+    </tr>
+  `).join('');
+}
+
+function renderBlockedList(blockedAttempts) {
+  const list = document.getElementById('blocked-history-list');
+  if (!list) return;
+
+  if (blockedAttempts.length === 0) {
+    list.innerHTML = '<div class="text-muted" style="font-size: 13px;">No blocked transactions recorded. Policy engine is operating normally.</div>';
+    return;
+  }
+
+  list.innerHTML = blockedAttempts.map(b => `
+    <div class="blocked-item">
+      <div class="font-bold">${b.intent}</div>
+      <div style="font-size: 12px; margin-top: 2px;">Reason: ${b.reason}</div>
+    </div>
+  `).join('');
+}
+
+function renderIncidentsList(incidents) {
+  const container = document.getElementById('incidents-log-container');
+  if (!container) return;
+
+  if (incidents.length === 0) {
+    container.innerHTML = '<div class="text-muted" style="font-size: 13px;">No security incidents recorded. System is operating safely.</div>';
+    return;
+  }
+
+  container.innerHTML = incidents.map(inc => {
+    const sevClass = `sev-${inc.severity.toLowerCase()}`;
+    return `
+      <div class="incident-log-card">
+        <div class="incident-card-top">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="severity-pill ${sevClass}">${inc.severity}</span>
+            <span class="incident-cat-tag">${inc.category}</span>
+          </div>
+          <span class="font-mono text-muted" style="font-size: 11px;">${new Date(inc.timestamp).toLocaleTimeString()}</span>
+        </div>
+        <p class="incident-desc-text">${inc.description}</p>
+        <div class="incident-action-text"><strong>Action Taken:</strong> ${inc.actionTaken}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updatePolicyInputs(policies) {
+  const maxTx = document.getElementById('pol-max-tx');
+  const autoAppr = document.getElementById('pol-auto-appr');
+  const dailyLimit = document.getElementById('pol-daily-limit');
+  const maxDiscount = document.getElementById('pol-max-discount');
+  const minMargin = document.getElementById('pol-min-margin');
+
+  if (maxTx) maxTx.value = policies.spending_controls?.max_transaction_limit || 10000;
+  if (autoAppr) autoAppr.value = policies.spending_controls?.auto_approval_threshold || 2000;
+  if (dailyLimit) dailyLimit.value = policies.spending_controls?.daily_spending_limit || 25000;
+  if (maxDiscount) maxDiscount.value = policies.selling_controls?.max_discount_percentage || 10;
+  if (minMargin) minMargin.value = policies.selling_controls?.min_allowed_margin || 500;
+
+  updateAgentStatusPill(policies.agent_status);
+}
+
+function updateAgentStatusPill(status) {
+  const pills = [document.getElementById('global-agent-pill')];
+  const killDot = document.getElementById('agent-kill-dot');
+  const killText = document.getElementById('agent-kill-text');
+  const killSub = document.getElementById('agent-kill-sub');
+  const killBtn = document.getElementById('btn-toggle-kill-switch');
+
+  const ovHealthDot = document.getElementById('ov-health-dot');
+  const ovHealthStatus = document.getElementById('ov-health-status');
+
+  const isPaused = status === 'PAUSED';
+
+  pills.forEach(pill => {
+    if (pill) {
+      pill.className = `agent-status-pill ${isPaused ? 'paused' : ''}`;
+      pill.querySelector('.status-text').textContent = isPaused ? 'Agent: Paused' : 'Agent: Active';
+    }
+  });
+
+  if (killDot) killDot.className = `status-indicator-dot ${isPaused ? 'paused' : ''}`;
+  if (killText) killText.textContent = isPaused ? 'AI Agent Status: PAUSED (KILL SWITCH)' : 'AI Agent Status: ACTIVE';
+  if (killSub) killSub.textContent = isPaused ? 'Financial execution is blocked. Agent may browse catalog only.' : 'Agent is actively authorized to converse, recommend products, and initiate gated transactions.';
+  if (killBtn) {
+    killBtn.textContent = isPaused ? 'RESUME AI AGENT' : 'PAUSE AI AGENT (KILL SWITCH)';
+    killBtn.style.backgroundColor = isPaused ? 'var(--pastel-mint-bg)' : 'var(--pastel-crimson-bg)';
+    killBtn.style.color = isPaused ? 'var(--pastel-mint-text)' : 'var(--pastel-crimson-text)';
+  }
+
+  if (ovHealthDot) ovHealthDot.className = `health-indicator-dot ${isPaused ? 'paused' : ''}`;
+  if (ovHealthStatus) ovHealthStatus.textContent = isPaused ? 'Paused by Admin Controls' : 'Active & Authorized';
+}
+
+// =============================================================
+// 11. STEP-BY-STEP VISUAL AUDIT REPLAY MODAL
+// =============================================================
+window.openAuditReplayModal = async function(replayId) {
+  const modal = document.getElementById('modal-audit-replay');
+  const container = document.getElementById('replay-timeline-steps');
+  const titleEl = document.getElementById('replay-order-title');
+
+  if (!modal || !container) return;
+
+  try {
+    const res = await fetch(`/api/merchant/audit/replay/${replayId}`);
+    const data = await res.json();
+
+    if (titleEl) titleEl.textContent = `Transaction Lifecycle Replay #${data.orderId || replayId}`;
+
+    container.innerHTML = data.steps.map(step => `
+      <div class="replay-step-card">
+        <div class="step-card-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="step-number-tag">STEP ${step.stepIndex}</span>
+            <span class="step-name">${step.stepName}</span>
+          </div>
+          <span class="badge-ai-ready font-mono">${step.timeOffset} &bull; ${step.status}</span>
+        </div>
+        <div class="step-summary">${step.summary}</div>
+        <div class="step-detail-box">
+          <span style="font-weight: 700; color: var(--text-secondary);">Actor: ${step.actor}</span><br>
+          ${JSON.stringify(step.details, null, 2)}
+        </div>
+      </div>
+    `).join('');
+
+    modal.classList.add('active');
+  } catch (err) {
+    alert(`Could not load visual replay: ${err.message}`);
+  }
+};

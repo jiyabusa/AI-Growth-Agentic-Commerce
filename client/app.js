@@ -1627,19 +1627,21 @@ function renderShowcaseFeed(chatResponse) {
       const csImg = getProductImageUrl(cs.product.id);
       html += `
         <div class="companion-ecommerce-card">
-          <span class="companion-context-label">Complete your travel setup</span>
-          <div class="companion-content-wrap">
-            <img src="${csImg}" alt="${cs.product.name}" class="companion-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
-            <div class="companion-body">
-              <h4 class="companion-prod-name">${cs.product.name}</h4>
-              <p class="companion-prod-reason">${cs.explanation || 'Pairs well with your headphones'}</p>
-              <div class="companion-price-action">
-                <span class="companion-prod-price">₹${cs.product.price.toLocaleString('en-IN')}</span>
-                <button class="companion-btn-add" onclick="addItemToCart('${cs.product.id}', 1, false, true)">
-                  + Add Companion
-                </button>
-              </div>
+          <div class="companion-header-line">
+            <span>✦ Complete your travel setup</span>
+          </div>
+          <div class="companion-item-body">
+            <img src="${csImg}" alt="${cs.product.name}" class="companion-thumb" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
+            <div class="companion-details">
+              <h4 class="companion-name">${cs.product.name}</h4>
+              <p class="companion-pitch">${cs.explanation || 'Pairs well with your headphones'}</p>
             </div>
+          </div>
+          <div class="companion-action-row">
+            <span class="companion-price">₹${cs.product.price.toLocaleString('en-IN')}</span>
+            <button class="btn-add-companion" onclick="addItemToCart('${cs.product.id}', 1, false, true)">
+              + Add Companion
+            </button>
           </div>
         </div>
       `;
@@ -1649,19 +1651,21 @@ function renderShowcaseFeed(chatResponse) {
       const upImg = getProductImageUrl(upsell.product.id);
       html += `
         <div class="upgrade-ecommerce-card">
-          <span class="upgrade-context-label">Flagship Upgrade</span>
-          <div class="upgrade-content-wrap">
-            <img src="${upImg}" alt="${upsell.product.name}" class="companion-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
-            <div class="upgrade-body">
-              <h4 class="upgrade-prod-name">${upsell.product.name}</h4>
-              <p class="upgrade-prod-reason">${upsell.explanation || 'Enhanced active noise cancelling and premium materials.'}</p>
-              <div class="companion-price-action">
-                <span class="upgrade-prod-price">₹${upsell.product.price.toLocaleString('en-IN')}</span>
-                <button class="companion-btn-add" onclick="addItemToCart('${upsell.product.id}', 1, true, false)">
-                  Choose Flagship
-                </button>
-              </div>
+          <div class="upgrade-header-line">
+            <span>✦ Flagship Upgrade</span>
+          </div>
+          <div class="companion-item-body">
+            <img src="${upImg}" alt="${upsell.product.name}" class="companion-thumb" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
+            <div class="companion-details">
+              <h4 class="companion-name">${upsell.product.name}</h4>
+              <p class="companion-pitch">${upsell.explanation || 'Enhanced active noise cancelling and premium materials.'}</p>
             </div>
+          </div>
+          <div class="companion-action-row">
+            <span class="companion-price">₹${upsell.product.price.toLocaleString('en-IN')}</span>
+            <button class="btn-upgrade-action" onclick="addItemToCart('${upsell.product.id}', 1, true, false)">
+              Choose Flagship
+            </button>
           </div>
         </div>
       `;
@@ -1673,15 +1677,17 @@ function renderShowcaseFeed(chatResponse) {
     const b = chatResponse.negotiation.bundleAlternative;
     html += `
       <div class="bundle-ecommerce-card">
-        <span class="bundle-context-label">Special Bundle Deal</span>
+        <div class="bundle-header-line">
+          <span>✦ Special Bundle Deal</span>
+        </div>
         <h4 class="bundle-title">${b.bundleName}</h4>
-        <p class="bundle-desc">${b.explanation || 'Special bundle pricing when pairing complementary accessories.'}</p>
-        <div class="bundle-action-row">
+        <p class="bundle-pitch">${b.explanation || 'Special bundle pricing when pairing complementary accessories.'}</p>
+        <div class="companion-action-row">
           <div class="bundle-pricing">
-            <span class="bundle-price">₹${b.specialBundlePrice.toLocaleString('en-IN')}</span>
-            <span class="bundle-savings">Save ₹${b.totalSavings.toLocaleString('en-IN')}</span>
+            <span class="bundle-price" style="font-size: 15px; font-weight: 800; color: #15803d;">₹${b.specialBundlePrice.toLocaleString('en-IN')}</span>
+            <span class="bundle-savings" style="font-size: 11.5px; color: #166534; font-weight: 600; margin-left: 6px;">Save ₹${b.totalSavings.toLocaleString('en-IN')}</span>
           </div>
-          <button class="bundle-btn-apply" onclick="applyBundleDiscount('${b.bundleItems[0].id}', '${b.bundleItems[1].id}', ${b.totalSavings})">
+          <button class="btn-bundle-action" onclick="applyBundleDiscount('${b.bundleItems[0].id}', '${b.bundleItems[1].id}', ${b.totalSavings})">
             Accept Bundle Offer
           </button>
         </div>

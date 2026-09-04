@@ -116,7 +116,7 @@ Access the live catalog feed at `GET /api/catalog` or via the **AGENT-READABLE C
   "protocol": "Agentic-Commerce-Protocol/1.0",
   "merchant": {
     "id": "merch_rzp_growth_lab",
-    "name": "OmniGrowth Merchant Labs (Razorpay Test Mode)",
+    "name": "Revify Merchant Labs (Razorpay Test Mode)",
     "currency": "INR",
     "mandate_auth_supported": true,
     "supported_specs": ["NPCI-UAP/1.0", "Google-AP2/1.0"]

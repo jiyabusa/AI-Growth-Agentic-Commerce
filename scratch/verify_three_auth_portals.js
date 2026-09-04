@@ -76,7 +76,7 @@ async function verifyAll() {
   assert(html.includes('id="tab-merchant-signup"'), 'Missing tab-merchant-signup');
   assert(html.includes('id="form-merchant-login"'), 'Missing form-merchant-login');
   assert(html.includes('id="form-merchant-signup"'), 'Missing form-merchant-signup');
-  assert(html.includes('id="btn-fill-demo-omnigrowth"'), 'Missing 1-click demo button for merchant');
+  assert(html.includes('id="btn-fill-demo-revify"') || html.includes('id="btn-fill-demo-omnigrowth"'), 'Missing 1-click demo button for merchant');
   console.log('  ✓ Verified: AI Commerce Command Center Login Dashboard (Merchant)');
 
   // 2.3: AI-to-AI Login Dashboard
@@ -104,11 +104,11 @@ async function verifyAll() {
 
   // 3.2 Merchant Auth
   const merchRes = await request('POST', '/api/merchant/login', {
-    email: 'admin@omnigrowth.com',
+    email: 'admin@revify.com',
     password: 'password123'
   });
   assert(merchRes.body.success, 'Merchant login failed');
-  assert.strictEqual(merchRes.body.merchant.name, 'OmniGrowth Labs');
+  assert.strictEqual(merchRes.body.merchant.name, 'Revify Labs');
   assert.strictEqual(merchRes.body.merchant.role, 'merchant');
   console.log(`  ✓ Merchant Login API: Logged in as ${merchRes.body.merchant.name} (Role: ${merchRes.body.merchant.role})`);
 

@@ -460,27 +460,6 @@ class DatabaseService {
       createdAt: '2026-02-20T11:00:00.000Z'
     });
 
-    // 2c. AI-to-AI Commerce Authorized Users Store
-    this.ai2aiUsers = new Map();
-
-    this.ai2aiUsers.set('ai2ai_operator', {
-      id: 'ai2ai_operator',
-      name: 'Commerce Operator',
-      email: 'operator@omnigrowth.com',
-      password: 'password123',
-      role: 'operator',
-      createdAt: '2026-03-01T09:00:00.000Z'
-    });
-
-    this.ai2aiUsers.set('ai2ai_admin', {
-      id: 'ai2ai_admin',
-      name: 'Agent Admin',
-      email: 'agent-admin@omnigrowth.com',
-      password: 'password123',
-      role: 'admin',
-      createdAt: '2026-03-01T09:00:00.000Z'
-    });
-
     // 3. Merchant Policies & Agent Controls
     this.policies = {
       agent_status: 'ACTIVE', // 'ACTIVE' | 'PAUSED'
@@ -1108,75 +1087,6 @@ class DatabaseService {
       plan: m.plan,
       createdAt: m.createdAt
     }));
-  }
-
-  // --- AI-to-AI Commerce Authorized Users ---
-  registerAi2aiUser({ name, email, password }) {
-    if (!name || !email || !password) {
-      return { success: false, error: 'Name, email, and password are required.' };
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-    for (const u of this.ai2aiUsers.values()) {
-      if (u.email.toLowerCase() === normalizedEmail) {
-        return { success: false, error: 'An account with this email already exists. Please log in.' };
-      }
-    }
-
-    const userId = `ai2ai_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const newUser = {
-      id: userId,
-      name: name.trim(),
-      email: normalizedEmail,
-      password,
-      role: 'operator',
-      createdAt: new Date().toISOString()
-    };
-
-    this.ai2aiUsers.set(userId, newUser);
-    return {
-      success: true,
-      user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        createdAt: newUser.createdAt
-      }
-    };
-  }
-
-  loginAi2aiUser({ email, password }) {
-    if (!email || !password) {
-      return { success: false, error: 'Email and password are required.' };
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-    let matched = null;
-    for (const u of this.ai2aiUsers.values()) {
-      if (u.email.toLowerCase() === normalizedEmail) {
-        matched = u;
-        break;
-      }
-    }
-
-    if (!matched) {
-      return { success: false, error: 'Account not found. Please sign up.' };
-    }
-    if (matched.password !== password) {
-      return { success: false, error: 'Invalid password. Please try again.' };
-    }
-
-    return {
-      success: true,
-      user: {
-        id: matched.id,
-        name: matched.name,
-        email: matched.email,
-        role: matched.role,
-        createdAt: matched.createdAt
-      }
-    };
   }
 
   // --- Orders ---

@@ -30,15 +30,6 @@ try {
   currentMerchant = null;
 }
 
-// AI-to-AI Commerce Authorized User State
-let currentAi2aiUser = null;
-try {
-  const saved = localStorage.getItem('omnigrowth_ai2ai_user');
-  if (saved) currentAi2aiUser = JSON.parse(saved);
-} catch (e) {
-  currentAi2aiUser = null;
-}
-
 let topRecommendationsList = [];
 let currentRecFilter = 'all';
 
@@ -99,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   setupCustomerAuth();
   setupMerchantAuth();
-  setupAi2aiAuth();
   setupTopRecommendations();
   setupCustomerOrdersModal();
   setupEditProfileModal();
@@ -112,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupMerchantControls();
   setupSimulatorControls();
   setupNLPolicyBuilder();
-  setupAIToAIDemo();
 
   // Initial customer state & data fetches
   updateCustomerUI();
@@ -138,9 +127,6 @@ function setupNavigation() {
     if (targetViewId === 'view-merchant' && !currentMerchant) {
       targetViewId = 'view-merchant-auth';
     }
-    if (targetViewId === 'view-ai2ai' && !currentAi2aiUser) {
-      targetViewId = 'view-ai2ai-auth';
-    }
 
     appViews.forEach(view => view.classList.remove('active'));
     switchBtns.forEach(btn => btn.classList.remove('active'));
@@ -152,7 +138,6 @@ function setupNavigation() {
     let navBtnTarget = targetViewId;
     if (targetViewId === 'view-customer-auth') navBtnTarget = 'view-shopping';
     if (targetViewId === 'view-merchant-auth') navBtnTarget = 'view-merchant';
-    if (targetViewId === 'view-ai2ai-auth') navBtnTarget = 'view-ai2ai';
     const activeBtn = document.querySelector(`.nav-switch-btn[data-target="${navBtnTarget}"]`);
     if (activeBtn) activeBtn.classList.add('active');
 
@@ -163,9 +148,7 @@ function setupNavigation() {
         'view-customer-auth': '#customer-login',
         'view-shopping': '#shopping',
         'view-merchant-auth': '#merchant-login',
-        'view-merchant': '#merchant',
-        'view-ai2ai-auth': '#ai2ai-login',
-        'view-ai2ai': '#ai2ai'
+        'view-merchant': '#merchant'
       };
       if (hashMap[targetViewId] !== undefined) {
         history.replaceState(null, '', window.location.pathname + (hashMap[targetViewId] || ''));
@@ -175,8 +158,6 @@ function setupNavigation() {
     if (targetViewId === 'view-merchant') {
       refreshMerchantData();
       updateMerchantUI();
-    } else if (targetViewId === 'view-ai2ai') {
-      renderAgentCatalogSchema();
     } else if (targetViewId === 'view-shopping') {
       loadTopRecommendations();
       updateCustomerGreeting();
@@ -195,12 +176,6 @@ function setupNavigation() {
   });
   document.getElementById('card-enter-merchant')?.addEventListener('click', () => {
     window.switchAppView(currentMerchant ? 'view-merchant' : 'view-merchant-auth');
-  });
-  document.getElementById('card-enter-ai2ai')?.addEventListener('click', () => {
-    window.switchAppView(currentAi2aiUser ? 'view-ai2ai' : 'view-ai2ai-auth');
-  });
-  document.getElementById('btn-launch-ai2ai')?.addEventListener('click', () => {
-    window.switchAppView(currentAi2aiUser ? 'view-ai2ai' : 'view-ai2ai-auth');
   });
 
   // Navbar Customer Account button
@@ -223,10 +198,6 @@ function setupNavigation() {
       window.switchAppView('view-merchant-auth', false);
     } else if (hash === 'merchant' || hash === 'command') {
       window.switchAppView('view-merchant', false);
-    } else if (['ai2ai-login', 'ai2ai-auth', 'arena-login'].includes(hash)) {
-      window.switchAppView('view-ai2ai-auth', false);
-    } else if (hash === 'ai2ai' || hash === 'arena') {
-      window.switchAppView('view-ai2ai', false);
     } else if (hash === 'landing' || hash === 'home') {
       window.switchAppView('view-landing', false);
     }
@@ -629,125 +600,6 @@ function updateMerchantUI() {
 }
 
 // =============================================================
-// 1.1c AI-TO-AI COMMERCE AUTHENTICATION CONTROLLER
-// =============================================================
-function setupAi2aiAuth() {
-  const tabLogin = document.getElementById('tab-ai2ai-login');
-  const tabSignup = document.getElementById('tab-ai2ai-signup');
-  const formLogin = document.getElementById('form-ai2ai-login');
-  const formSignup = document.getElementById('form-ai2ai-signup');
-
-  tabLogin?.addEventListener('click', () => {
-    tabLogin.classList.add('active');
-    tabSignup.classList.remove('active');
-    formLogin.classList.add('active');
-    formSignup.classList.remove('active');
-  });
-
-  tabSignup?.addEventListener('click', () => {
-    tabSignup.classList.add('active');
-    tabLogin.classList.remove('active');
-    formSignup.classList.add('active');
-    formLogin.classList.remove('active');
-  });
-
-  // AI-to-AI Login Form
-  formLogin?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('ai2ai-login-email').value.trim();
-    const password = document.getElementById('ai2ai-login-password').value;
-    const btn = document.getElementById('btn-submit-ai2ai-login');
-    btn.disabled = true;
-    btn.textContent = 'Authenticating...';
-
-    try {
-      const res = await fetch('/api/ai2ai/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      btn.disabled = false;
-      btn.textContent = 'Enter AI-to-AI Arena →';
-
-      if (data.success && data.user) {
-        setAuthenticatedAi2aiUser(data.user);
-        window.switchAppView('view-ai2ai');
-      } else {
-        alert(data.error || 'Login failed. Please try again.');
-      }
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = 'Enter AI-to-AI Arena →';
-      alert('Network error during login: ' + err.message);
-    }
-  });
-
-  // AI-to-AI Sign Up Form
-  formSignup?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('ai2ai-signup-name').value.trim();
-    const email = document.getElementById('ai2ai-signup-email').value.trim();
-    const password = document.getElementById('ai2ai-signup-password').value;
-    const btn = document.getElementById('btn-submit-ai2ai-signup');
-    btn.disabled = true;
-    btn.textContent = 'Creating Account...';
-
-    try {
-      const res = await fetch('/api/ai2ai/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
-      });
-      const data = await res.json();
-      btn.disabled = false;
-      btn.textContent = 'Create Account & Launch Arena →';
-
-      if (data.success && data.user) {
-        setAuthenticatedAi2aiUser(data.user);
-        window.switchAppView('view-ai2ai');
-      } else {
-        alert(data.error || 'Registration failed. Please try again.');
-      }
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = 'Create Account & Launch Arena →';
-      alert('Network error during registration: ' + err.message);
-    }
-  });
-
-  // 1-Click Demo AI-to-AI Profiles
-  document.getElementById('btn-fill-demo-operator')?.addEventListener('click', () => {
-    document.getElementById('ai2ai-login-email').value = 'operator@omnigrowth.com';
-    document.getElementById('ai2ai-login-password').value = 'password123';
-    tabLogin?.click();
-    formLogin?.dispatchEvent(new Event('submit'));
-  });
-
-  document.getElementById('btn-fill-demo-agentadmin')?.addEventListener('click', () => {
-    document.getElementById('ai2ai-login-email').value = 'agent-admin@omnigrowth.com';
-    document.getElementById('ai2ai-login-password').value = 'password123';
-    tabLogin?.click();
-    formLogin?.dispatchEvent(new Event('submit'));
-  });
-}
-
-function setAuthenticatedAi2aiUser(user) {
-  currentAi2aiUser = user;
-  try {
-    localStorage.setItem('omnigrowth_ai2ai_user', JSON.stringify(user));
-  } catch (e) {}
-}
-
-function logoutAi2aiUser() {
-  currentAi2aiUser = null;
-  try {
-    localStorage.removeItem('omnigrowth_ai2ai_user');
-  } catch (e) {}
-  window.switchAppView('view-ai2ai-auth');
-}
-
-// =============================================================
 // 1.2 TOP "RECOMMENDED FOR YOU" HORIZONTAL RAIL ENGINE
 // =============================================================
 function setupTopRecommendations() {
@@ -1014,11 +866,6 @@ async function openCustomerOrderHistory() {
 
 // Global subview switcher for navigation links
 window.switchMerchantSubview = function(subviewId) {
-  if (subviewId === 'sub-ai2ai') {
-    window.switchAppView('view-ai2ai');
-    return;
-  }
-
   const sideNavBtns = document.querySelectorAll('.side-nav-btn');
   const subViews = document.querySelectorAll('.sub-view');
 
@@ -2248,396 +2095,6 @@ function setupNLPolicyBuilder() {
       alert(`Apply error: ${err.message}`);
     }
   });
-}
-
-// =============================================================
-// 9. AI-TO-AI AUTONOMOUS COMMERCE DEMONSTRATION CONTROLLER
-// =============================================================
-let a2aDemoState = {
-  isRunning: false,
-  isPaused: false,
-  currentStepIndex: 0,
-  steps: [],
-  simulationData: null,
-  viewMode: 'human', // 'human' | 'technical'
-  timer: null
-};
-
-function setupAIToAIDemo() {
-  const btnRun = document.getElementById('btn-demo-run');
-  const btnPause = document.getElementById('btn-demo-pause');
-  const btnRestart = document.getElementById('btn-demo-restart');
-  const btnModeHuman = document.getElementById('btn-mode-human');
-  const btnModeTech = document.getElementById('btn-mode-tech');
-  const btnToggleRawCatalog = document.getElementById('btn-toggle-raw-catalog');
-
-  // Playback Control Listeners
-  btnRun?.addEventListener('click', startAIToAIDemo);
-  btnPause?.addEventListener('click', pauseAIToAIDemo);
-  btnRestart?.addEventListener('click', restartAIToAIDemo);
-
-  // View Mode Switchers
-  btnModeHuman?.addEventListener('click', () => setAIToAIViewMode('human'));
-  btnModeTech?.addEventListener('click', () => setAIToAIViewMode('technical'));
-
-  // Final Action Links
-  document.getElementById('btn-a2a-go-orders')?.addEventListener('click', () => {
-    window.switchMerchantSubview('sub-orders');
-  });
-
-  document.getElementById('btn-a2a-go-audit')?.addEventListener('click', () => {
-    if (a2aDemoState.simulationData?.finalOrder?.id) {
-      openVisualAuditReplay(a2aDemoState.simulationData.finalOrder.id);
-    } else {
-      window.switchMerchantSubview('sub-audit');
-    }
-  });
-
-  document.getElementById('btn-a2a-restart-demo')?.addEventListener('click', restartAIToAIDemo);
-  btnToggleRawCatalog?.addEventListener('click', toggleRawCatalogJson);
-
-  // Initial load of agent catalog schema
-  renderAgentCatalogSchema();
-}
-
-function setAIToAIViewMode(mode) {
-  a2aDemoState.viewMode = mode;
-  document.getElementById('btn-mode-human')?.classList.toggle('active', mode === 'human');
-  document.getElementById('btn-mode-tech')?.classList.toggle('active', mode === 'technical');
-
-  // Re-render rendered cards with active view mode
-  reRenderTimelineMessages();
-}
-
-async function startAIToAIDemo() {
-  const btnRun = document.getElementById('btn-demo-run');
-  const btnPause = document.getElementById('btn-demo-pause');
-
-  if (a2aDemoState.isPaused) {
-    a2aDemoState.isPaused = false;
-    a2aDemoState.isRunning = true;
-    btnRun.disabled = true;
-    btnPause.disabled = false;
-    playNextA2AStep();
-    return;
-  }
-
-  // Fresh run: fetch simulation data from backend
-  btnRun.disabled = true;
-  btnRun.innerHTML = '<span class="ctl-icon">⏳</span> Initializing...';
-  
-  // Hide empty state prompt
-  const emptyState = document.getElementById('timeline-empty-prompt');
-  if (emptyState) emptyState.style.display = 'none';
-
-  // Reset guard box and complete card
-  document.getElementById('ai2ai-transaction-guard-card').style.display = 'none';
-  document.getElementById('ai2ai-complete-card').style.display = 'none';
-
-  try {
-    const res = await fetch('/api/simulation/ai-to-ai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ buyerIntent: 'I need wireless headphones under ₹5,000 with noise cancellation.' })
-    });
-    const data = await res.json();
-    a2aDemoState.simulationData = data;
-    a2aDemoState.steps = data.dialogueSteps || [];
-    a2aDemoState.currentStepIndex = 0;
-    a2aDemoState.isRunning = true;
-    a2aDemoState.isPaused = false;
-
-    // Clear stream
-    const streamBox = document.getElementById('ai2ai-stream-box');
-    if (streamBox) streamBox.innerHTML = '';
-
-    btnRun.disabled = true;
-    btnRun.innerHTML = '<span class="ctl-icon">▶</span> Running...';
-    btnPause.disabled = false;
-
-    playNextA2AStep();
-  } catch (err) {
-    alert(`Demo failed to initialize: ${err.message}`);
-    btnRun.disabled = false;
-    btnRun.innerHTML = '<span class="ctl-icon">▶</span> Run Demo';
-  }
-}
-
-function pauseAIToAIDemo() {
-  if (!a2aDemoState.isRunning) return;
-  a2aDemoState.isPaused = true;
-  a2aDemoState.isRunning = false;
-  clearTimeout(a2aDemoState.timer);
-
-  const btnRun = document.getElementById('btn-demo-run');
-  const btnPause = document.getElementById('btn-demo-pause');
-  btnRun.disabled = false;
-  btnRun.innerHTML = '<span class="ctl-icon">▶</span> Resume Demo';
-  btnPause.disabled = true;
-}
-
-function restartAIToAIDemo() {
-  clearTimeout(a2aDemoState.timer);
-  a2aDemoState.isRunning = false;
-  a2aDemoState.isPaused = false;
-  a2aDemoState.currentStepIndex = 0;
-
-  const btnRun = document.getElementById('btn-demo-run');
-  const btnPause = document.getElementById('btn-demo-pause');
-  btnRun.disabled = false;
-  btnRun.innerHTML = '<span class="ctl-icon">▶</span> Run Demo';
-  btnPause.disabled = true;
-
-  // Reset UI components
-  const streamBox = document.getElementById('ai2ai-stream-box');
-  if (streamBox) {
-    streamBox.innerHTML = `
-      <div class="timeline-empty-prompt" id="timeline-empty-prompt">
-        <div class="empty-sparkle-icon">🤖 ⚡ 💳</div>
-        <h4>Ready to Run Autonomous AI-to-AI Demo</h4>
-        <p>Click <strong>[Run Demo]</strong> to watch the AI Buyer negotiate with Merchant AI within margin guardrails.</p>
-        <button class="btn-primary btn-run-large" onclick="document.getElementById('btn-demo-run').click()">▶ Run Flagship Demo</button>
-      </div>
-    `;
-  }
-
-  document.getElementById('ai2ai-transaction-guard-card').style.display = 'none';
-  document.getElementById('ai2ai-complete-card').style.display = 'none';
-  document.getElementById('timeline-step-counter').textContent = 'Ready • 0/11 Steps';
-
-  // Reset side panels
-  document.getElementById('buyer-state-text').textContent = 'Ready to initiate query to merchant';
-  document.getElementById('merchant-state-text').textContent = 'Policy guard active: Direct 11.1% discount blocked, Bundle counter-offer enabled';
-
-  // Reset stage stepper
-  updateStageStepper('DISCOVERING', true);
-}
-
-function playNextA2AStep() {
-  if (!a2aDemoState.isRunning || a2aDemoState.isPaused) return;
-
-  if (a2aDemoState.currentStepIndex >= a2aDemoState.steps.length) {
-    finishAIToAIDemo();
-    return;
-  }
-
-  const step = a2aDemoState.steps[a2aDemoState.currentStepIndex];
-  renderTimelineStep(step);
-  updateSidePanelsForStep(step);
-  updateStageStepper(step.stage);
-
-  // Counter
-  document.getElementById('timeline-step-counter').textContent = `Step ${step.step} / ${a2aDemoState.steps.length}`;
-
-  // If Step 8 (TRANSACTION_GUARD), display the Pre-Transaction Guard Box prominently
-  if (step.action === 'TRANSACTION_GUARD') {
-    const guardBox = document.getElementById('ai2ai-transaction-guard-card');
-    if (guardBox) guardBox.style.display = 'block';
-  }
-
-  a2aDemoState.currentStepIndex++;
-
-  // Schedule next step (approx 1.2s delay for pleasant viewing pacing)
-  a2aDemoState.timer = setTimeout(() => {
-    playNextA2AStep();
-  }, 1200);
-}
-
-function renderTimelineStep(step) {
-  const streamBox = document.getElementById('ai2ai-stream-box');
-  if (!streamBox) return;
-
-  let roleClass = 'system-card';
-  if (step.speakerRole === 'buyer') roleClass = 'buyer-card';
-  else if (step.speakerRole === 'merchant') roleClass = 'merchant-card';
-
-  const card = document.createElement('div');
-  card.className = `timeline-msg-card ${roleClass}`;
-  card.dataset.stepIndex = step.step;
-
-  card.innerHTML = buildStepCardHTML(step, a2aDemoState.viewMode);
-  streamBox.appendChild(card);
-  streamBox.scrollTop = streamBox.scrollHeight;
-}
-
-function buildStepCardHTML(step, viewMode) {
-  const actionTagClass = `tag-${step.action.toLowerCase().replace(/_/g, '-')}`;
-
-  if (viewMode === 'technical') {
-    return `
-      <div class="msg-top-row">
-        <div class="msg-speaker-group">
-          <span class="msg-speaker-name">${escapeHTML(step.speaker)}</span>
-          <span class="msg-action-tag ${actionTagClass}">${escapeHTML(step.action)}</span>
-        </div>
-        <span class="msg-step-num">Step ${step.step}</span>
-      </div>
-      <div class="msg-tech-box">
-        <div class="tech-action-name">ACTION: ${escapeHTML(step.technicalAction || step.action)}</div>
-        <pre class="tech-params-pre">${escapeHTML(JSON.stringify(step.technicalParams || {}, null, 2))}</pre>
-        ${step.technicalResult ? `<pre class="tech-params-pre" style="color: #4ade80; margin-top: 6px;">RESULT: ${escapeHTML(JSON.stringify(step.technicalResult, null, 2))}</pre>` : ''}
-      </div>
-    `;
-  } else {
-    // Human View (Conversational)
-    return `
-      <div class="msg-top-row">
-        <div class="msg-speaker-group">
-          <span class="msg-speaker-name">${escapeHTML(step.speaker)}</span>
-          <span class="msg-action-tag ${actionTagClass}">${escapeHTML(step.action)}</span>
-        </div>
-        <span class="msg-step-num">Step ${step.step}</span>
-      </div>
-      <div class="msg-human-body">
-        "${escapeHTML(step.humanMessage || step.message)}"
-      </div>
-    `;
-  }
-}
-
-function reRenderTimelineMessages() {
-  const streamBox = document.getElementById('ai2ai-stream-box');
-  if (!streamBox) return;
-
-  const cards = streamBox.querySelectorAll('.timeline-msg-card');
-  cards.forEach(card => {
-    const stepIdx = parseInt(card.dataset.stepIndex, 10);
-    const step = a2aDemoState.steps.find(s => s.step === stepIdx);
-    if (step) {
-      card.innerHTML = buildStepCardHTML(step, a2aDemoState.viewMode);
-    }
-  });
-}
-
-function updateSidePanelsForStep(step) {
-  const buyerState = document.getElementById('buyer-state-text');
-  const buyerQuery = document.getElementById('buyer-code-pre');
-  const merchantState = document.getElementById('merchant-state-text');
-  const merchantSnippet = document.getElementById('merchant-code-pre');
-
-  if (step.speakerRole === 'buyer') {
-    if (buyerState) buyerState.textContent = `Action: ${step.action} — ${step.humanMessage.slice(0, 75)}...`;
-    if (buyerQuery && step.technicalParams) {
-      buyerQuery.textContent = JSON.stringify({ action: step.technicalAction, ...step.technicalParams }, null, 2);
-    }
-  } else if (step.speakerRole === 'merchant') {
-    if (merchantState) merchantState.textContent = `Response: ${step.action} — ${step.humanMessage.slice(0, 75)}...`;
-    if (merchantSnippet && step.technicalParams) {
-      merchantSnippet.textContent = JSON.stringify({ policy_evaluation: step.action, ...step.technicalParams }, null, 2);
-    }
-  } else if (step.speakerRole === 'system') {
-    if (merchantState) merchantState.textContent = `Deterministic Engine: ${step.action} Executed & Authorized`;
-  }
-}
-
-function updateStageStepper(currentStage, isReset = false) {
-  const stages = ['DISCOVERING', 'SEARCHING', 'NEGOTIATING', 'VALIDATING', 'PAYING', 'COMPLETED'];
-  const stageBoxes = [
-    document.getElementById('stage-box-discover'),
-    document.getElementById('stage-box-search'),
-    document.getElementById('stage-box-negotiate'),
-    document.getElementById('stage-box-validate'),
-    document.getElementById('stage-box-pay'),
-    document.getElementById('stage-box-complete')
-  ];
-
-  if (isReset) {
-    stageBoxes.forEach(b => {
-      if (b) {
-        b.className = 'stage-step-box';
-      }
-    });
-    return;
-  }
-
-  const activeIdx = stages.indexOf(currentStage);
-  stageBoxes.forEach((b, idx) => {
-    if (!b) return;
-    if (idx < activeIdx) {
-      b.className = 'stage-step-box completed';
-    } else if (idx === activeIdx) {
-      b.className = 'stage-step-box active';
-    } else {
-      b.className = 'stage-step-box';
-    }
-  });
-}
-
-function finishAIToAIDemo() {
-  a2aDemoState.isRunning = false;
-  a2aDemoState.isPaused = false;
-
-  const btnRun = document.getElementById('btn-demo-run');
-  const btnPause = document.getElementById('btn-demo-pause');
-  btnRun.disabled = false;
-  btnRun.innerHTML = '<span class="ctl-icon">↺</span> Run Again';
-  btnPause.disabled = true;
-
-  updateStageStepper('COMPLETED');
-
-  // Display Complete Summary Card
-  const compCard = document.getElementById('ai2ai-complete-card');
-  if (compCard && a2aDemoState.simulationData) {
-    const summary = a2aDemoState.simulationData.summary || {};
-    document.getElementById('comp-product-val').textContent = summary.product || 'SoundWave ANC + Travel Case';
-    document.getElementById('comp-total-val').textContent = `₹${(summary.total || 4999).toLocaleString('en-IN')}`;
-    document.getElementById('comp-pay-val').textContent = summary.paymentStatus || 'Verified (Razorpay Test Mode)';
-    document.getElementById('comp-order-val').textContent = summary.orderId || (a2aDemoState.simulationData.finalOrder ? a2aDemoState.simulationData.finalOrder.id : 'ORD-9428');
-
-    compCard.style.display = 'flex';
-    compCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  // Refresh background merchant analytics so new order shows up immediately
-  refreshMerchantData();
-}
-
-async function renderAgentCatalogSchema() {
-  const container = document.getElementById('agent-catalog-cards-grid');
-  const rawPre = document.getElementById('raw-catalog-json');
-  if (!container) return;
-
-  try {
-    const res = await fetch('/api/merchant/products');
-    const data = await res.json();
-    const products = data.products || [];
-
-    if (rawPre) {
-      rawPre.textContent = JSON.stringify(products, null, 2);
-    }
-
-    container.innerHTML = products.slice(0, 6).map(p => `
-      <div class="agent-catalog-item-card">
-        <div class="catalog-item-header">
-          <span class="catalog-item-name">${escapeHTML(p.name)}</span>
-          <span class="catalog-item-price">₹${p.price.toLocaleString('en-IN')}</span>
-        </div>
-        <div class="catalog-schema-tags">
-          <span class="schema-tag">Category: ${escapeHTML(p.category || 'Audio')}</span>
-          <span class="schema-tag">Stock: ${p.stockCount || 15}</span>
-          <span class="schema-tag">Rating: ${p.rating || 4.8}★</span>
-          ${p.features ? p.features.slice(0, 2).map(f => `<span class="schema-tag">${escapeHTML(f)}</span>`).join('') : ''}
-          <span class="schema-tag highlight" style="color: var(--lavender-text); font-weight: 800;">AI Readiness: 96%</span>
-        </div>
-      </div>
-    `).join('');
-  } catch (err) {
-    console.warn('Failed to load agent catalog schema', err);
-  }
-}
-
-function toggleRawCatalogJson() {
-  const rawPre = document.getElementById('raw-catalog-json');
-  const btn = document.getElementById('btn-toggle-raw-catalog');
-  if (!rawPre || !btn) return;
-
-  if (rawPre.style.display === 'none') {
-    rawPre.style.display = 'block';
-    btn.textContent = 'Hide Raw JSON Schema';
-  } else {
-    rawPre.style.display = 'none';
-    btn.textContent = 'Inspect Raw JSON Schema';
-  }
 }
 
 // =============================================================

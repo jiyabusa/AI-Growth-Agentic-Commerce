@@ -42,6 +42,55 @@ try {
 let topRecommendationsList = [];
 let currentRecFilter = 'all';
 
+// High-Resolution Editorial Product Imagery
+const PRODUCT_IMAGES = {
+  prod_anc_headphones: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
+  prod_anc_headphones_pro: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=600&q=80',
+  prod_travel_case: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80',
+  prod_bt_adapter: 'https://images.unsplash.com/photo-1543512214-318c7553f230?auto=format&fit=crop&w=600&q=80',
+  prod_travel_backpack: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80',
+  prod_mech_keyboard: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
+  prod_coiled_cable: 'https://images.unsplash.com/photo-1605792657660-596af9009e82?auto=format&fit=crop&w=600&q=80',
+  prod_desk_mat: 'https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&w=600&q=80',
+  prod_laptop_stand: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=600&q=80',
+  prod_usbc_hub: 'https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=600&q=80',
+  prod_gan_charger: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=600&q=80',
+  prod_earbuds_anc: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80'
+};
+
+function getProductImageUrl(productId) {
+  return PRODUCT_IMAGES[productId] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80';
+}
+
+function getNaturalRecNote(rec) {
+  if (!rec) return 'Popular with customers this week';
+  if (rec.naturalNote) return rec.naturalNote;
+  if (rec.reasonBadge) {
+    const b = rec.reasonBadge.toLowerCase();
+    if (b.includes('search') || b.includes('recent')) {
+      return 'Picked for you based on your recent searches';
+    }
+    if (b.includes('companion') || b.includes('pair')) {
+      return 'Pairs seamlessly with your current setup';
+    }
+    if (b.includes('trending') || b.includes('popular') || b.includes('best')) {
+      return 'Popular with customers who bought this';
+    }
+    if (b.includes('margin') || b.includes('deal') || b.includes('value')) {
+      return 'Exceptional value in high-performance audio';
+    }
+    return rec.reasonBadge;
+  }
+  return 'Curated recommendation for your setup';
+}
+
+function getTimeOfDayGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 // Speech-to-Text (STT) and Text-to-Speech (TTS) state
 let isListening = false;
 let isSpeaking = false;
@@ -355,11 +404,13 @@ function updateCustomerUI() {
   const customerBadge = document.getElementById('customer-avatar-badge');
   const statusBadge = document.getElementById('customer-status-badge');
   const historyIndicator = document.getElementById('customer-history-indicator');
+  const storeCustomerName = document.getElementById('store-customer-name');
 
   if (currentCustomer) {
     const firstName = currentCustomer.name.split(' ')[0];
     const initials = currentCustomer.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+    if (storeCustomerName) storeCustomerName.textContent = firstName;
     if (navCustomerName) navCustomerName.textContent = currentCustomer.name;
     if (navCustomerAvatar) navCustomerAvatar.textContent = initials || '👤';
     if (customerBadge) customerBadge.textContent = initials || '👤';
@@ -371,19 +422,21 @@ function updateCustomerUI() {
     }
     if (historyIndicator) {
       historyIndicator.textContent = isReturning 
-        ? `Personalized Signals Active (${(currentCustomer.searchHistory || []).length} searches, ${(currentCustomer.purchaseHistory || []).length} orders)`
-        : 'Transparent Trending Feed (No Prior History)';
+        ? 'Curated for your audio & travel preferences'
+        : 'Trending selections curated for you';
     }
 
     refreshCustomerOrdersCount();
   } else {
+    if (storeCustomerName) storeCustomerName.textContent = 'Guest';
     if (navCustomerName) navCustomerName.textContent = 'Sign In / Sign Up';
     if (navCustomerAvatar) navCustomerAvatar.textContent = '👤';
     if (customerBadge) customerBadge.textContent = '👤';
     if (statusBadge) statusBadge.textContent = 'Guest Mode';
-    if (historyIndicator) historyIndicator.textContent = 'Transparent Trending Feed';
+    if (historyIndicator) historyIndicator.textContent = 'Trending selections curated for you';
   }
 
+  updateCartBadge();
   updateCustomerGreeting();
 }
 
@@ -391,30 +444,31 @@ function updateCustomerGreeting() {
   const greetingEl = document.getElementById('shopping-customer-greeting');
   const chatStream = document.getElementById('chat-stream');
 
-  const name = currentCustomer ? currentCustomer.name.split(' ')[0] : 'there';
-  const greetingText = `Hi ${name}, what are you looking for today?`;
+  const firstName = currentCustomer ? currentCustomer.name.split(' ')[0] : 'there';
+  const timeGreeting = getTimeOfDayGreeting();
+  const greetingTitle = `${timeGreeting}, ${firstName}`;
 
   if (greetingEl) {
-    greetingEl.textContent = greetingText;
+    greetingEl.textContent = greetingTitle;
   }
 
-  // Set default initial assistant welcome message
+  // Set natural assistant welcome message without diagnostic labels
   const isReturning = currentCustomer && (currentCustomer.isReturning || currentCustomer.purchaseHistory?.length > 0);
   let welcomeDetails = '';
   if (isReturning) {
-    welcomeDetails = `Welcome back! I can help you discover products matching your audio & travel setup, compare compatible accessories, and negotiate bundle pricing within store policy.`;
+    welcomeDetails = `Welcome back, ${firstName}. I'm here to help you discover products, recommend matching companion accessories, and unlock bundle savings for your setup.`;
   } else {
-    welcomeDetails = `I can help you explore our agent-readable catalog, explain why each item fits your needs, recommend compatible companion accessories, and negotiate special bundle pricing within our store policies.`;
+    welcomeDetails = `Welcome, ${firstName}. I can help you find high-performance audio, travel essentials, and desk gear tailored to your exact budget.`;
   }
 
-  latestAIResponseText = `${greetingText} ${welcomeDetails}`;
+  latestAIResponseText = `${greetingTitle}. ${welcomeDetails}`;
 
   if (chatStream && chatStream.children.length <= 1) {
     chatStream.innerHTML = `
       <div class="chat-bubble bubble-assistant">
-        <div class="bubble-sender">AI Shopping Salesperson</div>
+        <div class="bubble-sender">Shopping Assistant</div>
         <div class="bubble-text">
-          <strong>${greetingText}</strong><br>${welcomeDetails}
+          <strong>${welcomeDetails}</strong>
         </div>
       </div>
     `;
@@ -694,7 +748,7 @@ function logoutAi2aiUser() {
 }
 
 // =============================================================
-// 1.2 TOP "RECOMMENDED FOR YOU" (6-8 PRODUCTS) ENGINE
+// 1.2 TOP "RECOMMENDED FOR YOU" HORIZONTAL RAIL ENGINE
 // =============================================================
 function setupTopRecommendations() {
   const filterBtns = document.querySelectorAll('.btn-rec-filter');
@@ -705,6 +759,18 @@ function setupTopRecommendations() {
       currentRecFilter = btn.dataset.filter;
       renderTopRecommendations();
     });
+  });
+
+  const prevBtn = document.getElementById('btn-rec-prev');
+  const nextBtn = document.getElementById('btn-rec-next');
+  const rail = document.getElementById('top-recommendations-grid');
+
+  prevBtn?.addEventListener('click', () => {
+    if (rail) rail.scrollBy({ left: -340, behavior: 'smooth' });
+  });
+
+  nextBtn?.addEventListener('click', () => {
+    if (rail) rail.scrollBy({ left: 340, behavior: 'smooth' });
   });
 }
 
@@ -719,14 +785,14 @@ async function loadTopRecommendations() {
     const subtitle = document.getElementById('top-rec-subtitle');
 
     if (badgeRecType) {
-      badgeRecType.textContent = data.isPersonalized ? '🎯 Personalized Signals' : '🔥 Multi-Source Trending';
+      badgeRecType.textContent = data.isPersonalized ? 'Personalized for you' : 'Popular this week';
     }
 
     if (subtitle) {
       if (data.isPersonalized && currentCustomer) {
-        subtitle.textContent = `Personalized for ${currentCustomer.name} based on previous searches, viewed products, and companion compatibility across our catalog.`;
+        subtitle.textContent = `Tailored selections based on your shopping preferences and gear compatibility.`;
       } else {
-        subtitle.textContent = `Top-rated and trending selections curated across configured merchant direct and verified partner networks.`;
+        subtitle.textContent = `Curated electronics and accessories popular with verified shoppers.`;
       }
     }
 
@@ -750,49 +816,40 @@ function renderTopRecommendations() {
   }
 
   if (filtered.length === 0) {
-    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 24px;">No products found in this category.</div>`;
+    grid.innerHTML = `<div style="padding: 40px; color: var(--text-muted); font-size: 13.5px; text-align: center; width: 100%;">No products found in this category.</div>`;
     return;
   }
 
   grid.innerHTML = filtered.map(rec => {
     const p = rec.product;
-    const isPersonalized = rec.isPersonalized;
-    const reasonClass = isPersonalized ? 'top-rec-reason-badge' : 'top-rec-reason-badge trending-badge';
+    const imgUrl = getProductImageUrl(p.id);
+    const naturalNote = getNaturalRecNote(rec);
+    const merchant = p.source || 'OmniDirect';
 
     return `
-      <div class="top-rec-card">
-        <div class="top-rec-card-top">
-          <div class="top-rec-source-row">
-            <span class="top-rec-source-pill">🌐 ${p.source || 'OmniGrowth Direct'}</span>
-            <span class="top-rec-rating">★ ${p.rating}</span>
-          </div>
-          
-          <h4 class="top-rec-title">${p.name}</h4>
-          
-          <div class="${reasonClass}">
-            <span>${isPersonalized ? '🎯' : '🔥'}</span>
-            <span>${rec.reasonBadge}</span>
+      <article class="store-product-card" data-product-id="${p.id}">
+        <div class="prod-hero-wrap">
+          <img src="${imgUrl}" alt="${p.name}" class="prod-hero-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
+          <span class="prod-hero-rating">★ ${p.rating || '4.8'}</span>
+        </div>
+        
+        <div class="prod-body">
+          <div class="prod-source">${merchant} &bull; ${p.category || 'Gear'}</div>
+
+          <h3 class="prod-title" title="${p.name}">${p.name}</h3>
+
+          <p class="prod-recommendation-note">${naturalNote}</p>
+
+          <div class="prod-footer-row">
+            <span class="prod-price">₹${p.price.toLocaleString('en-IN')}</span>
+            <button class="prod-why-link" onclick="openWhyThisModal('${p.id}', '${encodeURIComponent(JSON.stringify(rec.whyThisReasons || []))}')">Why this?</button>
           </div>
 
-          <div class="top-rec-features">
-            ${(p.features || []).slice(0, 2).map(f => `<span class="top-rec-feature-tag">${f}</span>`).join('')}
-          </div>
+          <button class="prod-add-btn" onclick="addItemToCart('${p.id}', 1, false, false)" title="Add ${p.name} to cart">
+            + Add to Cart
+          </button>
         </div>
-
-        <div class="top-rec-footer">
-          <div class="top-rec-price-box">
-            <span class="top-rec-price-label">Price</span>
-            <span class="top-rec-price-val">₹${p.price.toLocaleString('en-IN')}</span>
-          </div>
-          
-          <div class="top-rec-actions-wrap">
-            <button class="btn-rec-why-link" onclick="openWhyThisModal('${p.id}', '${encodeURIComponent(JSON.stringify(rec.whyThisReasons || []))}')">Why this?</button>
-            <button class="btn-rec-add-cart" onclick="addItemToCart('${p.id}', 1, false, false)">
-              + Add
-            </button>
-          </div>
-        </div>
-      </div>
+      </article>
     `;
   }).join('');
 }
@@ -1040,7 +1097,7 @@ function setupSessionMemory() {
     try {
       await fetch(`/api/shopping/session/context?sessionId=${currentSessionId}`, { method: 'DELETE' });
       refreshSessionMemory();
-      appendChatBubble('AI Salesperson', 'Shopping context reset. Feel free to ask about any category of electronics!', 'assistant');
+      appendChatBubble('Shopping Assistant', 'Shopping context reset. Feel free to ask about any category of electronics!', 'assistant');
     } catch (e) {
       console.error('Clear memory error:', e);
     }
@@ -1080,12 +1137,12 @@ async function handleUserMessageSubmission(messageText) {
     await window.addItemToCart(latestRecommendedCrossSell.id, 1, false, true);
     const reply = `I have added the **${latestRecommendedCrossSell.name}** (₹${latestRecommendedCrossSell.price.toLocaleString('en-IN')}) to your cart! You can review your cart or proceed to checkout anytime.`;
     latestAIResponseText = reply;
-    appendChatBubble('AI Salesperson', reply, 'assistant');
+    appendChatBubble('Shopping Assistant', reply, 'assistant');
     return;
   }
 
   // Contextual loading indicator
-  const loadingId = appendChatBubble('AI Salesperson', 'Searching catalog & evaluating recommendations...', 'assistant');
+  const loadingId = appendChatBubble('Shopping Assistant', 'Searching catalog & evaluating recommendations...', 'assistant');
 
   try {
     const res = await fetch('/api/shopping/chat', {
@@ -1114,13 +1171,8 @@ async function handleUserMessageSubmission(messageText) {
 
     currentSmartCartOpportunity = data.smartCartOpportunity;
 
-    // Render conversational reply with confidence tag
-    let confidenceTag = '';
-    if (data.intent && data.intent.confidence) {
-      confidenceTag = `<span class="badge-ai-ready font-mono" style="font-size: 10px; margin-left: 6px;">✓ Intent Understood (${data.intent.confidence}% Conf)</span>`;
-    }
-
-    appendChatBubble('AI Salesperson', `${data.reply} ${confidenceTag}`, 'assistant');
+    // Render natural conversational reply without diagnostic tags
+    appendChatBubble('Shopping Assistant', data.reply, 'assistant');
 
     // Refresh active session memory display
     refreshSessionMemory();
@@ -1132,7 +1184,7 @@ async function handleUserMessageSubmission(messageText) {
     renderShowcaseFeed(data);
   } catch (err) {
     removeChatBubble(loadingId);
-    appendChatBubble('AI Salesperson', 'Sorry, I encountered an issue connecting to the merchant feed. Please try again.', 'assistant');
+    appendChatBubble('Shopping Assistant', 'Sorry, I encountered an issue connecting to the merchant feed. Please try again.', 'assistant');
   }
 }
 
@@ -1521,10 +1573,10 @@ function renderShowcaseFeed(chatResponse) {
 
   if (chatResponse.agentStatus === 'PAUSED') {
     container.innerHTML = `
-      <div class="companion-widget" style="background-color: var(--pastel-crimson-bg); border-color: var(--pastel-crimson-border);">
-        <div class="widget-eyebrow text-danger">AGENT KILL SWITCH ENGAGED</div>
-        <div class="widget-title" style="color: var(--pastel-crimson-text);">Purchasing Paused by Merchant</div>
-        <div class="widget-desc" style="color: var(--pastel-crimson-text);">The merchant has temporarily paused autonomous purchasing. Catalog browsing is available, but transactions are blocked.</div>
+      <div class="companion-ecommerce-card" style="border-left: 3px solid #dc2626; background: #fff5f5;">
+        <span class="companion-context-label" style="color: #dc2626;">NOTICE</span>
+        <h4 class="companion-prod-name">Purchasing Temporarily Paused</h4>
+        <p class="companion-prod-reason">The store has paused real-time checkout while catalog updates take place.</p>
       </div>
     `;
     return;
@@ -1532,91 +1584,109 @@ function renderShowcaseFeed(chatResponse) {
 
   let html = '';
 
-  // 1. Render Product Recommendations with "Why this?"
+  // 1. Render Discovered Products
   if (chatResponse.recommendations && chatResponse.recommendations.length > 0) {
+    html += `<div class="discovered-products-container">`;
     html += chatResponse.recommendations.map(rec => {
       const p = rec.product;
+      const imgUrl = getProductImageUrl(p.id);
+      const naturalNote = rec.explanation || 'Recommended for your preferences';
+      const merchant = p.source || p.brand || 'OmniDirect';
+
       return `
-        <div class="rec-product-card">
-          <div class="rec-card-top">
-            <div>
-              <span class="rec-badge-ai">AI Match: ${rec.recommendationScore}/100</span>
-              <h4 class="rec-prod-name">${p.name}</h4>
-              <span class="text-muted font-mono" style="font-size: 11.5px;">${p.brand} &bull; ${p.category} &bull; ${p.rating}&#9733;</span>
+        <div class="discovered-product-card" data-product-id="${p.id}">
+          <img src="${imgUrl}" alt="${p.name}" class="discovered-thumb" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
+
+          <div class="discovered-info">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="discovered-brand">${merchant} &bull; ★ ${p.rating || '4.8'}</span>
+              <button class="prod-why-link" onclick="openWhyThisModal('${p.id}', '${encodeURIComponent(JSON.stringify(rec.whyThisReasons || []))}')">Why this? &rarr;</button>
             </div>
-            <div class="rec-prod-price">₹${p.price.toLocaleString('en-IN')}</div>
-          </div>
-
-          <div class="rec-explanation-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <strong>Why Recommended:</strong>
-              <button class="btn-link-action" onclick="openWhyThisModal('${p.id}', '${encodeURIComponent(JSON.stringify(rec.whyThisReasons || []))}')">Why this? &rarr;</button>
+            <h4 class="discovered-title">${p.name}</h4>
+            <p class="discovered-reason">${naturalNote}</p>
+            
+            <div class="discovered-bottom-row">
+              <span class="discovered-price">₹${p.price.toLocaleString('en-IN')}</span>
+              <button class="btn-discovered-add" onclick="addItemToCart('${p.id}', 1, false, false)">
+                + Add to Cart
+              </button>
             </div>
-            <span>${rec.explanation}</span>
-          </div>
-
-          <div class="rec-features-row">
-            ${(p.features || []).map(f => `<span class="feature-tag">${f}</span>`).join('')}
-          </div>
-
-          <div class="rec-card-actions">
-            <button class="btn-add-cart-primary" onclick="addItemToCart('${p.id}', 1, false, false)">
-              Add to Cart (₹${p.price.toLocaleString('en-IN')})
-            </button>
           </div>
         </div>
       `;
     }).join('');
+    html += `</div>`;
   }
 
-  // 2. Render Companion Cross-Sell / Upsell
+  // 2. Render Companion Cross-Sell / Upsell seamlessly into shopping journey
   if (chatResponse.upsellAndCrossSell) {
     const { upsell, crossSells } = chatResponse.upsellAndCrossSell;
 
     if (crossSells && crossSells.length > 0) {
       const cs = crossSells[0];
+      const csImg = getProductImageUrl(cs.product.id);
       html += `
-        <div class="companion-widget">
-          <div class="widget-eyebrow">COMPATIBLE COMPANION ACCESSORY</div>
-          <div class="widget-title">${cs.product.name} (+₹${cs.product.price.toLocaleString('en-IN')})</div>
-          <div class="widget-desc">${cs.explanation}</div>
-          <button class="btn-widget-action" onclick="addItemToCart('${cs.product.id}', 1, false, true)">
-            + Add Companion Accessory (₹${cs.product.price.toLocaleString('en-IN')})
-          </button>
+        <div class="companion-ecommerce-card">
+          <span class="companion-context-label">Complete your travel setup</span>
+          <div class="companion-content-wrap">
+            <img src="${csImg}" alt="${cs.product.name}" class="companion-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
+            <div class="companion-body">
+              <h4 class="companion-prod-name">${cs.product.name}</h4>
+              <p class="companion-prod-reason">${cs.explanation || 'Pairs well with your headphones'}</p>
+              <div class="companion-price-action">
+                <span class="companion-prod-price">₹${cs.product.price.toLocaleString('en-IN')}</span>
+                <button class="companion-btn-add" onclick="addItemToCart('${cs.product.id}', 1, false, true)">
+                  + Add Companion
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       `;
     }
 
     if (upsell) {
+      const upImg = getProductImageUrl(upsell.product.id);
       html += `
-        <div class="companion-widget" style="background: linear-gradient(135deg, var(--lavender-light), #ffffff); border-color: var(--lavender-primary);">
-          <div class="widget-eyebrow" style="color: var(--lavender-dark);">INTELLIGENT UPGRADE OPTION</div>
-          <div class="widget-title" style="color: var(--purple-deep);">${upsell.headline}</div>
-          <div class="widget-desc">${upsell.explanation}</div>
-          <button class="btn-widget-action" style="background-color: var(--lavender-dark);" onclick="addItemToCart('${upsell.product.id}', 1, true, false)">
-            Choose Flagship Edition (₹${upsell.product.price.toLocaleString('en-IN')})
-          </button>
+        <div class="upgrade-ecommerce-card">
+          <span class="upgrade-context-label">Flagship Upgrade</span>
+          <div class="upgrade-content-wrap">
+            <img src="${upImg}" alt="${upsell.product.name}" class="companion-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
+            <div class="upgrade-body">
+              <h4 class="upgrade-prod-name">${upsell.product.name}</h4>
+              <p class="upgrade-prod-reason">${upsell.explanation || 'Enhanced active noise cancelling and premium materials.'}</p>
+              <div class="companion-price-action">
+                <span class="upgrade-prod-price">₹${upsell.product.price.toLocaleString('en-IN')}</span>
+                <button class="companion-btn-add" onclick="addItemToCart('${upsell.product.id}', 1, true, false)">
+                  Choose Flagship
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       `;
     }
   }
 
-  // 3. Render Negotiation Result
-  if (chatResponse.negotiation) {
-    const neg = chatResponse.negotiation;
-    if (neg.bundleAlternative) {
-      const b = neg.bundleAlternative;
-      html += `
-        <div class="negotiation-widget">
-          <div class="widget-eyebrow" style="color: var(--lavender-dark);">MERCHANT-BOUNDED BUNDLE COUNTER-OFFER</div>
-          <div class="neg-title">${b.bundleName}</div>
-          <div class="neg-desc">${b.explanation}</div>
-          <button class="btn-widget-action" style="background-color: var(--lavender-dark);" onclick="applyBundleDiscount('${b.bundleItems[0].id}', '${b.bundleItems[1].id}', ${b.totalSavings})">
-            Accept Special Bundle (₹${b.specialBundlePrice.toLocaleString('en-IN')})
+  // 3. Render Negotiation Result (Clean commerce bundle offer)
+  if (chatResponse.negotiation && chatResponse.negotiation.bundleAlternative) {
+    const b = chatResponse.negotiation.bundleAlternative;
+    html += `
+      <div class="bundle-ecommerce-card">
+        <span class="bundle-context-label">Special Bundle Deal</span>
+        <h4 class="bundle-title">${b.bundleName}</h4>
+        <p class="bundle-desc">${b.explanation || 'Special bundle pricing when pairing complementary accessories.'}</p>
+        <div class="bundle-action-row">
+          <div class="bundle-pricing">
+            <span class="bundle-price">₹${b.specialBundlePrice.toLocaleString('en-IN')}</span>
+            <span class="bundle-savings">Save ₹${b.totalSavings.toLocaleString('en-IN')}</span>
+          </div>
+          <button class="bundle-btn-apply" onclick="applyBundleDiscount('${b.bundleItems[0].id}', '${b.bundleItems[1].id}', ${b.totalSavings})">
+            Accept Bundle Offer
           </button>
         </div>
-      `;
-    }
+      </div>
+    `;
   }
 
   container.innerHTML = html;
@@ -1670,7 +1740,7 @@ window.addItemToCart = async function(productId, quantity = 1, isUpsell = false,
       openCartDrawer();
       const addedMsg = `Added **${productId.replace(/prod_/g, '').replace(/_/g, ' ')}** to your cart. Total is now **₹${cartData.total.toLocaleString('en-IN')}**.`;
       latestAIResponseText = addedMsg;
-      appendChatBubble('AI Salesperson', addedMsg, 'assistant');
+      appendChatBubble('Shopping Assistant', addedMsg, 'assistant');
     }
   } catch (err) {
     console.error('Cart add error:', err);
@@ -1690,18 +1760,20 @@ window.applyBundleDiscount = async function(mainId, crossId, savings) {
   await refreshCart();
   const bundleMsg = `Applied special **₹${savings.toLocaleString('en-IN')} bundle discount** to your cart! Your bundle total is **₹${cartData.total.toLocaleString('en-IN')}**.`;
   latestAIResponseText = bundleMsg;
-  appendChatBubble('AI Salesperson', bundleMsg, 'assistant');
+  appendChatBubble('Shopping Assistant', bundleMsg, 'assistant');
 };
 
 // =============================================================
-// 6. CART DRAWER & SMART CART OPTIMIZER
+// 6. CART DRAWER & E-COMMERCE CART
 // =============================================================
 function setupCartDrawer() {
   const openBtn = document.getElementById('btn-open-cart');
+  const headerCartBtn = document.getElementById('btn-header-cart');
   const closeBtn = document.getElementById('btn-close-cart');
   const overlay = document.getElementById('cart-drawer-overlay');
 
   openBtn?.addEventListener('click', openCartDrawer);
+  headerCartBtn?.addEventListener('click', openCartDrawer);
   closeBtn?.addEventListener('click', closeCartDrawer);
   overlay?.addEventListener('click', (e) => {
     if (e.target === overlay) closeCartDrawer();
@@ -1730,12 +1802,27 @@ async function refreshCart() {
 }
 
 function updateCartBadge() {
+  const totalItems = (cartData.items || []).reduce((sum, i) => sum + i.quantity, 0);
   const badge = document.getElementById('nav-cart-count');
-  if (badge) {
-    const totalItems = (cartData.items || []).reduce((sum, i) => sum + i.quantity, 0);
-    badge.textContent = totalItems;
-  }
+  if (badge) badge.textContent = totalItems;
+  const headerBadge = document.getElementById('header-cart-count');
+  if (headerBadge) headerBadge.textContent = totalItems;
 }
+
+window.removeItemFromCart = async function(productId) {
+  try {
+    const res = await fetch('/api/shopping/cart/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: currentSessionId, productId })
+    });
+    cartData = await res.json();
+    updateCartBadge();
+    renderCartDrawer();
+  } catch (err) {
+    console.error('Cart remove error:', err);
+  }
+};
 
 function renderCartDrawer() {
   const container = document.getElementById('cart-items-list');
@@ -1747,19 +1834,33 @@ function renderCartDrawer() {
 
   if (!container) return;
 
-  // Render Smart Cart Proactive Alert
+  // Subtle contextual delivery or companion notice
   if (smartCartBanner) {
-    if (cartData.items && cartData.items.length > 0 && currentSmartCartOpportunity) {
-      smartCartBanner.style.display = 'flex';
-      smartCartBanner.innerHTML = `
-        <span class="sc-title">✨ Smart Cart Optimizer</span>
-        <p class="sc-desc">${currentSmartCartOpportunity.message}</p>
-        ${currentSmartCartOpportunity.suggestedProduct ? `
-          <button class="btn-sc-action" onclick="addItemToCart('${currentSmartCartOpportunity.suggestedProduct.id}', 1, false, true)">
-            ${currentSmartCartOpportunity.actionLabel}
-          </button>
-        ` : ''}
-      `;
+    if (cartData.items && cartData.items.length > 0) {
+      smartCartBanner.style.display = 'block';
+      if (cartData.subtotal < 5000) {
+        const diff = 5000 - cartData.subtotal;
+        smartCartBanner.innerHTML = `
+          <div style="font-size: 12.5px; color: #475569; padding: 4px 0;">
+            🚚 Add <strong>₹${diff.toLocaleString('en-IN')}</strong> more to unlock complimentary expedited shipping.
+          </div>
+        `;
+      } else if (currentSmartCartOpportunity && currentSmartCartOpportunity.suggestedProduct) {
+        smartCartBanner.innerHTML = `
+          <div style="font-size: 12.5px; color: #475569; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <span>Add the matching travel case for ₹799?</span>
+            <button onclick="addItemToCart('prod_travel_case', 1, false, true)" style="background: #ede9fe; color: #6366f1; border: none; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 11.5px; cursor: pointer;">
+              + Add
+            </button>
+          </div>
+        `;
+      } else {
+        smartCartBanner.innerHTML = `
+          <div style="font-size: 12.5px; color: #16a34a; padding: 4px 0;">
+            ✓ Free premium delivery unlocked on this order!
+          </div>
+        `;
+      }
     } else {
       smartCartBanner.style.display = 'none';
     }
@@ -1767,9 +1868,9 @@ function renderCartDrawer() {
 
   if (!cartData.items || cartData.items.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
-        <p class="font-bold" style="font-size: 15px; margin-bottom: 6px;">Your cart is empty</p>
-        <p style="font-size: 13px;">Ask or speak to the AI assistant to discover products.</p>
+      <div style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+        <p class="font-bold" style="font-size: 15px; margin-bottom: 6px; color: #1e293b;">Your shopping cart is empty</p>
+        <p style="font-size: 13px; color: #64748b;">Explore our curated recommendations or search above to get started.</p>
       </div>
     `;
     if (subtotalEl) subtotalEl.textContent = '₹0';
@@ -1778,15 +1879,25 @@ function renderCartDrawer() {
     return;
   }
 
-  container.innerHTML = cartData.items.map(item => `
-    <div class="cart-item-row">
-      <div>
-        <span class="font-bold">${item.name}</span>
-        <div class="text-muted" style="font-size: 11.5px;">Qty: ${item.quantity} &bull; ₹${item.price.toLocaleString('en-IN')} each ${item.isCrossSell ? '<span class="badge-ai-feed">+Companion</span>' : ''}</div>
+  container.innerHTML = cartData.items.map(item => {
+    const imgUrl = getProductImageUrl(item.id);
+    return `
+      <div class="cart-item-row" style="display: flex; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f5f9;">
+        <img src="${imgUrl}" alt="${item.name}" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px; background: #f8fafc; flex-shrink: 0;" onerror="this.src='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80'">
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 600; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 3px;">
+            Qty: ${item.quantity} &bull; ₹${item.price.toLocaleString('en-IN')}
+            ${item.isCrossSell ? '<span style="font-size: 10.5px; color: #6366f1; background: #ede9fe; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">Companion</span>' : ''}
+          </div>
+          <button onclick="removeItemFromCart('${item.id}')" style="background: none; border: none; padding: 0; margin-top: 5px; color: #ef4444; font-size: 11.5px; cursor: pointer; text-decoration: underline;">
+            Remove
+          </button>
+        </div>
+        <div style="font-weight: 700; font-size: 14px; color: #0f172a;">₹${(item.price * item.quantity).toLocaleString('en-IN')}</div>
       </div>
-      <div class="font-bold font-mono">₹${(item.price * item.quantity).toLocaleString('en-IN')}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   if (subtotalEl) subtotalEl.textContent = `₹${cartData.subtotal.toLocaleString('en-IN')}`;
   if (totalEl) totalEl.textContent = `₹${cartData.total.toLocaleString('en-IN')}`;
@@ -1854,7 +1965,7 @@ function setupCheckoutModals() {
       // Handle BLOCKED / PAUSED
       if (!currentPolicyEvaluation.authorized) {
         alert(`POLICY ENGINE BLOCKED:\n\n${currentPolicyEvaluation.reason}\n\nPayment was NOT initiated and no order was created.`);
-        appendChatBubble('AI Salesperson', `[POLICY BLOCKED] I couldn't initiate this payment: ${currentPolicyEvaluation.reason}`, 'assistant');
+        appendChatBubble('Shopping Assistant', `[POLICY BLOCKED] I couldn't initiate this payment: ${currentPolicyEvaluation.reason}`, 'assistant');
         return;
       }
 
@@ -1909,7 +2020,7 @@ function setupCheckoutModals() {
       if (payData.success) {
         const confText = `Payment Successful! Order **#${payData.order.id}** confirmed for **₹${payData.order.total.toLocaleString('en-IN')}**. Stock updated and merchant revenue attributed!`;
         latestAIResponseText = confText;
-        appendChatBubble('AI Salesperson', confText, 'assistant');
+        appendChatBubble('Shopping Assistant', confText, 'assistant');
 
         alert(`Payment Captured Successfully!\n\nOrder Confirmed: #${payData.order.id}\nAmount: ₹${payData.order.total.toLocaleString('en-IN')}`);
         await refreshCart();
@@ -1919,7 +2030,7 @@ function setupCheckoutModals() {
       } else {
         const failText = `Your payment wasn't completed (${payData.reason}), so your order has not been confirmed. Your cart is still safely preserved.`;
         latestAIResponseText = failText;
-        appendChatBubble('AI Salesperson', failText, 'assistant');
+        appendChatBubble('Shopping Assistant', failText, 'assistant');
 
         alert(`Payment Failed:\n\n${payData.reason}\n\nYour cart has been preserved.`);
       }

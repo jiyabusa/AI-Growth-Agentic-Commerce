@@ -1,0 +1,20 @@
+{
+  "name": "ai-growth-agentic-commerce",
+  "version": "1.0.0",
+  "description": "Explainable, Bounded, and Gated Agentic Commerce Platform with AP2/UAP Mandates, FRM Risk Engine, and Razorpay Integration",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "node server/server.js",
+    "start": "node server/server.js",
+    "serve": "node server/server.js",
+    "test": "node server/test/test-suite.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "razorpay": "^2.9.5",
+    "uuid": "^11.1.0"
+  }
+}

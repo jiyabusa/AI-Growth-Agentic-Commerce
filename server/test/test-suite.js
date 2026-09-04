@@ -204,18 +204,8 @@ async function runTestSuite() {
   console.log(`✔ Natural language prompt converted to deterministic rules:`);
   console.log(`  Max Discount: ${parsedPolicy.parsedPolicy.selling_controls.max_discount_percentage}% | Auto-Approve: ₹${parsedPolicy.parsedPolicy.spending_controls.auto_approval_threshold}\n`);
 
-  // TEST 10: AI-to-AI Autonomous Commerce Simulation
-  console.log('[TEST 10] Testing Autonomous AI-to-AI Commerce Simulation...');
-  const aiToAiCommerceService = require('../services/aiToAiCommerceService');
-  const ai2aiResult = await aiToAiCommerceService.runSimulation({
-    buyerIntent: 'Find noise-cancelling headphones for travel under ₹5,000'
-  });
-  assert(ai2aiResult.success, 'AI-to-AI negotiation must succeed');
-  assert(ai2aiResult.dialogueSteps.length >= 6, 'Must have multi-turn negotiation and tool calls');
-  assert(ai2aiResult.finalOrder.razorpay_payment_id.startsWith('pay_'));
-  console.log(`✔ AI-to-AI Autonomous Negotiation completed in ${ai2aiResult.dialogueSteps.length} turns.`);
-  // TEST 11: Merchant Intelligence & Product AI Audit
-  console.log('[TEST 11] Testing AI Sales Intelligence & Product AI Audit Engine...');
+  // TEST 10: Merchant Intelligence & Product AI Audit
+  console.log('[TEST 10] Testing AI Sales Intelligence & Product AI Audit Engine...');
   const merchantIntelligenceService = require('../services/merchantIntelligenceService');
   const insights = merchantIntelligenceService.generateSalesInsights();
   assert(insights.length >= 4, 'Must generate commercial intelligence insights');

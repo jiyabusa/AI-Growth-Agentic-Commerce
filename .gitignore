@@ -4,3 +4,5 @@ node_modules/
 .env
 server/data/*.db
 *.db
+*.db-shm
+*.db-wal

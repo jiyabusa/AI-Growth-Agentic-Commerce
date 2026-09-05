@@ -196,6 +196,30 @@ const SEED_USERS = [
     password: 'password123',
     notification_pref: 'sms',
     role: 'customer'
+  },
+  {
+    id: 'merch_revify',
+    name: 'Vikram Desai',
+    email: 'admin@revify.com',
+    password: 'password123',
+    notification_pref: 'email',
+    role: 'merchant'
+  },
+  {
+    id: 'merch_acousticpro',
+    name: 'Meera Joshi',
+    email: 'meera@acousticpro.com',
+    password: 'password123',
+    notification_pref: 'email',
+    role: 'merchant'
+  },
+  {
+    id: 'merch_hypertravel',
+    name: 'Karan Kapoor',
+    email: 'karan@hypertravel.com',
+    password: 'password123',
+    notification_pref: 'email',
+    role: 'merchant'
   }
 ];
 

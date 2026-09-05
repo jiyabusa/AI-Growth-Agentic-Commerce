@@ -9,6 +9,19 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
+// In Vercel serverless environment, copy template database to /tmp if it doesn't exist yet
+if (process.env.VERCEL && !fs.existsSync(config.DB_PATH)) {
+  const seedDbPath = path.join(__dirname, 'data/revify.db');
+  if (fs.existsSync(seedDbPath)) {
+    try {
+      fs.copyFileSync(seedDbPath, config.DB_PATH);
+      console.log('[DB] Copied initial database to Vercel /tmp storage.');
+    } catch (e) {
+      console.warn('[DB] Could not copy template DB to /tmp, will initialize fresh:', e.message);
+    }
+  }
+}
+
 const db = new sqlite3.Database(config.DB_PATH, (err) => {
   if (err) {
     console.error('[DB] Failed to connect to SQLite database:', err.message);

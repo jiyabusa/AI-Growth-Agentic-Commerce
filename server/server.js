@@ -85,33 +85,37 @@ function setAuthCookie(res, user) {
 /**
  * Customer Sign Up / Registration
  */
-const handleRegister = (req, res) => {
+const handleRegister = async (req, res) => {
   const { name, email, password } = req.body;
-  const result = dbService.registerCustomer({ name, email, password });
+  const result = await dbService.registerCustomer({ name, email, password });
   if (!result.success) {
     return res.status(400).json(result);
   }
   const token = setAuthCookie(res, result.customer);
   res.json({
     ...result,
+    user: result.customer,
     token
   });
 };
 app.post('/api/auth/register', handleRegister);
+app.post('/api/auth/signup', handleRegister);
 app.post('/api/customer/register', handleRegister);
+app.post('/api/customer/signup', handleRegister);
 
 /**
  * Customer Login / Sign In (with Rate Limiting & httpOnly JWT Cookie)
  */
-const handleLogin = (req, res) => {
+const handleLogin = async (req, res) => {
   const { email, password } = req.body;
-  const result = dbService.loginCustomer({ email, password });
+  const result = await dbService.loginCustomer({ email, password });
   if (!result.success) {
     return res.status(401).json(result);
   }
   const token = setAuthCookie(res, result.customer);
   res.json({
     ...result,
+    user: result.customer,
     token
   });
 };
@@ -327,31 +331,92 @@ app.delete('/api/cart/clear', optionalAuthMiddleware, (req, res) => {
 });
 
 // =================================================================
-// 0b. MERCHANT AUTHENTICATION APIS
+// 0b. MERCHANT AUTHENTICATION APIS & SESSION MANAGEMENT
 // =================================================================
+
+function setMerchantAuthCookie(res, merchant) {
+  const payload = {
+    id: merchant.id,
+    email: merchant.email,
+    businessName: merchant.businessName,
+    role: 'merchant'
+  };
+  const token = jwt.sign(payload, config.JWT_SECRET || 'revify-jwt-super-secret-key-2026', {
+    expiresIn: '7d'
+  });
+  res.cookie('revify_merchant_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+  return token;
+}
 
 /**
  * Merchant Sign Up / Registration
  */
-app.post('/api/merchant/register', (req, res) => {
+const handleMerchantRegister = (req, res) => {
   const { businessName, storeName, ownerName, email, password } = req.body;
   const result = dbService.registerMerchant({ businessName, storeName, ownerName, email, password });
   if (!result.success) {
     return res.status(400).json(result);
   }
-  res.json(result);
-});
+  const token = setMerchantAuthCookie(res, result.merchant);
+  res.json({
+    ...result,
+    token
+  });
+};
+app.post('/api/merchant/register', handleMerchantRegister);
+app.post('/api/merchant/signup', handleMerchantRegister);
 
 /**
  * Merchant Login / Sign In
  */
-app.post('/api/merchant/login', (req, res) => {
+const handleMerchantLogin = (req, res) => {
   const { email, password } = req.body;
   const result = dbService.loginMerchant({ email, password });
   if (!result.success) {
     return res.status(401).json(result);
   }
-  res.json(result);
+  const token = setMerchantAuthCookie(res, result.merchant);
+  res.json({
+    ...result,
+    token
+  });
+};
+app.post('/api/merchant/login', handleMerchantLogin);
+
+/**
+ * Merchant Session Verification (/api/merchant/me)
+ */
+app.get('/api/merchant/me', (req, res) => {
+  const token = req.cookies?.revify_merchant_token || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : null);
+  if (!token) {
+    return res.status(401).json({ authenticated: false, error: 'No active merchant session.' });
+  }
+  try {
+    const decoded = jwt.verify(token, config.JWT_SECRET || 'revify-jwt-super-secret-key-2026');
+    const merchant = dbService.getMerchantById(decoded.id) || {
+      id: decoded.id,
+      name: decoded.businessName,
+      businessName: decoded.businessName,
+      email: decoded.email,
+      role: 'merchant'
+    };
+    return res.json({ authenticated: true, merchant });
+  } catch (err) {
+    return res.status(401).json({ authenticated: false, error: 'Merchant session expired or invalid.' });
+  }
+});
+
+/**
+ * Merchant Log Out
+ */
+app.post('/api/merchant/logout', (req, res) => {
+  res.clearCookie('revify_merchant_token');
+  res.json({ success: true, message: 'Merchant logged out successfully.' });
 });
 
 /**
@@ -911,13 +976,17 @@ app.post('/api/merchant/reset', (req, res) => {
 });
 
 const PORT = config.PORT;
-app.listen(PORT, () => {
-  console.log(`\n======================================================`);
-  console.log(`  AI Growth & Agentic Commerce Platform Running`);
-  console.log(`  Unified URL: http://localhost:${PORT}`);
-  console.log(`  - Landing Switcher: /`);
-  console.log(`  - Merchant Portal: /#merchant`);
-  console.log(`  - AI Shopping: /#shopping`);
-  console.log(`  Mode: Razorpay Test Mode & Deterministic Policy Engine`);
-  console.log(`======================================================\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n======================================================`);
+    console.log(`  AI Growth & Agentic Commerce Platform Running`);
+    console.log(`  Unified URL: http://localhost:${PORT}`);
+    console.log(`  - Landing Switcher: /`);
+    console.log(`  - Merchant Portal: /#merchant`);
+    console.log(`  - AI Shopping: /#shopping`);
+    console.log(`  Mode: Razorpay Test Mode & Deterministic Policy Engine`);
+    console.log(`======================================================\n`);
+  });
+}
+
+module.exports = app;

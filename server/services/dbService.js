@@ -5,9 +5,13 @@
 const bcrypt = require('bcryptjs');
 
 let dbRun = null;
+let dbGet = null;
+let dbAll = null;
 try {
   const db = require('../database');
   dbRun = db.run;
+  dbGet = db.get;
+  dbAll = db.all;
 } catch (e) {
   // Graceful fallback if database connection has not initialized
 }
@@ -15,6 +19,37 @@ try {
 class DatabaseService {
   constructor() {
     this.resetState();
+    this.initDatabaseSync();
+  }
+
+  async initDatabaseSync() {
+    if (!dbAll) return;
+    try {
+      const rows = await dbAll('SELECT * FROM users');
+      if (rows && rows.length > 0) {
+        for (const row of rows) {
+          if (!this.customers.has(row.id)) {
+            this.customers.set(row.id, {
+              id: row.id,
+              name: row.name,
+              email: (row.email || '').toLowerCase().trim(),
+              password_hash: row.password_hash,
+              notification_pref: row.notification_pref || 'email',
+              role: row.role || 'customer',
+              isReturning: false,
+              searchHistory: [],
+              purchaseHistory: [],
+              viewedHistory: [],
+              browsingCategories: [],
+              preferredBudget: null,
+              createdAt: row.created_at || new Date().toISOString()
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // Table might not be ready yet
+    }
   }
 
   resetState() {
@@ -474,6 +509,16 @@ class DatabaseService {
       createdAt: '2026-02-20T11:00:00.000Z'
     });
 
+    this.merchants.set('merch_hypertravel', {
+      id: 'merch_hypertravel',
+      businessName: 'HyperTravel Tech Supply',
+      ownerName: 'Karan Kapoor',
+      email: 'karan@hypertravel.com',
+      password: 'password123',
+      plan: 'Razorpay Test Mode',
+      createdAt: '2026-03-10T10:00:00.000Z'
+    });
+
     // 3. Merchant Policies & Agent Controls
     this.policies = {
       agent_status: 'ACTIVE', // 'ACTIVE' | 'PAUSED'
@@ -831,25 +876,35 @@ class DatabaseService {
   }
 
   // --- Customer Authentication & Profiles ---
-  registerCustomer({ name, email, password, role = 'customer' }) {
+  async registerCustomer({ name, email, password, role = 'customer' }) {
     if (!name || !email || !password) {
-      return { success: false, error: 'Name, email, and password are required.' };
+      return { success: false, code: 'MISSING_FIELDS', error: 'Full name, email, and password are required.' };
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      return { success: false, error: 'Please provide a valid email address.' };
+      return { success: false, code: 'INVALID_EMAIL', error: 'Please provide a valid email address.' };
     }
 
     if (password.length < 6) {
-      return { success: false, error: 'Password must be at least 6 characters.' };
+      return { success: false, code: 'PASSWORD_TOO_SHORT', error: 'Password must be at least 6 characters.' };
     }
 
     const normalizedEmail = email.toLowerCase().trim();
     for (const cust of this.customers.values()) {
-      if (cust.email.toLowerCase() === normalizedEmail) {
-        return { success: false, error: 'An account with this email already exists. Please log in.' };
+      if (cust.email && cust.email.toLowerCase() === normalizedEmail) {
+        return { success: false, code: 'EMAIL_EXISTS', error: 'An account with this email already exists. Please log in.' };
       }
+    }
+
+    // Check SQLite users table
+    if (dbGet) {
+      try {
+        const existing = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [normalizedEmail]);
+        if (existing) {
+          return { success: false, code: 'EMAIL_EXISTS', error: 'An account with this email already exists. Please log in.' };
+        }
+      } catch (e) {}
     }
 
     const password_hash = bcrypt.hashSync(password, 10);
@@ -874,18 +929,21 @@ class DatabaseService {
 
     // Persist to SQLite
     if (dbRun) {
-      dbRun(
-        `INSERT INTO users (id, name, email, password_hash, notification_pref, role, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(email) DO UPDATE SET name = excluded.name, password_hash = excluded.password_hash`,
-        [newCustomer.id, newCustomer.name, newCustomer.email, password_hash, 'email', role, newCustomer.createdAt]
-      ).catch(err => console.error('[DB] SQLite insert user error:', err.message));
-
-      dbRun(
-        `INSERT INTO carts (user_id, items_json) VALUES (?, '[]')
-         ON CONFLICT(user_id) DO NOTHING`,
-        [newCustomer.id]
-      ).catch(err => console.error('[DB] SQLite insert cart error:', err.message));
+      try {
+        await dbRun(
+          `INSERT INTO users (id, name, email, password_hash, notification_pref, role, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(email) DO UPDATE SET name = excluded.name, password_hash = excluded.password_hash`,
+          [newCustomer.id, newCustomer.name, newCustomer.email, password_hash, 'email', role, newCustomer.createdAt]
+        );
+        await dbRun(
+          `INSERT INTO carts (user_id, items_json) VALUES (?, '[]')
+           ON CONFLICT(user_id) DO NOTHING`,
+          [newCustomer.id]
+        );
+      } catch (err) {
+        console.error('[DB] SQLite insert user error:', err.message);
+      }
     }
 
     return {
@@ -902,25 +960,50 @@ class DatabaseService {
     };
   }
 
-  loginCustomer({ email, password }) {
+  async loginCustomer({ email, password }) {
     if (!email || !password) {
-      return { success: false, error: 'Email and password are required.' };
+      return { success: false, code: 'MISSING_FIELDS', error: 'Email and password are required.' };
     }
 
     const normalizedEmail = email.toLowerCase().trim();
     let matchedCustomer = null;
     for (const cust of this.customers.values()) {
-      if (cust.email.toLowerCase() === normalizedEmail) {
+      if (cust.email && cust.email.toLowerCase() === normalizedEmail) {
         matchedCustomer = cust;
         break;
       }
     }
 
-    if (!matchedCustomer) {
-      return { success: false, error: 'Customer account not found. Please sign up.' };
+    // Fallback: Check SQLite directly if not in in-memory map
+    if (!matchedCustomer && dbGet) {
+      try {
+        const row = await dbGet('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [normalizedEmail]);
+        if (row) {
+          matchedCustomer = {
+            id: row.id,
+            name: row.name,
+            email: (row.email || '').toLowerCase().trim(),
+            password_hash: row.password_hash,
+            notification_pref: row.notification_pref || 'email',
+            role: row.role || 'customer',
+            isReturning: false,
+            searchHistory: [],
+            purchaseHistory: [],
+            viewedHistory: [],
+            browsingCategories: [],
+            preferredBudget: null,
+            createdAt: row.created_at || new Date().toISOString()
+          };
+          this.customers.set(row.id, matchedCustomer);
+        }
+      } catch (e) {}
     }
 
-    // Verify password with bcrypt or fallback for test seeds
+    if (!matchedCustomer) {
+      return { success: false, code: 'USER_NOT_FOUND', error: 'No account found with this email address. Please sign up.' };
+    }
+
+    // Verify password with bcrypt or plaintext fallback for test seeds
     let isValid = false;
     if (matchedCustomer.password_hash) {
       isValid = bcrypt.compareSync(password, matchedCustomer.password_hash);
@@ -929,7 +1012,7 @@ class DatabaseService {
     }
 
     if (!isValid) {
-      return { success: false, error: 'Incorrect password. Please verify your credentials.' };
+      return { success: false, code: 'INVALID_CREDENTIALS', error: 'Incorrect password. Please verify your credentials.' };
     }
 
     return {
@@ -1160,13 +1243,13 @@ class DatabaseService {
   registerMerchant({ businessName, storeName, ownerName, email, password }) {
     const finalBusinessName = (businessName || storeName || '').trim();
     if (!finalBusinessName || !email || !password) {
-      return { success: false, error: 'Business name, email, and password are required.' };
+      return { success: false, code: 'MISSING_FIELDS', error: 'Business name, email, and password are required.' };
     }
 
     const normalizedEmail = email.toLowerCase().trim();
     for (const m of this.merchants.values()) {
       if (m.email.toLowerCase() === normalizedEmail) {
-        return { success: false, error: 'A merchant account with this email already exists. Please log in.' };
+        return { success: false, code: 'EMAIL_EXISTS', error: 'A merchant account with this email already exists. Please log in.' };
       }
     }
 
@@ -1199,7 +1282,7 @@ class DatabaseService {
 
   loginMerchant({ email, password }) {
     if (!email || !password) {
-      return { success: false, error: 'Email and password are required.' };
+      return { success: false, code: 'MISSING_FIELDS', error: 'Email and password are required.' };
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -1214,10 +1297,10 @@ class DatabaseService {
     }
 
     if (!matched) {
-      return { success: false, error: 'Merchant account not found. Please sign up.' };
+      return { success: false, code: 'MERCHANT_NOT_FOUND', error: 'Merchant account not found. Please sign up.' };
     }
     if (matched.password !== password) {
-      return { success: false, error: 'Invalid password. Please try again.' };
+      return { success: false, code: 'INVALID_CREDENTIALS', error: 'Incorrect password. Please verify your credentials.' };
     }
 
     return {
@@ -1233,6 +1316,38 @@ class DatabaseService {
         createdAt: matched.createdAt
       }
     };
+  }
+
+  getMerchantById(id) {
+    if (!id) return null;
+    const m = this.merchants.get(id);
+    if (m) {
+      return {
+        id: m.id,
+        name: m.businessName,
+        businessName: m.businessName,
+        ownerName: m.ownerName,
+        email: m.email,
+        role: 'merchant',
+        plan: m.plan,
+        createdAt: m.createdAt
+      };
+    }
+    for (const merch of this.merchants.values()) {
+      if (merch.id === id) {
+        return {
+          id: merch.id,
+          name: merch.businessName,
+          businessName: merch.businessName,
+          ownerName: merch.ownerName,
+          email: merch.email,
+          role: 'merchant',
+          plan: merch.plan,
+          createdAt: merch.createdAt
+        };
+      }
+    }
+    return null;
   }
 
   getMerchants() {

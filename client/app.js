@@ -21,6 +21,36 @@ let currentMandate = null;
 let currentUserOrders = [];
 
 // =============================================================
+// SAFE JSON FETCH UTILITY
+// Guarantees response.ok and content-type: application/json verification,
+// eliminating unhandled HTML 404/500 JSON parse crashes in production.
+// =============================================================
+async function safeFetchJson(url, options = {}) {
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch (netErr) {
+    throw new Error('Unable to reach server. Please check your network connection.');
+  }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const status = res.status;
+    const statusText = res.statusText || 'Error';
+    throw new Error(`Server returned an unexpected response (${status} ${statusText}) — check API configuration.`);
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch (jsonErr) {
+    throw new Error('Failed to parse server response as JSON.');
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
+// =============================================================
 // CONDITIONAL HEADER CART BUTTON CONTROLLER
 // Real conditional DOM mount/unmount tied to auth & active view
 // =============================================================
@@ -160,8 +190,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupSimulatorControls();
   setupNLPolicyBuilder();
 
-  // Restore session from httpOnly cookie via /api/auth/me
+  // Restore sessions from httpOnly cookies via backend checks
   await checkAuthSession();
+  await checkMerchantSession();
+
+  // Evaluate initial URL hash route with verified auth state
+  if (window.handleRouteHash) {
+    window.handleRouteHash();
+  }
 
   updateMerchantUI();
   refreshCart();
@@ -281,16 +317,18 @@ function setupNavigation() {
     } else if (['merchant-login', 'merchant-auth', 'merchant-signin'].includes(hash)) {
       window.switchAppView('view-merchant-auth', false);
     } else if (hash === 'merchant' || hash === 'command') {
-      window.switchAppView('view-merchant', false);
+      if (!currentMerchant) {
+        window.switchAppView('view-merchant-auth', true);
+      } else {
+        window.switchAppView('view-merchant', false);
+      }
     } else if (hash === 'landing' || hash === 'home') {
       window.switchAppView('view-landing', false);
     }
   }
 
+  window.handleRouteHash = handleRouteHash;
   window.addEventListener('hashchange', handleRouteHash);
-  if (window.location.hash) {
-    handleRouteHash();
-  }
 }
 
 // =============================================================
@@ -299,17 +337,16 @@ function setupNavigation() {
 
 async function checkAuthSession() {
   try {
-    const res = await fetch('/api/auth/me', { credentials: 'include' });
-    const data = await res.json();
-    if (data.authenticated && data.user) {
-      currentCustomer = data.user;
-      currentMandate = data.mandate || null;
+    const { ok, data } = await safeFetchJson('/api/auth/me', { credentials: 'include' });
+    const user = data?.user || data?.customer;
+    if (ok && (data?.authenticated || data?.success) && user) {
+      currentCustomer = user;
+      currentMandate = data.mandate || data.activeMandate || null;
     } else {
       currentCustomer = null;
       currentMandate = null;
     }
   } catch (err) {
-    console.error('Session check failed:', err);
     currentCustomer = null;
     currentMandate = null;
   }
@@ -790,25 +827,25 @@ function setupMerchantAuth() {
     btn.textContent = 'Authenticating...';
 
     try {
-      const res = await fetch('/api/merchant/login', {
+      const { ok, data } = await safeFetchJson('/api/merchant/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
       btn.disabled = false;
       btn.textContent = 'Log In to Merchant Center →';
 
-      if (data.success && data.merchant) {
+      if (ok && data.success && data.merchant) {
         setAuthenticatedMerchant(data.merchant);
         window.switchAppView('view-merchant');
       } else {
-        alert(data.error || 'Merchant login failed. Please try again.');
+        alert(data.error || 'Merchant login failed. Please check your credentials.');
       }
     } catch (err) {
       btn.disabled = false;
       btn.textContent = 'Log In to Merchant Center →';
-      alert('Network error during merchant login: ' + err.message);
+      alert(err.message);
     }
   });
 
@@ -824,16 +861,16 @@ function setupMerchantAuth() {
     btn.textContent = 'Creating Account...';
 
     try {
-      const res = await fetch('/api/merchant/register', {
+      const { ok, data } = await safeFetchJson('/api/merchant/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ businessName, ownerName, email, password })
       });
-      const data = await res.json();
       btn.disabled = false;
       btn.textContent = 'Create Merchant Account →';
 
-      if (data.success && data.merchant) {
+      if (ok && data.success && data.merchant) {
         setAuthenticatedMerchant(data.merchant);
         window.switchAppView('view-merchant');
       } else {
@@ -842,25 +879,54 @@ function setupMerchantAuth() {
     } catch (err) {
       btn.disabled = false;
       btn.textContent = 'Create Merchant Account →';
-      alert('Network error during merchant registration: ' + err.message);
+      alert(err.message);
     }
   });
 
   // 1-Click Demo Merchant Profiles
+  const triggerDemoMerchantLogin = async (email, password) => {
+    const btn = document.getElementById('btn-submit-merchant-login');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Authenticating Demo Merchant...';
+    }
+    try {
+      const { ok, data } = await safeFetchJson('/api/merchant/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Log In to Merchant Center →';
+      }
+      if (ok && data.success && data.merchant) {
+        setAuthenticatedMerchant(data.merchant);
+        window.switchAppView('view-merchant');
+      } else {
+        alert(data.error || 'Merchant demo login failed.');
+      }
+    } catch (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Log In to Merchant Center →';
+      }
+      alert(err.message);
+    }
+  };
+
   const btnDemoRevify = document.getElementById('btn-fill-demo-revify') || document.getElementById('btn-fill-demo-omnigrowth');
   btnDemoRevify?.addEventListener('click', () => {
-    document.getElementById('merchant-login-email').value = 'admin@revify.com';
-    document.getElementById('merchant-login-password').value = 'password123';
-    // Switch to login tab if on signup
-    tabLogin?.click();
-    formLogin?.dispatchEvent(new Event('submit'));
+    triggerDemoMerchantLogin('admin@revify.com', 'password123');
   });
 
   document.getElementById('btn-fill-demo-acousticpro')?.addEventListener('click', () => {
-    document.getElementById('merchant-login-email').value = 'meera@acousticpro.com';
-    document.getElementById('merchant-login-password').value = 'password123';
-    tabLogin?.click();
-    formLogin?.dispatchEvent(new Event('submit'));
+    triggerDemoMerchantLogin('meera@acousticpro.com', 'password123');
+  });
+
+  document.getElementById('btn-fill-demo-hypertravel')?.addEventListener('click', () => {
+    triggerDemoMerchantLogin('karan@hypertravel.com', 'password123');
   });
 }
 
@@ -872,14 +938,38 @@ function setAuthenticatedMerchant(merchant) {
   updateMerchantUI();
 }
 
-function logoutMerchant() {
+async function logoutMerchant() {
   currentMerchant = null;
   try {
     localStorage.removeItem('revify_merchant');
     localStorage.removeItem('omnigrowth_merchant');
+    await fetch('/api/merchant/logout', { method: 'POST', credentials: 'include' });
   } catch (e) {}
   updateMerchantUI();
   window.switchAppView('view-merchant-auth');
+}
+
+async function checkMerchantSession() {
+  try {
+    const { ok, data } = await safeFetchJson('/api/merchant/me', { credentials: 'include' });
+    if (ok && data && (data.authenticated || data.success) && data.merchant) {
+      currentMerchant = data.merchant;
+      try {
+        localStorage.setItem('revify_merchant', JSON.stringify(currentMerchant));
+      } catch (e) {}
+    } else {
+      currentMerchant = null;
+      try {
+        localStorage.removeItem('revify_merchant');
+      } catch (e) {}
+    }
+  } catch (err) {
+    currentMerchant = null;
+    try {
+      localStorage.removeItem('revify_merchant');
+    } catch (e) {}
+  }
+  updateMerchantUI();
 }
 
 function updateMerchantUI() {
@@ -1178,19 +1268,18 @@ function setupCustomerLoginModal() {
     }
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const { ok, data } = await safeFetchJson('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Log In →';
       }
 
-      if (data.success && data.user) {
+      if (ok && data.success && data.user) {
         setAuthenticatedCustomer(data.user, data.mandate || null);
         closeCustomerLoginModal();
         window.switchAppView('view-shopping');
@@ -1207,7 +1296,7 @@ function setupCustomerLoginModal() {
         submitBtn.textContent = 'Log In →';
       }
       if (errBanner) {
-        errBanner.textContent = 'Network error during login: ' + err.message;
+        errBanner.textContent = err.message;
         errBanner.style.display = 'block';
       }
     }
@@ -1247,19 +1336,18 @@ function setupCustomerLoginModal() {
     }
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const { ok, data } = await safeFetchJson('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ name, email, password })
       });
-      const data = await res.json();
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Account →';
       }
 
-      if (data.success && data.user) {
+      if (ok && data.success && data.user) {
         setAuthenticatedCustomer(data.user, data.mandate || null);
         closeCustomerLoginModal();
         window.switchAppView('view-shopping');
@@ -1276,10 +1364,62 @@ function setupCustomerLoginModal() {
         submitBtn.textContent = 'Create Account →';
       }
       if (errBanner) {
-        errBanner.textContent = 'Network error during registration: ' + err.message;
+        errBanner.textContent = err.message;
         errBanner.style.display = 'block';
       }
     }
+  });
+
+  // 1-Click Demo Customer Profiles
+  const triggerDemoCustomerLogin = async (email, password) => {
+    clearErrors();
+    const submitBtn = document.getElementById('btn-popup-submit-login');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Authenticating Demo Profile...';
+    }
+    try {
+      const { ok, data } = await safeFetchJson('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
+      });
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Log In →';
+      }
+      if (ok && data.success && data.user) {
+        setAuthenticatedCustomer(data.user, data.mandate || null);
+        closeCustomerLoginModal();
+        window.switchAppView('view-shopping');
+        appendChatBubble('Shopping Assistant', `Welcome back, **${data.user.name}**! Demo profile loaded with active AP2 spend mandate.`, 'assistant');
+      } else {
+        if (errBanner) {
+          errBanner.textContent = data.error || 'Demo login failed.';
+          errBanner.style.display = 'block';
+        }
+      }
+    } catch (err) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Log In →';
+      }
+      if (errBanner) {
+        errBanner.textContent = err.message;
+        errBanner.style.display = 'block';
+      }
+    }
+  };
+
+  document.getElementById('btn-demo-cust-aarav')?.addEventListener('click', () => {
+    triggerDemoCustomerLogin('aarav@example.com', 'password123');
+  });
+  document.getElementById('btn-demo-cust-priya')?.addEventListener('click', () => {
+    triggerDemoCustomerLogin('priya@example.com', 'password123');
+  });
+  document.getElementById('btn-demo-cust-rohan')?.addEventListener('click', () => {
+    triggerDemoCustomerLogin('rohan@example.com', 'password123');
   });
 }
 

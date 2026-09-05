@@ -12,10 +12,59 @@ let latestRecommendedCrossSell = null;
 let currentProductsList = [];
 let currentSmartCartOpportunity = null;
 
+// Current Active Application View / Route Context
+let currentAppView = 'view-landing';
+
 // Customer Authentication & Profile State (Backend DB & JWT Session-Driven)
 let currentCustomer = null;
 let currentMandate = null;
 let currentUserOrders = [];
+
+// =============================================================
+// CONDITIONAL HEADER CART BUTTON CONTROLLER
+// Real conditional DOM mount/unmount tied to auth & active view
+// =============================================================
+function renderHeaderCartButton() {
+  const container = document.querySelector('.top-nav-right');
+  if (!container) return;
+
+  const isShoppingView = (currentAppView === 'view-shopping' || currentAppView === 'shopping');
+  const shouldShowCart = Boolean(currentCustomer) && isShoppingView;
+  const existingBtn = document.getElementById('btn-open-cart');
+
+  if (shouldShowCart) {
+    const totalItems = (cartData.items || []).reduce((sum, i) => sum + (i.quantity || 1), 0);
+    if (!existingBtn) {
+      const cartBtn = document.createElement('button');
+      cartBtn.className = 'btn-cart-nav';
+      cartBtn.id = 'btn-open-cart';
+      cartBtn.title = 'Shopping Cart';
+      cartBtn.setAttribute('aria-label', `Shopping Cart (${totalItems} items)`);
+      cartBtn.innerHTML = `
+        <span class="cart-label">Cart</span>
+        <span class="cart-badge" id="nav-cart-count">${totalItems}</span>
+      `;
+      cartBtn.addEventListener('click', openCartDrawer);
+
+      // Mount directly before the customer account entry point
+      const accountBtn = document.getElementById('btn-nav-customer');
+      if (accountBtn && accountBtn.parentNode === container) {
+        container.insertBefore(cartBtn, accountBtn);
+      } else {
+        container.appendChild(cartBtn);
+      }
+    } else {
+      const badge = document.getElementById('nav-cart-count');
+      if (badge) badge.textContent = totalItems;
+      existingBtn.setAttribute('aria-label', `Shopping Cart (${totalItems} items)`);
+    }
+  } else {
+    if (existingBtn) {
+      existingBtn.remove();
+    }
+  }
+}
+window.renderHeaderCartButton = renderHeaderCartButton;
 
 // Merchant Authentication & Profile State
 let currentMerchant = null;
@@ -138,6 +187,8 @@ function setupNavigation() {
       targetViewId = 'view-merchant-auth';
     }
 
+    currentAppView = targetViewId;
+
     appViews.forEach(view => view.classList.remove('active'));
     switchBtns.forEach(btn => btn.classList.remove('active'));
 
@@ -164,6 +215,9 @@ function setupNavigation() {
         history.replaceState(null, '', window.location.pathname + (hashMap[targetViewId] || ''));
       }
     }
+
+    // Conditionally mount or unmount the header cart button based on auth state and current view
+    renderHeaderCartButton();
 
     if (targetViewId === 'view-merchant') {
       refreshMerchantData();
@@ -201,17 +255,19 @@ function setupNavigation() {
     window.switchAppView(currentMerchant ? 'view-merchant' : 'view-merchant-auth');
   });
 
-  // Top Navbar Direct Login Button
-  document.getElementById('btn-open-login-popup')?.addEventListener('click', () => {
-    openCustomerLoginModal('login');
-  });
-
-  // Top Navbar Customer Account button
+  // Top Navbar Customer Account button (Single Consolidated Account / Login Entry Point)
   document.getElementById('btn-nav-customer')?.addEventListener('click', () => {
     if (currentCustomer) {
       openUserProfilePanel();
     } else {
       openCustomerLoginModal('login');
+    }
+  });
+
+  // Top Right delegation for conditionally mounted cart button
+  document.querySelector('.top-nav-right')?.addEventListener('click', (e) => {
+    if (e.target.closest('#btn-open-cart')) {
+      openCartDrawer();
     }
   });
 
@@ -270,7 +326,6 @@ function setAuthenticatedCustomer(user, mandate = null) {
 }
 
 function updateCustomerUI() {
-  const btnLogin = document.getElementById('btn-open-login-popup');
   const btnNavCustomer = document.getElementById('btn-nav-customer');
   const navCustomerMonogram = document.getElementById('nav-customer-monogram');
   const navCustomerName = document.getElementById('nav-customer-name');
@@ -284,9 +339,16 @@ function updateCustomerUI() {
     const initials = currentCustomer.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
     const firstName = currentCustomer.name.split(' ')[0];
 
-    if (btnLogin) btnLogin.style.display = 'none';
-    if (btnNavCustomer) btnNavCustomer.style.display = 'inline-flex';
-    if (navCustomerMonogram) navCustomerMonogram.textContent = initials || 'US';
+    if (btnNavCustomer) {
+      btnNavCustomer.style.display = 'inline-flex';
+      btnNavCustomer.classList.remove('is-guest');
+      btnNavCustomer.classList.add('is-authenticated');
+      btnNavCustomer.title = 'Your Profile & Spend Mandate';
+    }
+    if (navCustomerMonogram) {
+      navCustomerMonogram.style.display = 'inline-flex';
+      navCustomerMonogram.textContent = initials || 'US';
+    }
     if (navCustomerName) navCustomerName.textContent = currentCustomer.name;
     if (storeCustomerName) storeCustomerName.textContent = firstName;
     if (customerBadge) customerBadge.textContent = initials || 'US';
@@ -314,9 +376,18 @@ function updateCustomerUI() {
 
     refreshCustomerOrdersCount();
   } else {
-    // Honest Unauthenticated / Guest state
-    if (btnLogin) btnLogin.style.display = 'inline-flex';
-    if (btnNavCustomer) btnNavCustomer.style.display = 'none';
+    // Honest Unauthenticated / Guest state (Consolidated single login / account trigger)
+    if (btnNavCustomer) {
+      btnNavCustomer.style.display = 'inline-flex';
+      btnNavCustomer.classList.add('is-guest');
+      btnNavCustomer.classList.remove('is-authenticated');
+      btnNavCustomer.title = 'Sign In or View Account';
+    }
+    if (navCustomerMonogram) {
+      navCustomerMonogram.style.display = 'none';
+      navCustomerMonogram.textContent = '';
+    }
+    if (navCustomerName) navCustomerName.textContent = 'Sign In';
     if (storeCustomerName) storeCustomerName.textContent = 'Guest';
     if (customerBadge) customerBadge.textContent = '--';
     if (statusBadge) {
@@ -333,6 +404,7 @@ function updateCustomerUI() {
     }
   }
 
+  renderHeaderCartButton();
   updateCartBadge();
   updateCustomerGreeting();
 }
@@ -2419,11 +2491,12 @@ async function refreshCart() {
 }
 
 function updateCartBadge() {
-  const totalItems = (cartData.items || []).reduce((sum, i) => sum + i.quantity, 0);
+  const totalItems = (cartData.items || []).reduce((sum, i) => sum + (i.quantity || 1), 0);
   const badge = document.getElementById('nav-cart-count');
   if (badge) badge.textContent = totalItems;
   const headerBadge = document.getElementById('header-cart-count');
   if (headerBadge) headerBadge.textContent = totalItems;
+  renderHeaderCartButton();
 }
 
 window.removeItemFromCart = async function(productId) {

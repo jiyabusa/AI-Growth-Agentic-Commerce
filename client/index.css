@@ -273,7 +273,7 @@ body {
 .top-nav-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .agent-status-pill {
@@ -608,24 +608,45 @@ body {
 }
 
 .btn-customer-account-nav {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-mid);
-  padding: 5px 12px;
+  padding: 5px 13px;
   border-radius: var(--radius-full);
   font-family: var(--font-sans);
   font-size: 12.5px;
   font-weight: 700;
-  color: var(--lavender-dark);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
+  user-select: none;
+  line-height: 1;
 }
 
 .btn-customer-account-nav:hover {
   background-color: var(--lavender-light);
   border-color: var(--lavender-primary);
+  color: var(--purple-deep);
+}
+
+.btn-customer-account-nav.is-guest {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: #ffffff;
+  border: 1px solid var(--border-mid);
+  padding: 6px 14px;
+}
+
+.btn-customer-account-nav.is-guest:hover {
+  color: var(--purple-deep);
+  border-color: var(--lavender-mid);
+  background-color: var(--lavender-vlight);
+}
+
+.customer-name-text {
+  line-height: 1;
 }
 
 /* =============================================================
@@ -4670,33 +4691,7 @@ body {
 /* CUSTOMER AUTHENTICATION & TOP RECOMMENDATIONS STYLES */
 /* ============================================================= */
 
-/* Navbar Customer Button */
-.btn-customer-account-nav {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 13px;
-  border-radius: var(--radius-full);
-  background-color: var(--lavender-vlight);
-  border: 1px solid var(--lavender-primary);
-  color: var(--purple-deep);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.btn-customer-account-nav:hover {
-  background-color: var(--lavender-light);
-  border-color: var(--purple-primary);
-  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.15);
-  transform: translateY(-1px);
-}
-
-.customer-avatar-icon {
-  font-size: 13px;
-}
+/* Customer Authentication & Auth View */
 
 /* Auth Page View */
 .auth-page-container {

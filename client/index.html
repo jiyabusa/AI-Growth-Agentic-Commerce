@@ -33,28 +33,18 @@
       </button>
     </div>
 
-    <!-- Top Right Status & Cart Button -->
+    <!-- Top Right Status & Account Action -->
     <div class="top-nav-right">
-      <!-- Direct Login Pop-up Trigger (Shown when unauthenticated) -->
-      <button class="btn-login-popup-nav" id="btn-open-login-popup" title="Log In to Revify">
-        <span class="login-btn-text">Log In</span>
-      </button>
-
-      <!-- Customer Account Monogram Chip (Shown when authenticated) -->
-      <button class="btn-customer-account-nav" id="btn-nav-customer" style="display: none;" title="Your Profile &amp; Spend Mandate">
-        <span class="customer-monogram-avatar" id="nav-customer-monogram">--</span>
-        <span class="customer-name-text" id="nav-customer-name">Account</span>
-      </button>
-
       <!-- Dynamic Agent Mandate Indicator (Computed live, never hardcoded) -->
       <div class="agent-status-pill pill-no-mandate" id="global-agent-pill" title="AI Agent Delegation Mandate Status">
         <span class="status-dot dot-inactive" id="global-agent-dot"></span>
         <span class="status-text" id="global-agent-text">Agent: No Mandate</span>
       </div>
 
-      <button class="btn-cart-nav" id="btn-open-cart" title="Shopping Cart">
-        <span class="cart-label">Cart</span>
-        <span class="cart-badge" id="nav-cart-count">0</span>
+      <!-- Single Consolidated Account / Profile / Sign-in Entry Point -->
+      <button class="btn-customer-account-nav is-guest" id="btn-nav-customer" title="Sign In or View Account">
+        <span class="customer-monogram-avatar" id="nav-customer-monogram" style="display: none;">--</span>
+        <span class="customer-name-text" id="nav-customer-name">Sign In</span>
       </button>
     </div>
   </header>

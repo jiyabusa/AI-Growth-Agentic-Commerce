@@ -111,6 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
   refreshMerchantData();
   refreshSessionMemory();
   loadTopRecommendations();
+
+  // Always make Customer Login Pop-up Modal immediately visible on page load
+  openCustomerLoginModal('login');
 });
 
 // =============================================================
@@ -121,9 +124,10 @@ function setupNavigation() {
   const appViews = document.querySelectorAll('.app-view');
 
   window.switchAppView = function(targetViewId, updateHash = true) {
-    // Role-based access control: redirect to appropriate login if not authenticated
+    // Role-based access control: open login modal if customer tries to access shopping without account
     if (targetViewId === 'view-shopping' && !currentCustomer) {
-      targetViewId = 'view-customer-auth';
+      openCustomerLoginModal('login');
+      return;
     }
     if (targetViewId === 'view-merchant' && !currentMerchant) {
       targetViewId = 'view-merchant-auth';
@@ -171,21 +175,40 @@ function setupNavigation() {
 
   document.getElementById('nav-brand-home')?.addEventListener('click', () => window.switchAppView('view-landing'));
 
-  // Landing page portal card click handlers — always go through auth first
-  document.getElementById('card-enter-shopping')?.addEventListener('click', () => {
-    window.switchAppView(currentCustomer ? 'view-shopping' : 'view-customer-auth');
+  // Landing page portal card click handlers — open login popup directly if not logged in
+  document.getElementById('card-enter-shopping')?.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'btn-hero-login-popup') return;
+    if (currentCustomer) {
+      window.switchAppView('view-shopping');
+    } else {
+      openCustomerLoginModal('login');
+    }
   });
+  document.getElementById('btn-enter-shopping-direct')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (currentCustomer) {
+      window.switchAppView('view-shopping');
+    } else {
+      openCustomerLoginModal('login');
+    }
+  });
+  document.getElementById('btn-hero-login-popup')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openCustomerLoginModal('login');
+  });
+
   document.getElementById('card-enter-merchant')?.addEventListener('click', () => {
     window.switchAppView(currentMerchant ? 'view-merchant' : 'view-merchant-auth');
   });
 
-  // Navbar Customer Account button
+  // Top Navbar Direct Login Button
+  document.getElementById('btn-open-login-popup')?.addEventListener('click', () => {
+    openCustomerLoginModal('login');
+  });
+
+  // Top Navbar Customer Account button
   document.getElementById('btn-nav-customer')?.addEventListener('click', () => {
-    if (currentCustomer) {
-      openCustomerOrderHistory();
-    } else {
-      openCustomerLoginModal('login');
-    }
+    openCustomerLoginModal('login');
   });
 
   // URL Hash Routing Support
@@ -752,15 +775,19 @@ function openCustomerLoginModal(defaultTab = 'login') {
     tabSignup?.classList.remove('active');
     if (formLogin) formLogin.style.display = 'block';
     if (formSignup) formSignup.style.display = 'none';
-    if (popupTitle) popupTitle.textContent = currentCustomer ? `Switch Account (Signed in as ${currentCustomer.name.split(' ')[0]})` : 'Sign In to Your Account';
+    if (popupTitle) popupTitle.textContent = currentCustomer ? `Switch Account (Signed in as ${currentCustomer.name.split(' ')[0]})` : 'Customer Login & Sign In';
   }
 
   modal.classList.add('active');
+  modal.style.display = 'flex';
 }
 
 function closeCustomerLoginModal() {
   const modal = document.getElementById('modal-customer-login');
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+  }
 }
 
 window.openCustomerLoginModal = openCustomerLoginModal;
@@ -853,6 +880,7 @@ function setupCustomerLoginModal() {
       if (data.success && data.customer) {
         setAuthenticatedCustomer(data.customer);
         closeCustomerLoginModal();
+        window.switchAppView('view-shopping');
         appendChatBubble('Shopping Assistant', `Welcome back, **${data.customer.name}**! Your preferences and order history have been synchronized.`, 'assistant');
       } else {
         alert(data.error || 'Login failed. Please verify credentials.');
@@ -896,6 +924,7 @@ function setupCustomerLoginModal() {
       if (data.success && data.customer) {
         setAuthenticatedCustomer(data.customer);
         closeCustomerLoginModal();
+        window.switchAppView('view-shopping');
         appendChatBubble('Shopping Assistant', `Welcome to Revify, **${data.customer.name}**! What can I help you find today?`, 'assistant');
       } else {
         alert(data.error || 'Sign up failed.');

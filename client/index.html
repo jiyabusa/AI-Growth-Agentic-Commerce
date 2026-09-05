@@ -472,6 +472,66 @@
             <div class="store-chat-stream" id="chat-stream">
               <!-- Message bubbles injected via JS -->
             </div>
+
+            <!-- Fixed / Sticky Shopping Chat Composer -->
+            <div class="conversation-composer-sticky" id="conversation-composer-sticky">
+              <!-- Voice Recognition Live Status & Stop Control -->
+              <div class="composer-voice-status" id="composer-voice-status" style="display: none;">
+                <span class="composer-voice-pulse" aria-hidden="true"></span>
+                <span class="composer-voice-state-text" id="composer-voice-state-text">Listening...</span>
+                <span class="composer-voice-hint">Speak clearly. Words appear in the input field for review.</span>
+                <button type="button" class="btn-composer-voice-stop" id="btn-composer-voice-stop" title="Stop listening">Stop</button>
+              </div>
+
+              <!-- Chat Input Form -->
+              <form class="conversation-composer-form" id="stream-chat-form">
+                <div class="composer-input-wrapper">
+                  <input
+                    type="text"
+                    id="stream-chat-input"
+                    class="conversation-composer-input"
+                    placeholder="Ask anything or type your message..."
+                    autocomplete="off"
+                    aria-label="Ask anything or type your message"
+                  />
+                  
+                  <div class="composer-actions">
+                    <!-- Microphone Voice Input Button -->
+                    <button
+                      type="button"
+                      class="btn-composer-mic"
+                      id="btn-stream-mic"
+                      title="Speak to shopping assistant"
+                      aria-label="Voice input"
+                    >
+                      <span class="composer-mic-icon" id="stream-mic-icon">🎙️</span>
+                    </button>
+
+                    <!-- Send Button -->
+                    <button
+                      type="submit"
+                      class="btn-composer-send"
+                      id="btn-stream-send"
+                      title="Send message"
+                      aria-label="Send message"
+                    >
+                      <svg class="send-svg-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                      </svg>
+                      <span class="send-label">Send</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <!-- Graceful Voice / System Error Banner -->
+              <div class="composer-error-banner" id="composer-error-banner" style="display: none;">
+                <span class="composer-error-icon">⚠️</span>
+                <span class="composer-error-text" id="composer-error-text">Microphone access was denied. Please allow microphone permissions in your browser.</span>
+                <button type="button" class="btn-dismiss-error" id="btn-dismiss-error" title="Dismiss">&times;</button>
+              </div>
+            </div>
           </div>
 
           <!-- Right: Search Results, Discovered Items, Contextual Upsells & Cross-sells -->

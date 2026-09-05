@@ -38,6 +38,12 @@
 
     <!-- Top Right Status & Cart Button -->
     <div class="top-nav-right">
+      <!-- Direct Login Pop-up Trigger -->
+      <button class="btn-login-popup-nav" id="btn-open-login-popup" title="Customer Login &amp; Sign In">
+        <span class="login-key-icon">🔑</span>
+        <span class="login-btn-text">Log In</span>
+      </button>
+
       <!-- Customer Account Pill / Quick Auth -->
       <button class="btn-customer-account-nav" id="btn-nav-customer" title="Customer Profile &amp; Authentication">
         <span class="customer-avatar-icon" id="nav-customer-avatar">👤</span>
@@ -82,9 +88,14 @@
           <p class="portal-card-desc">
             Experience natural language &amp; voice product discovery, explainable recommendations, 1-click companion cross-sells, bounded bundle negotiation, and Razorpay checkout.
           </p>
-          <button class="btn-portal btn-shopping-action">
-            Enter AI Shopping &rarr;
-          </button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto;">
+            <button type="button" class="btn-portal btn-shopping-action" id="btn-enter-shopping-direct">
+              Enter AI Shopping &rarr;
+            </button>
+            <button type="button" class="btn-portal btn-landing-login-pop" id="btn-hero-login-popup" style="background: rgba(109, 40, 217, 0.08); color: #6d28d9; border: 1.5px solid #c4b5fd; font-weight: 700;">
+              🔑 Log In Pop-up
+            </button>
+          </div>
         </div>
 
         <!-- Merchant Portal Card -->
@@ -1611,7 +1622,7 @@
   <!-- ============================================================= -->
   <!-- MODAL 8: CUSTOMER LOGIN & AUTHENTICATION POPUP MODAL -->
   <!-- ============================================================= -->
-  <div class="modal-overlay" id="modal-customer-login">
+  <div class="modal-overlay active" id="modal-customer-login" style="display: flex;">
     <div class="modal-card modal-auth-popup-card" style="max-width: 460px;">
       <div class="modal-header">
         <div class="auth-popup-brand-wrap" style="display: flex; align-items: center; gap: 10px;">

@@ -1,5 +1,9 @@
-# AI Growth & Agentic Commerce Platform
-### Governed Autonomous Revenue Agent with AP2 / NPCI-UAP Cryptographic Mandates, Deterministic FRM Risk Engine, and Razorpay Integration
+<p align="center">
+  <img src="client/logo.png" alt="Revify Logo" width="110">
+</p>
+
+<h1 align="center">Revify // AI Growth &amp; Agentic Commerce</h1>
+<h3 align="center">Governed Autonomous Revenue Agent with AP2 / NPCI-UAP Cryptographic Mandates, Deterministic FRM Risk Engine, and Razorpay Integration</h3>
 
 [![Spec](https://img.shields.io/badge/Protocol-NPCI--UAP%20%2F%20Google--AP2-blue)](#)
 [![Gateway](https://img.shields.io/badge/Payment%20Gateway-Razorpay%20Test%20Mode-emerald)](#)

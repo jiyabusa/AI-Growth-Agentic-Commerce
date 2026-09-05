@@ -1542,17 +1542,24 @@ body {
   background: #ffffff;
   border: 1px solid #edf2f7;
   border-radius: 14px;
-  padding: 20px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+  height: 640px;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
 }
 
 .dialogue-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  padding: 16px 20px 14px 20px;
   border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  flex-shrink: 0;
+  margin-bottom: 0;
 }
 
 .dialogue-title-wrap {
@@ -1583,9 +1590,243 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-height: 540px;
+  flex: 1 1 auto;
   overflow-y: auto;
-  padding-right: 6px;
+  padding: 16px 20px 24px 20px;
+  scroll-behavior: smooth;
+}
+
+/* =============================================================
+   FIXED STICKY SHOPPING CHAT COMPOSER
+   ============================================================= */
+.conversation-composer-sticky {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid #ede9fe;
+  padding: 12px 18px 14px 18px;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 -4px 14px rgba(124, 58, 237, 0.04);
+}
+
+.composer-voice-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 6px 12px;
+  background: #fdf4ff;
+  border: 1px solid #f0abfc;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #86198f;
+  animation: voice-banner-fadein 0.2s ease;
+}
+
+.composer-voice-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c026d3;
+  display: inline-block;
+  animation: typing-dot-bounce 1s infinite ease-in-out;
+}
+
+.composer-voice-state-text {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.composer-voice-hint {
+  font-size: 11.5px;
+  color: #701a75;
+  margin-left: 4px;
+}
+
+.btn-composer-voice-stop {
+  margin-left: auto;
+  background: #fae8ff;
+  border: 1px solid #e879f9;
+  color: #701a75;
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-composer-voice-stop:hover {
+  background: #f0abfc;
+  color: #4a044e;
+}
+
+.composer-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #fbfbfe;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 26px;
+  padding: 4px 6px 4px 16px;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+}
+
+.composer-input-wrapper:focus-within {
+  background: #ffffff;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.conversation-composer-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13.5px;
+  color: #0f172a;
+  font-family: inherit;
+  padding: 7px 0;
+  min-width: 0;
+}
+
+.conversation-composer-input::placeholder {
+  color: #94a3b8;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-composer-mic {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #ede9fe;
+  background: #f5f3ff;
+  color: #6d28d9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.btn-composer-mic:hover {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-color: #ddd6fe;
+}
+
+.btn-composer-mic.listening {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.2);
+  animation: soundwave-pulse 1.2s infinite ease-in-out;
+}
+
+.composer-mic-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.btn-composer-send {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 17px;
+  border: none;
+  background: #7c3aed;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.25);
+}
+
+.btn-composer-send:hover {
+  background: #6d28d9;
+}
+
+.btn-composer-send:active {
+  transform: scale(0.97);
+}
+
+.send-svg-icon {
+  display: block;
+}
+
+.composer-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #92400e;
+  animation: voice-banner-fadein 0.2s ease;
+}
+
+.composer-error-icon {
+  font-size: 13px;
+}
+
+.composer-error-text {
+  flex: 1;
+}
+
+.btn-dismiss-error {
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  color: #92400e;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+@media (max-width: 960px) {
+  .discovery-dialogue-col {
+    height: 580px;
+  }
+}
+
+@media (max-width: 640px) {
+  .conversation-composer-sticky {
+    padding: 10px 12px 12px 12px;
+  }
+  .composer-input-wrapper {
+    padding: 4px 4px 4px 12px;
+  }
+  .conversation-composer-input {
+    font-size: 13px;
+  }
+  .btn-composer-send .send-label {
+    display: none;
+  }
+  .btn-composer-send {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .composer-voice-hint {
+    display: none;
+  }
 }
 
 .chat-bubble {

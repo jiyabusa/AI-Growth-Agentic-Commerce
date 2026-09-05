@@ -3623,6 +3623,21 @@ body {
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
+.modal-auth-popup-card {
+  max-width: 460px;
+  border: 1px solid #ede9fe;
+}
+
+.btn-demo-chip {
+  transition: all 0.15s ease;
+}
+
+.btn-demo-chip:hover {
+  background: #ede9fe !important;
+  border-color: #c4b5fd !important;
+  color: #5b21b6 !important;
+}
+
 .modal-header {
   padding: 18px 22px;
   border-bottom: 1px solid var(--border-light);

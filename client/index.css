@@ -699,44 +699,37 @@ body {
    ============================================================= */
 .landing-hero {
   max-width: 960px;
-  margin: 40px auto;
+  margin: 36px auto;
   padding: 0 24px;
   text-align: center;
 }
 
-.hero-badge {
-  display: inline-block;
-  background: var(--lavender-light);
-  color: var(--lavender-dark);
-  font-size: 11.5px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  padding: 4px 14px;
-  border-radius: var(--radius-full);
-  margin-bottom: 16px;
-  border: 1px solid var(--lavender-mid);
+.hero-tagline-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 32px;
 }
 
-.hero-title {
-  font-size: 38px;
+.hero-tagline-sub {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
+}
+
+.hero-tagline-main {
+  font-size: 28px;
   font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -1px;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
   color: var(--text-primary);
-  margin-bottom: 14px;
+  margin: 0;
 }
 
 .highlight-text {
   color: var(--lavender-dark);
-}
-
-.hero-desc {
-  font-size: 15px;
-  color: var(--text-secondary);
-  max-width: 720px;
-  margin: 0 auto 36px auto;
-  line-height: 1.6;
 }
 
 .landing-cards-grid {

@@ -1567,7 +1567,7 @@
       </div>
 
       <div class="modal-footer">
-        <span class="field-hint" style="margin-right: auto;">Transactions are recorded with deterministic policy validation and Razorpay test mode capture.</span>
+        <button type="button" class="btn-secondary" id="btn-orders-switch-account" style="margin-right: auto;">⇄ Switch / Log In</button>
         <button class="btn-primary" id="btn-close-customer-orders-footer">Done</button>
       </div>
     </div>
@@ -1605,6 +1605,101 @@
           <button type="submit" class="btn-primary" id="btn-save-edit-profile">Save &amp; Sync Everywhere &rarr;</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 8: CUSTOMER LOGIN & AUTHENTICATION POPUP MODAL -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="modal-customer-login">
+    <div class="modal-card modal-auth-popup-card" style="max-width: 460px;">
+      <div class="modal-header">
+        <div class="auth-popup-brand-wrap" style="display: flex; align-items: center; gap: 10px;">
+          <div class="brand-logo-gem" style="width: 32px; height: 32px;">
+            <img src="logo.png" alt="Revify" class="brand-logo-img">
+          </div>
+          <div>
+            <span class="modal-eyebrow">CUSTOMER GATEWAY</span>
+            <h2 class="modal-title" id="auth-popup-title">Customer Login &amp; Sign In</h2>
+          </div>
+        </div>
+        <button class="modal-close" id="btn-close-customer-login-modal">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px;">
+        <!-- Auth Tabs Switcher inside Popup -->
+        <div class="auth-tabs" style="margin-bottom: 16px;">
+          <button type="button" class="auth-tab-btn active" id="tab-popup-login" data-popup-tab="login">Log In</button>
+          <button type="button" class="auth-tab-btn" id="tab-popup-signup" data-popup-tab="signup">New Account (Sign Up)</button>
+        </div>
+
+        <!-- 1-Click Quick Demo Customer Accounts -->
+        <div class="demo-accounts-tray" style="margin-bottom: 16px; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <span class="demo-tray-label" style="display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px;">
+            ⚡ 1-CLICK DEMO ACCOUNTS:
+          </span>
+          <div class="demo-chips-grid" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <button type="button" class="btn-demo-chip" id="btn-popup-demo-aarav" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ede9fe; background: #f5f3ff; color: #6d28d9; cursor: pointer; font-weight: 600;">
+              👤 Aarav (Audio Fan)
+            </button>
+            <button type="button" class="btn-demo-chip" id="btn-popup-demo-priya" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ede9fe; background: #f5f3ff; color: #6d28d9; cursor: pointer; font-weight: 600;">
+              👤 Priya (Traveler)
+            </button>
+            <button type="button" class="btn-demo-chip" id="btn-popup-demo-rohan" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ede9fe; background: #f5f3ff; color: #6d28d9; cursor: pointer; font-weight: 600;">
+              👤 Rohan (Desk Setup)
+            </button>
+            <button type="button" class="btn-demo-chip" id="btn-popup-demo-ananya" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ede9fe; background: #f5f3ff; color: #6d28d9; cursor: pointer; font-weight: 600;">
+              👤 Ananya (New User)
+            </button>
+          </div>
+        </div>
+
+        <!-- POPUP TAB 1: LOG IN FORM -->
+        <form id="form-popup-login" class="auth-form active">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="popup-login-email">Email Address</label>
+            <input type="email" id="popup-login-email" class="form-input" placeholder="priya@example.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="popup-login-password">Password</label>
+            <input type="password" id="popup-login-password" class="form-input" placeholder="Enter password" required autocomplete="current-password" value="password123">
+          </div>
+
+          <button type="submit" class="btn-primary" id="btn-popup-submit-login" style="width: 100%; justify-content: center; padding: 10px 16px; font-weight: 700;">
+            Sign In &amp; Continue Shopping &rarr;
+          </button>
+        </form>
+
+        <!-- POPUP TAB 2: SIGN UP FORM -->
+        <form id="form-popup-signup" class="auth-form" style="display: none;">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="popup-signup-name">Full Name</label>
+            <input type="text" id="popup-signup-name" class="form-input" placeholder="e.g. Maya Verma" required autocomplete="name">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label" for="popup-signup-email">Email Address</label>
+            <input type="email" id="popup-signup-email" class="form-input" placeholder="e.g. maya@example.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" for="popup-signup-password">Password</label>
+            <input type="password" id="popup-signup-password" class="form-input" placeholder="Create a password" required autocomplete="new-password" value="password123">
+          </div>
+
+          <button type="submit" class="btn-primary" id="btn-popup-submit-signup" style="width: 100%; justify-content: center; padding: 10px 16px; font-weight: 700;">
+            Create Account &amp; Start Shopping &rarr;
+          </button>
+        </form>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+        <span class="field-hint" style="font-size: 11.5px; color: #64748b;">
+          Encrypted sessions with verified order attribution.
+        </span>
+        <button type="button" class="btn-secondary" id="btn-close-customer-login-footer">Cancel</button>
+      </div>
     </div>
   </div>
 

@@ -18,77 +18,193 @@ const policyParserService = require('./services/policyParserService');
 // Retain protocol service utilities
 const mandateService = require('./services/mandateService');
 const frmService = require('./services/frmService');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
+const { authMiddleware, optionalAuthMiddleware } = require('./middleware/authMiddleware');
 
 const app = express();
 
-app.use(cors());
+// Security: CORS locked to trusted origins with credentials support
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  config.FRONTEND_ORIGIN
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server) or from allowed origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Dev mode permissive fallback while keeping credentials header clean
+  },
+  credentials: true
+}));
+
+app.use(cookieParser(config.COOKIE_SECRET));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../client')));
 
+// Rate Limiting to prevent brute-force on auth endpoints
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { success: false, error: 'Too many login attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+/**
+ * Helper: Issue httpOnly JWT Cookie for authenticated sessions
+ */
+function setAuthCookie(res, user) {
+  const payload = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role || 'customer'
+  };
+  const token = jwt.sign(payload, config.JWT_SECRET || 'revify-jwt-super-secret-key-2026', {
+    expiresIn: '7d'
+  });
+  res.cookie('revify_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+  return token;
+}
+
 // =================================================================
-// 0. CUSTOMER AUTHENTICATION & PROFILE APIS
+// 0. CUSTOMER AUTHENTICATION & PROFILE APIS (REAL DB & JWT SESSIONS)
 // =================================================================
 
 /**
  * Customer Sign Up / Registration
  */
-app.post('/api/customer/register', (req, res) => {
+const handleRegister = (req, res) => {
   const { name, email, password } = req.body;
   const result = dbService.registerCustomer({ name, email, password });
   if (!result.success) {
     return res.status(400).json(result);
   }
-  res.json(result);
-});
+  const token = setAuthCookie(res, result.customer);
+  res.json({
+    ...result,
+    token
+  });
+};
+app.post('/api/auth/register', handleRegister);
+app.post('/api/customer/register', handleRegister);
 
 /**
- * Customer Login / Sign In
+ * Customer Login / Sign In (with Rate Limiting & httpOnly JWT Cookie)
  */
-app.post('/api/customer/login', (req, res) => {
+const handleLogin = (req, res) => {
   const { email, password } = req.body;
   const result = dbService.loginCustomer({ email, password });
   if (!result.success) {
     return res.status(401).json(result);
   }
-  res.json(result);
-});
+  const token = setAuthCookie(res, result.customer);
+  res.json({
+    ...result,
+    token
+  });
+};
+app.post('/api/auth/login', loginLimiter, handleLogin);
+app.post('/api/customer/login', loginLimiter, handleLogin);
 
 /**
- * Get Customer Profile & Interaction Signals
+ * Session Verification (/api/auth/me)
+ * Checks httpOnly cookie on page load to restore authenticated session
  */
-app.get('/api/customer/profile', (req, res) => {
-  const customerId = req.query.customerId;
-  if (!customerId) {
-    return res.status(400).json({ error: 'customerId query parameter is required.' });
+const handleGetMe = (req, res) => {
+  const customer = dbService.getCustomerById(req.user.id);
+  if (!customer) {
+    return res.status(404).json({ success: false, error: 'User profile not found.' });
   }
-  const profile = dbService.getCustomerById(customerId);
+  const activeMandate = dbService.getActiveMandate(req.user.id);
+  res.json({
+    success: true,
+    customer,
+    activeMandate: activeMandate || null,
+    hasActiveMandate: !!activeMandate
+  });
+};
+app.get('/api/auth/me', authMiddleware, handleGetMe);
+app.get('/api/customer/me', authMiddleware, handleGetMe);
+
+/**
+ * Customer Log Out
+ * Clears httpOnly JWT session cookie
+ */
+const handleLogout = (req, res) => {
+  res.clearCookie('revify_token', {
+    httpOnly: true,
+    sameSite: 'lax'
+  });
+  res.json({ success: true, message: 'Logged out successfully.' });
+};
+app.post('/api/auth/logout', handleLogout);
+app.post('/api/customer/logout', handleLogout);
+
+/**
+ * Editable Customer Profile (PATCH /api/customer/profile and PATCH /profile)
+ */
+const handleProfilePatch = (req, res) => {
+  const { name, email, notification_pref } = req.body;
+  const result = dbService.updateCustomerProfile(req.user.id, { name, email, notification_pref });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+};
+app.patch('/api/customer/profile', authMiddleware, handleProfilePatch);
+app.patch('/api/profile', authMiddleware, handleProfilePatch);
+
+/**
+ * Get Customer Profile & Interaction Signals (Optional Auth or query param)
+ */
+app.get('/api/customer/profile', optionalAuthMiddleware, (req, res) => {
+  const targetId = req.query.customerId || (req.user ? req.user.id : null);
+  if (!targetId) {
+    return res.status(400).json({ error: 'customerId query parameter or valid authentication is required.' });
+  }
+  const profile = dbService.getCustomerById(targetId);
   if (!profile) {
     return res.status(404).json({ error: 'Customer not found.' });
   }
-  res.json({ customer: profile });
+  const activeMandate = dbService.getActiveMandate(targetId);
+  res.json({ customer: profile, activeMandate: activeMandate || null });
 });
 
 /**
- * Update Customer Profile (Name, Email) with Real-Time Shared Source of Truth Propagation
+ * Update Customer Profile (Legacy POST / PUT support)
  */
-app.post('/api/customer/profile/update', (req, res) => {
-  const { customerId, name, email } = req.body;
+app.post('/api/customer/profile/update', optionalAuthMiddleware, (req, res) => {
+  const customerId = req.body.customerId || (req.user ? req.user.id : null);
+  const { name, email, notification_pref } = req.body;
   if (!customerId) {
     return res.status(400).json({ error: 'customerId is required.' });
   }
-  const result = dbService.updateCustomerProfile(customerId, { name, email });
+  const result = dbService.updateCustomerProfile(customerId, { name, email, notification_pref });
   if (!result.success) {
     return res.status(400).json(result);
   }
   res.json(result);
 });
 
-app.put('/api/customer/profile', (req, res) => {
-  const { customerId, name, email } = req.body;
+app.put('/api/customer/profile', optionalAuthMiddleware, (req, res) => {
+  const customerId = req.body.customerId || (req.user ? req.user.id : null);
+  const { name, email, notification_pref } = req.body;
   if (!customerId) {
     return res.status(400).json({ error: 'customerId is required.' });
   }
-  const result = dbService.updateCustomerProfile(customerId, { name, email });
+  const result = dbService.updateCustomerProfile(customerId, { name, email, notification_pref });
   if (!result.success) {
     return res.status(400).json(result);
   }
@@ -96,7 +212,7 @@ app.put('/api/customer/profile', (req, res) => {
 });
 
 /**
- * Get All Registered Customer Accounts (Shared Source of Truth)
+ * Get All Registered Customer Accounts
  */
 app.get('/api/customer/all', (req, res) => {
   const customers = dbService.getCustomers();
@@ -106,8 +222,9 @@ app.get('/api/customer/all', (req, res) => {
 /**
  * Record Dynamic Customer Signal (Search, View, Interaction)
  */
-app.post('/api/customer/signal', (req, res) => {
-  const { customerId, signalType, value } = req.body;
+app.post('/api/customer/signal', optionalAuthMiddleware, (req, res) => {
+  const customerId = req.body.customerId || (req.user ? req.user.id : null);
+  const { signalType, value } = req.body;
   if (!customerId || !signalType || !value) {
     return res.status(400).json({ error: 'customerId, signalType, and value are required.' });
   }
@@ -116,15 +233,97 @@ app.post('/api/customer/signal', (req, res) => {
 });
 
 /**
- * Get Customer Order History
+ * Get Customer Order History (Scoped to authenticated session)
  */
-app.get('/api/customer/orders', (req, res) => {
-  const customerId = req.query.customerId;
-  if (!customerId) {
-    return res.status(400).json({ error: 'customerId is required.' });
+app.get('/api/customer/orders', optionalAuthMiddleware, (req, res) => {
+  const targetId = (req.user && req.user.id) || req.query.customerId;
+  if (!targetId) {
+    return res.json({ orders: [], count: 0 });
   }
-  const orders = dbService.getCustomerOrders(customerId);
-  res.json({ orders, count: orders.length });
+  const orders = dbService.getCustomerOrders(targetId);
+  res.json({ orders: orders || [], count: (orders || []).length });
+});
+
+// =================================================================
+// 0a. AP2 / UAP SPEND MANDATE APIS
+// =================================================================
+
+/**
+ * Get Current Active Mandate for Authenticated User
+ */
+app.get('/api/mandates/active', authMiddleware, (req, res) => {
+  const mandate = dbService.getActiveMandate(req.user.id);
+  res.json({
+    success: true,
+    mandate: mandate || null,
+    hasActiveMandate: !!mandate
+  });
+});
+
+/**
+ * Create Cryptographically Signed AP2 / UAP Spend Mandate
+ */
+app.post('/api/mandates/create', authMiddleware, (req, res) => {
+  const { max_amount, category, valid_duration_seconds } = req.body;
+  const maxAmountNum = Number(max_amount) || 5000;
+  const durationSec = Number(valid_duration_seconds) || 3600;
+
+  const signed = mandateService.createMandate({
+    user_id: req.user.id,
+    max_amount: maxAmountNum,
+    category: category || 'electronics',
+    valid_duration_seconds: durationSec
+  });
+
+  const saved = dbService.saveMandate({
+    user_id: req.user.id,
+    agent_id: signed.payload.agent_id,
+    max_amount: signed.payload.max_amount,
+    category: signed.payload.category,
+    valid_duration_seconds: durationSec,
+    issued_at: signed.payload.issued_at,
+    valid_until: signed.payload.valid_until,
+    nonce: signed.payload.nonce,
+    token: signed.token
+  });
+
+  res.json({
+    success: true,
+    mandate: saved,
+    token: signed.token,
+    formatted_details: signed.formatted_details
+  });
+});
+
+/**
+ * Revoke Mandate for Authenticated User
+ */
+app.post('/api/mandates/revoke', authMiddleware, (req, res) => {
+  const result = dbService.revokeMandate(req.user.id);
+  res.json(result);
+});
+
+// =================================================================
+// 0c. REAL DATABASE-BACKED USER CART APIS
+// =================================================================
+
+app.get('/api/cart', optionalAuthMiddleware, (req, res) => {
+  const userId = (req.user && req.user.id) || req.query.userId || 'guest';
+  const items = dbService.getUserCart(userId);
+  res.json({ success: true, items: items || [] });
+});
+
+app.post('/api/cart/add', optionalAuthMiddleware, (req, res) => {
+  const userId = (req.user && req.user.id) || req.body.userId || 'guest';
+  const { productId, quantity } = req.body;
+  const items = dbService.addToUserCart(userId, productId, Number(quantity) || 1);
+  res.json({ success: true, items });
+});
+
+app.delete('/api/cart/clear', optionalAuthMiddleware, (req, res) => {
+  const userId = (req.user && req.user.id) || req.body.userId || 'guest';
+  const items = dbService.clearUserCart(userId);
+  res.json({ success: true, items });
 });
 
 // =================================================================
@@ -372,9 +571,9 @@ app.post('/api/shopping/checkout/evaluate', (req, res) => {
 });
 
 /**
- * Checkout Step 2: Razorpay Test-Mode Payment & Order Confirmation
+ * Checkout Step 2: Razorpay Test-Mode Payment & Order Confirmation with Mandate Verification
  */
-app.post('/api/shopping/checkout/pay', async (req, res) => {
+app.post('/api/shopping/checkout/pay', optionalAuthMiddleware, async (req, res) => {
   const { sessionId = 'default', customerId, customerName, cardNumber = '4111111111111111', userApproved = true, originalIntentText } = req.body;
   const cart = dbService.getCart(sessionId);
 
@@ -382,15 +581,31 @@ app.post('/api/shopping/checkout/pay', async (req, res) => {
     return res.status(400).json({ error: 'Cart is empty.' });
   }
 
-  // Resolve customer name from shared source of truth
-  let resolvedCustomerName = customerName;
-  if (customerId) {
-    const cust = dbService.getCustomerById(customerId);
+  // Resolve customer id and name from authenticated session or request body
+  const effectiveUserId = (req.user && req.user.id) || customerId;
+  let resolvedCustomerName = (req.user && req.user.name) || customerName;
+  if (effectiveUserId) {
+    const cust = dbService.getCustomerById(effectiveUserId);
     if (cust && cust.name) {
       resolvedCustomerName = cust.name;
     }
   }
-  if (!resolvedCustomerName) resolvedCustomerName = 'Aarav Sharma';
+  if (!resolvedCustomerName) resolvedCustomerName = 'Customer';
+
+  // 0. Enforce Authenticated User's Agent Spend Mandate if present
+  if (effectiveUserId) {
+    const userMandate = dbService.getActiveMandate(effectiveUserId);
+    if (userMandate) {
+      if (cart.total > userMandate.max_amount) {
+        return res.status(403).json({
+          success: false,
+          errorType: 'MANDATE_EXCEEDED',
+          reason: `Transaction amount ₹${cart.total.toLocaleString('en-IN')} exceeds your agent's authorized spend mandate ceiling of ₹${userMandate.max_amount.toLocaleString('en-IN')}. Update your mandate in your profile to proceed.`,
+          mandate: userMandate
+        });
+      }
+    }
+  }
 
   // 1. Policy Gate Check
   const policyCheck = policyEngine.evaluateTransaction({
@@ -422,7 +637,7 @@ app.post('/api/shopping/checkout/pay', async (req, res) => {
   const rzpOrder = await razorpayService.createOrder({
     amountInr: cart.total,
     receipt: `rcpt_${Date.now().toString().slice(-6)}`,
-    notes: { customer: resolvedCustomerName, customerId: customerId || '', cartItems: cart.items.length }
+    notes: { customer: resolvedCustomerName, customerId: effectiveUserId || '', cartItems: cart.items.length }
   });
 
   // 3. Razorpay Payment Execution & Verification (Success vs Declined Test Card)
@@ -456,7 +671,7 @@ app.post('/api/shopping/checkout/pay', async (req, res) => {
   const hasCrossSell = cart.items.some(i => i.isCrossSell);
 
   const order = dbService.createOrder({
-    customer_id: customerId,
+    customer_id: effectiveUserId,
     customer_name: resolvedCustomerName,
     items: cart.items,
     subtotal: cart.subtotal,

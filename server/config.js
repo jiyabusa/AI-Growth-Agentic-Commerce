@@ -3,6 +3,10 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 module.exports = {
   PORT: process.env.PORT || 3000,
+  JWT_SECRET: process.env.JWT_SECRET || 'revify-jwt-super-secret-key-2026',
+  COOKIE_SECRET: process.env.COOKIE_SECRET || 'revify-cookie-secret-key-2026',
+  DB_PATH: path.join(__dirname, 'data/revify.db'),
+  FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || 'http://localhost:3000',
   HMAC_SECRET: process.env.HMAC_SECRET || 'agentic-commerce-uap-ap2-secret-key-2026',
   RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || 'rzp_test_mock_agentic_key',
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || 'rzp_test_mock_agentic_secret',

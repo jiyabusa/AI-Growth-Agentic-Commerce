@@ -2,6 +2,15 @@
  * Unified Relational Store & Seed Data Service
  * Maintains live products, merchant policies, orders, analytics, carts, and audit events.
  */
+const bcrypt = require('bcryptjs');
+
+let dbRun = null;
+try {
+  const db = require('../database');
+  dbRun = db.run;
+} catch (e) {
+  // Graceful fallback if database connection has not initialized
+}
 
 class DatabaseService {
   constructor() {
@@ -267,6 +276,8 @@ class DatabaseService {
 
     // 2. Customer Authentication & Profile Store (Shared Single Source of Truth)
     this.customers = new Map();
+    this.mandates = new Map();
+    this.userCarts = new Map();
 
     // 1. Aarav Sharma
     this.customers.set('cust_aarav', {
@@ -820,9 +831,18 @@ class DatabaseService {
   }
 
   // --- Customer Authentication & Profiles ---
-  registerCustomer({ name, email, password }) {
+  registerCustomer({ name, email, password, role = 'customer' }) {
     if (!name || !email || !password) {
       return { success: false, error: 'Name, email, and password are required.' };
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return { success: false, error: 'Please provide a valid email address.' };
+    }
+
+    if (password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters.' };
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -832,12 +852,15 @@ class DatabaseService {
       }
     }
 
-    const customerId = `cust_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const password_hash = bcrypt.hashSync(password, 10);
+    const customerId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newCustomer = {
       id: customerId,
       name: name.trim(),
       email: normalizedEmail,
-      password,
+      password_hash,
+      notification_pref: 'email',
+      role,
       isReturning: false,
       searchHistory: [],
       purchaseHistory: [],
@@ -848,17 +871,32 @@ class DatabaseService {
     };
 
     this.customers.set(customerId, newCustomer);
+
+    // Persist to SQLite
+    if (dbRun) {
+      dbRun(
+        `INSERT INTO users (id, name, email, password_hash, notification_pref, role, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(email) DO UPDATE SET name = excluded.name, password_hash = excluded.password_hash`,
+        [newCustomer.id, newCustomer.name, newCustomer.email, password_hash, 'email', role, newCustomer.createdAt]
+      ).catch(err => console.error('[DB] SQLite insert user error:', err.message));
+
+      dbRun(
+        `INSERT INTO carts (user_id, items_json) VALUES (?, '[]')
+         ON CONFLICT(user_id) DO NOTHING`,
+        [newCustomer.id]
+      ).catch(err => console.error('[DB] SQLite insert cart error:', err.message));
+    }
+
     return {
       success: true,
       customer: {
         id: newCustomer.id,
         name: newCustomer.name,
         email: newCustomer.email,
-        role: 'customer',
-        isReturning: newCustomer.isReturning,
-        searchHistory: newCustomer.searchHistory,
-        purchaseHistory: newCustomer.purchaseHistory,
-        viewedHistory: newCustomer.viewedHistory,
+        role: newCustomer.role,
+        notification_pref: newCustomer.notification_pref,
+        isReturning: false,
         createdAt: newCustomer.createdAt
       }
     };
@@ -882,8 +920,16 @@ class DatabaseService {
       return { success: false, error: 'Customer account not found. Please sign up.' };
     }
 
-    if (matchedCustomer.password !== password) {
-      return { success: false, error: 'Invalid password. Please try again.' };
+    // Verify password with bcrypt or fallback for test seeds
+    let isValid = false;
+    if (matchedCustomer.password_hash) {
+      isValid = bcrypt.compareSync(password, matchedCustomer.password_hash);
+    } else if (matchedCustomer.password) {
+      isValid = (matchedCustomer.password === password);
+    }
+
+    if (!isValid) {
+      return { success: false, error: 'Incorrect password. Please verify your credentials.' };
     }
 
     return {
@@ -892,16 +938,112 @@ class DatabaseService {
         id: matchedCustomer.id,
         name: matchedCustomer.name,
         email: matchedCustomer.email,
-        role: 'customer',
+        role: matchedCustomer.role || 'customer',
+        notification_pref: matchedCustomer.notification_pref || 'email',
         isReturning: matchedCustomer.isReturning || matchedCustomer.purchaseHistory?.length > 0 || matchedCustomer.searchHistory?.length > 0,
-        searchHistory: matchedCustomer.searchHistory || [],
-        purchaseHistory: matchedCustomer.purchaseHistory || [],
-        viewedHistory: matchedCustomer.viewedHistory || [],
-        browsingCategories: matchedCustomer.browsingCategories || [],
-        preferredBudget: matchedCustomer.preferredBudget || null,
         createdAt: matchedCustomer.createdAt
       }
     };
+  }
+
+  // --- Mandate Storage & Validation ---
+  saveMandate(mandateData) {
+    if (!this.mandates) this.mandates = new Map();
+    const id = mandateData.id || `mnd_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const record = {
+      id,
+      user_id: mandateData.user_id,
+      agent_id: mandateData.agent_id || 'agent_growth_01',
+      max_amount: Number(mandateData.max_amount) || 5000,
+      category: mandateData.category || '*',
+      valid_duration_seconds: Number(mandateData.valid_duration_seconds) || 3600,
+      issued_at: mandateData.issued_at || Math.floor(Date.now() / 1000),
+      valid_until: mandateData.valid_until || (Math.floor(Date.now() / 1000) + 3600),
+      nonce: mandateData.nonce || `nonce_${Date.now()}`,
+      token: mandateData.token || '',
+      status: 'ACTIVE',
+      created_at: new Date().toISOString()
+    };
+    this.mandates.set(record.user_id, record);
+
+    if (dbRun) {
+      dbRun(
+        `INSERT INTO mandates (id, user_id, agent_id, max_amount, category, valid_duration_seconds, issued_at, valid_until, nonce, token, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET status = excluded.status`,
+        [record.id, record.user_id, record.agent_id, record.max_amount, record.category, record.valid_duration_seconds, record.issued_at, record.valid_until, record.nonce, record.token, record.status]
+      ).catch(err => console.error('[DB] SQLite insert mandate error:', err.message));
+    }
+
+    return record;
+  }
+
+  getActiveMandate(userId) {
+    if (!userId) return null;
+    if (this.mandates && this.mandates.has(userId)) {
+      const m = this.mandates.get(userId);
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      if (m.status === 'ACTIVE' && m.valid_until > nowSeconds) {
+        return m;
+      }
+    }
+    return null;
+  }
+
+  revokeMandate(userId) {
+    if (!userId) return { success: false, error: 'User ID is required.' };
+    if (this.mandates && this.mandates.has(userId)) {
+      const m = this.mandates.get(userId);
+      m.status = 'REVOKED';
+    }
+    if (dbRun) {
+      dbRun(
+        `UPDATE mandates SET status = 'REVOKED' WHERE user_id = ? AND status = 'ACTIVE'`,
+        [userId]
+      ).catch(err => console.error('[DB] SQLite revoke mandate error:', err.message));
+    }
+    return { success: true, message: 'Mandate successfully revoked.' };
+  }
+
+  // --- User Cart Persistence ---
+  getUserCart(userId) {
+    if (!this.userCarts) this.userCarts = new Map();
+    return this.userCarts.get(userId) || [];
+  }
+
+  addToUserCart(userId, productId, quantity = 1) {
+    if (!this.userCarts) this.userCarts = new Map();
+    const cart = this.userCarts.get(userId) || [];
+    const existing = cart.find(i => i.product_id === productId);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      cart.push({ product_id: productId, quantity, added_at: new Date().toISOString() });
+    }
+    this.userCarts.set(userId, cart);
+
+    if (dbRun) {
+      dbRun(
+        `INSERT INTO carts (user_id, items_json) VALUES (?, ?)
+         ON CONFLICT(user_id) DO UPDATE SET items_json = excluded.items_json`,
+        [userId, JSON.stringify(cart)]
+      ).catch(err => console.error('[DB] SQLite persist cart error:', err.message));
+    }
+
+    return cart;
+  }
+
+  clearUserCart(userId) {
+    if (this.userCarts) {
+      this.userCarts.set(userId, []);
+    }
+    if (dbRun) {
+      dbRun(
+        `UPDATE carts SET items_json = '[]' WHERE user_id = ?`,
+        [userId]
+      ).catch(err => console.error('[DB] SQLite clear cart error:', err.message));
+    }
+    return [];
   }
 
   getCustomerById(id) {
@@ -972,7 +1114,7 @@ class DatabaseService {
     }));
   }
 
-  updateCustomerProfile(customerId, { name, email }) {
+  updateCustomerProfile(customerId, { name, email, notification_pref }) {
     if (!customerId) return { success: false, error: 'Customer ID is required.' };
     const cust = this.customers.get(customerId);
     if (!cust) return { success: false, error: 'Customer profile not found.' };
@@ -989,6 +1131,16 @@ class DatabaseService {
     }
     if (email && email.trim()) {
       cust.email = email.trim().toLowerCase();
+    }
+    if (notification_pref) {
+      cust.notification_pref = notification_pref;
+    }
+
+    if (dbRun) {
+      dbRun(
+        `UPDATE users SET name = ?, email = ?, notification_pref = ? WHERE id = ?`,
+        [cust.name, cust.email, cust.notification_pref || 'email', customerId]
+      ).catch(err => console.error('[DB] SQLite update user profile error:', err.message));
     }
 
     this.updateAnalytics();
@@ -1175,6 +1327,14 @@ class DatabaseService {
 
     this.orders.unshift(newOrder);
     this.updateAnalytics();
+
+    if (dbRun) {
+      dbRun(
+        `INSERT INTO orders (id, user_id, customer_name, customer_email, items_json, total_amount, status, payment_method, razorpay_order_id, razorpay_payment_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [newOrder.id, newOrder.customer_id, newOrder.customer_name, '', JSON.stringify(newOrder.items), newOrder.total, newOrder.payment_status, newOrder.payment_method, newOrder.razorpay_order_id, newOrder.razorpay_payment_id, newOrder.created_at]
+      ).catch(err => console.error('[DB] SQLite insert order error:', err.message));
+    }
 
     return newOrder;
   }

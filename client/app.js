@@ -1,6 +1,6 @@
 // =============================================================
 // REVIFY PLATFORM FRONTEND CONTROLLER // LIGHT PASTEL SPA
-// AI Commerce Command Center + AI Shopping + Merchant Intelligence
+// Merchant Center + AI Shopping + Merchant Intelligence
 // =============================================================
 
 let currentSessionId = 'sess_' + Math.random().toString(36).substring(2, 8);
@@ -12,14 +12,10 @@ let latestRecommendedCrossSell = null;
 let currentProductsList = [];
 let currentSmartCartOpportunity = null;
 
-// Customer Authentication & Profile State
+// Customer Authentication & Profile State (Backend DB & JWT Session-Driven)
 let currentCustomer = null;
-try {
-  const saved = localStorage.getItem('revify_customer') || localStorage.getItem('omnigrowth_customer');
-  if (saved) currentCustomer = JSON.parse(saved);
-} catch (e) {
-  currentCustomer = null;
-}
+let currentMandate = null;
+let currentUserOrders = [];
 
 // Merchant Authentication & Profile State
 let currentMerchant = null;
@@ -86,14 +82,13 @@ function getTimeOfDayGreeting() {
 let isListening = false;
 let isSpeaking = false;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   setupNavigation();
-  setupCustomerAuth();
+  setupCustomerLoginModal();
+  setupUserProfilePanel();
   setupMerchantAuth();
   setupTopRecommendations();
   setupCustomerOrdersModal();
-  setupCustomerLoginModal();
-  setupEditProfileModal();
   setupMerchantSubviews();
   setupShoppingChat();
   setupSessionMemory();
@@ -104,16 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSimulatorControls();
   setupNLPolicyBuilder();
 
-  // Initial customer state & data fetches
-  updateCustomerUI();
+  // Restore session from httpOnly cookie via /api/auth/me
+  await checkAuthSession();
+
   updateMerchantUI();
   refreshCart();
   refreshMerchantData();
   refreshSessionMemory();
   loadTopRecommendations();
-
-  // Always make Customer Login Pop-up Modal immediately visible on page load
-  openCustomerLoginModal('login');
 });
 
 // =============================================================
@@ -208,7 +201,11 @@ function setupNavigation() {
 
   // Top Navbar Customer Account button
   document.getElementById('btn-nav-customer')?.addEventListener('click', () => {
-    openCustomerLoginModal('login');
+    if (currentCustomer) {
+      openUserProfilePanel();
+    } else {
+      openCustomerLoginModal('login');
+    }
   });
 
   // URL Hash Routing Support
@@ -234,204 +231,401 @@ function setupNavigation() {
 }
 
 // =============================================================
-// 1.1 CUSTOMER AUTHENTICATION CONTROLLER (SIGN UP & LOGIN)
+// 1.1 CUSTOMER AUTHENTICATION & USER PROFILE CONTROLLER
 // =============================================================
-function setupCustomerAuth() {
-  const tabSignUp = document.getElementById('tab-auth-signup');
-  const tabLogin = document.getElementById('tab-auth-login');
-  const formSignUp = document.getElementById('form-customer-signup');
-  const formLogin = document.getElementById('form-customer-login');
 
-  tabSignUp?.addEventListener('click', () => {
-    tabSignUp.classList.add('active');
-    tabLogin.classList.remove('active');
-    formSignUp.classList.add('active');
-    formLogin.classList.remove('active');
-  });
-
-  tabLogin?.addEventListener('click', () => {
-    tabLogin.classList.add('active');
-    tabSignUp.classList.remove('active');
-    formLogin.classList.add('active');
-    formSignUp.classList.remove('active');
-  });
-
-  // Sign Up Form Submit (New Customer)
-  formSignUp?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('signup-name').value.trim();
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
-
-    const btn = document.getElementById('btn-submit-signup');
-    btn.disabled = true;
-    btn.textContent = 'Registering Account...';
-
-    try {
-      const res = await fetch('/api/customer/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
-      });
-      const data = await res.json();
-      btn.disabled = false;
-      btn.textContent = 'Create Account & Start Shopping →';
-
-      if (data.success && data.customer) {
-        setAuthenticatedCustomer(data.customer);
-        window.switchAppView('view-shopping');
-      } else {
-        alert(data.error || 'Registration failed. Please try again.');
-      }
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = 'Create Account & Start Shopping →';
-      alert('Network error during registration: ' + err.message);
+async function checkAuthSession() {
+  try {
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    const data = await res.json();
+    if (data.authenticated && data.user) {
+      currentCustomer = data.user;
+      currentMandate = data.mandate || null;
+    } else {
+      currentCustomer = null;
+      currentMandate = null;
     }
-  });
-
-  // Log In Form Submit (Returning Customer)
-  formLogin?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-
-    const btn = document.getElementById('btn-submit-login');
-    btn.disabled = true;
-    btn.textContent = 'Authenticating...';
-
-    try {
-      const res = await fetch('/api/customer/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      btn.disabled = false;
-      btn.textContent = 'Log In & Continue →';
-
-      if (data.success && data.customer) {
-        setAuthenticatedCustomer(data.customer);
-        window.switchAppView('view-shopping');
-      } else {
-        alert(data.error || 'Login failed. Please verify your credentials.');
-      }
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = 'Log In & Continue →';
-      alert('Network error during login: ' + err.message);
-    }
-  });
-
-  // 1-Click Demo Profiles (Indian Customer Accounts)
-  document.getElementById('btn-fill-demo-aarav')?.addEventListener('click', () => {
-    document.getElementById('login-email').value = 'aarav@example.com';
-    document.getElementById('login-password').value = 'password123';
-    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
-  });
-
-  document.getElementById('btn-fill-demo-priya')?.addEventListener('click', () => {
-    document.getElementById('login-email').value = 'priya@example.com';
-    document.getElementById('login-password').value = 'password123';
-    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
-  });
-
-  document.getElementById('btn-fill-demo-rohan')?.addEventListener('click', () => {
-    document.getElementById('login-email').value = 'rohan@example.com';
-    document.getElementById('login-password').value = 'password123';
-    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
-  });
-
-  document.getElementById('btn-fill-demo-ananya')?.addEventListener('click', () => {
-    document.getElementById('login-email').value = 'ananya@example.com';
-    document.getElementById('login-password').value = 'password123';
-    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
-  });
-
-  // Legacy demo buttons fallback
-  document.getElementById('btn-fill-demo-jiya')?.addEventListener('click', () => {
-    document.getElementById('login-email').value = 'jiya@example.com';
-    document.getElementById('login-password').value = 'password123';
-    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
-  });
-
-  document.getElementById('btn-fill-demo-rahul')?.addEventListener('click', () => {
-    document.getElementById('login-email').value = 'rohan@example.com';
-    document.getElementById('login-password').value = 'password123';
-    document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
-  });
-
-  // Switch User / Account button inside Shopping view
-  document.getElementById('btn-switch-user')?.addEventListener('click', () => {
-    openCustomerLoginModal('login');
-  });
-
-  document.getElementById('btn-open-order-history')?.addEventListener('click', openCustomerOrderHistory);
+  } catch (err) {
+    console.error('Session check failed:', err);
+    currentCustomer = null;
+    currentMandate = null;
+  }
+  updateCustomerUI();
 }
 
-function setAuthenticatedCustomer(customer) {
-  currentCustomer = customer;
-  try {
-    localStorage.setItem('revify_customer', JSON.stringify(customer));
-  } catch (e) {}
-
+function setAuthenticatedCustomer(user, mandate = null) {
+  currentCustomer = user;
+  currentMandate = mandate;
   updateCustomerUI();
   updateCustomerGreeting();
   loadTopRecommendations();
   refreshCustomerOrdersCount();
 }
 
-function logoutCustomer() {
-  currentCustomer = null;
-  try {
-    localStorage.removeItem('revify_customer');
-    localStorage.removeItem('omnigrowth_customer');
-  } catch (e) {}
-
-  updateCustomerUI();
-  window.switchAppView('view-customer-auth');
-}
-
 function updateCustomerUI() {
+  const btnLogin = document.getElementById('btn-open-login-popup');
+  const btnNavCustomer = document.getElementById('btn-nav-customer');
+  const navCustomerMonogram = document.getElementById('nav-customer-monogram');
   const navCustomerName = document.getElementById('nav-customer-name');
-  const navCustomerAvatar = document.getElementById('nav-customer-avatar');
+  const globalAgentPill = document.getElementById('global-agent-pill');
+  const storeCustomerName = document.getElementById('store-customer-name');
   const customerBadge = document.getElementById('customer-avatar-badge');
   const statusBadge = document.getElementById('customer-status-badge');
   const historyIndicator = document.getElementById('customer-history-indicator');
-  const storeCustomerName = document.getElementById('store-customer-name');
 
   if (currentCustomer) {
+    const initials = currentCustomer.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
     const firstName = currentCustomer.name.split(' ')[0];
-    const initials = currentCustomer.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-    if (storeCustomerName) storeCustomerName.textContent = firstName;
+    if (btnLogin) btnLogin.style.display = 'none';
+    if (btnNavCustomer) btnNavCustomer.style.display = 'inline-flex';
+    if (navCustomerMonogram) navCustomerMonogram.textContent = initials || 'US';
     if (navCustomerName) navCustomerName.textContent = currentCustomer.name;
-    if (navCustomerAvatar) navCustomerAvatar.textContent = initials || '👤';
-    if (customerBadge) customerBadge.textContent = initials || '👤';
-
-    const isReturning = currentCustomer.isReturning || (currentCustomer.purchaseHistory && currentCustomer.purchaseHistory.length > 0) || (currentCustomer.searchHistory && currentCustomer.searchHistory.length > 0);
+    if (storeCustomerName) storeCustomerName.textContent = firstName;
+    if (customerBadge) customerBadge.textContent = initials || 'US';
     if (statusBadge) {
-      statusBadge.textContent = isReturning ? '✨ Returning Customer' : '✨ New Customer Account';
-      statusBadge.className = isReturning ? 'badge-customer-status font-bold' : 'badge-customer-status font-bold new-acc';
+      statusBadge.textContent = 'Verified Customer';
+      statusBadge.className = 'badge-customer-status font-bold';
     }
     if (historyIndicator) {
-      historyIndicator.textContent = isReturning 
-        ? 'Curated for your audio & travel preferences'
-        : 'Trending selections curated for you';
+      historyIndicator.textContent = 'Curated recommendations for your verified account';
+    }
+
+    // Dynamic Agent Pill: check active mandate
+    const isMandateActive = currentMandate && currentMandate.status === 'ACTIVE' && new Date(currentMandate.expires_at) > new Date();
+    if (globalAgentPill) {
+      if (isMandateActive) {
+        globalAgentPill.className = 'agent-status-pill';
+        const txt = globalAgentPill.querySelector('.status-text');
+        if (txt) txt.textContent = `Agent: Active (₹${Number(currentMandate.max_amount).toLocaleString('en-IN')})`;
+      } else {
+        globalAgentPill.className = 'agent-status-pill pill-no-mandate';
+        const txt = globalAgentPill.querySelector('.status-text');
+        if (txt) txt.textContent = 'Agent: No Mandate';
+      }
     }
 
     refreshCustomerOrdersCount();
   } else {
+    // Honest Unauthenticated / Guest state
+    if (btnLogin) btnLogin.style.display = 'inline-flex';
+    if (btnNavCustomer) btnNavCustomer.style.display = 'none';
     if (storeCustomerName) storeCustomerName.textContent = 'Guest';
-    if (navCustomerName) navCustomerName.textContent = 'Sign In / Sign Up';
-    if (navCustomerAvatar) navCustomerAvatar.textContent = '👤';
-    if (customerBadge) customerBadge.textContent = '👤';
-    if (statusBadge) statusBadge.textContent = 'Guest Mode';
-    if (historyIndicator) historyIndicator.textContent = 'Trending selections curated for you';
+    if (customerBadge) customerBadge.textContent = '--';
+    if (statusBadge) {
+      statusBadge.textContent = 'Guest Mode';
+      statusBadge.className = 'badge-customer-status font-bold new-acc';
+    }
+    if (historyIndicator) {
+      historyIndicator.textContent = 'Catalog preview & AI shopping exploration';
+    }
+    if (globalAgentPill) {
+      globalAgentPill.className = 'agent-status-pill pill-no-mandate';
+      const txt = globalAgentPill.querySelector('.status-text');
+      if (txt) txt.textContent = 'Agent: No Mandate';
+    }
   }
 
   updateCartBadge();
   updateCustomerGreeting();
+}
+
+function openUserProfilePanel() {
+  if (!currentCustomer) {
+    openCustomerLoginModal('login');
+    return;
+  }
+
+  const panel = document.getElementById('panel-user-profile');
+  if (!panel) return;
+
+  const initials = currentCustomer.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const monogramEl = document.getElementById('profile-monogram-large');
+  const nameEl = document.getElementById('profile-user-fullname');
+  const emailEl = document.getElementById('profile-user-email');
+
+  if (monogramEl) monogramEl.textContent = initials || '--';
+  if (nameEl) nameEl.textContent = currentCustomer.name;
+  if (emailEl) emailEl.textContent = currentCustomer.email;
+
+  const inputName = document.getElementById('input-edit-fullname');
+  const inputNotif = document.getElementById('input-edit-notif');
+  if (inputName) inputName.value = currentCustomer.name || '';
+  if (inputNotif) inputNotif.value = currentCustomer.notification_pref || 'email';
+  const saveFeedback = document.getElementById('profile-save-feedback');
+  if (saveFeedback) saveFeedback.textContent = '';
+
+  renderProfileMandateSection();
+  fetchAndRenderUserOrders();
+
+  panel.classList.add('active');
+  panel.style.display = 'flex';
+}
+
+function closeUserProfilePanel() {
+  const panel = document.getElementById('panel-user-profile');
+  if (panel) {
+    panel.classList.remove('active');
+    panel.style.display = 'none';
+  }
+}
+
+window.openUserProfilePanel = openUserProfilePanel;
+window.closeUserProfilePanel = closeUserProfilePanel;
+
+function renderProfileMandateSection() {
+  const statusTag = document.getElementById('profile-mandate-status-tag');
+  const activeBox = document.getElementById('box-mandate-active');
+  const createForm = document.getElementById('form-create-mandate');
+  const valCeiling = document.getElementById('mandate-val-ceiling');
+  const valCategory = document.getElementById('mandate-val-category');
+  const valExpires = document.getElementById('mandate-val-expires');
+
+  const isMandateValid = currentMandate && currentMandate.status === 'ACTIVE' && new Date(currentMandate.expires_at) > new Date();
+
+  if (isMandateValid) {
+    if (statusTag) {
+      statusTag.textContent = `ACTIVE (₹${Number(currentMandate.max_amount).toLocaleString('en-IN')})`;
+      statusTag.className = 'mandate-status-tag active';
+    }
+    if (activeBox) activeBox.style.display = 'block';
+    if (createForm) createForm.style.display = 'none';
+
+    if (valCeiling) valCeiling.textContent = `₹${Number(currentMandate.max_amount).toLocaleString('en-IN')}`;
+    if (valCategory) valCategory.textContent = currentMandate.category_scope || 'all';
+    if (valExpires) {
+      const exp = new Date(currentMandate.expires_at);
+      valExpires.textContent = `${exp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${exp.toLocaleDateString()})`;
+    }
+  } else {
+    if (statusTag) {
+      statusTag.textContent = 'NO MANDATE';
+      statusTag.className = 'mandate-status-tag';
+    }
+    if (activeBox) activeBox.style.display = 'none';
+    if (createForm) createForm.style.display = 'block';
+  }
+}
+
+async function fetchAndRenderUserOrders() {
+  const container = document.getElementById('profile-transactions-list');
+  const countBadge = document.getElementById('profile-order-count-badge');
+  if (!container) return;
+
+  container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:14px;text-align:center;">Loading audit trail...</div>';
+
+  try {
+    const res = await fetch('/api/customer/orders', { credentials: 'include' });
+    const data = await res.json();
+    const orders = data.orders || [];
+    currentUserOrders = orders;
+
+    if (countBadge) {
+      countBadge.textContent = `${orders.length} order${orders.length === 1 ? '' : 's'}`;
+    }
+
+    if (orders.length === 0) {
+      container.innerHTML = `
+        <div class="empty-transactions-box" style="text-align: center; padding: 24px 12px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px;">
+          <p style="margin: 0 0 4px; font-weight: 700; font-size: 13px; color: var(--text-primary);">No transactions recorded yet</p>
+          <span style="font-size: 11.5px; color: var(--text-muted);">Autonomous AI purchases and authorized checkouts will appear here.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = orders.map(o => {
+      const dateStr = new Date(o.created_at || o.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const itemsDesc = (o.items || []).map(i => `${i.name} (x${i.quantity || 1})`).join(', ') || 'Revify Order';
+      return `
+        <div class="user-tx-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 8px;">
+          <div>
+            <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">${o.id} &bull; <span style="font-weight: 500; color: var(--text-secondary);">${itemsDesc}</span></div>
+            <div style="font-size: 11px; color: var(--text-muted);">${dateStr} &bull; ${o.ai_assisted ? 'AI Autonomous Order' : 'Direct Store Order'}</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="font-mono font-bold" style="font-size: 13.5px; color: #1e293b;">₹${o.total.toLocaleString('en-IN')}</div>
+            <span class="badge-ai-feed font-mono" style="font-size: 10px; padding: 1px 6px;">${o.payment_status || 'PAID'}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<div style="font-size:12px;color:var(--pastel-crimson-text);padding:10px;">Failed to load transactions: ${err.message}</div>`;
+  }
+}
+
+function setupUserProfilePanel() {
+  const panel = document.getElementById('panel-user-profile');
+  const closeBtn = document.getElementById('btn-close-profile-panel');
+  const bottomDoneBtn = document.getElementById('btn-close-profile-bottom');
+  const logoutBtn = document.getElementById('btn-profile-logout');
+
+  closeBtn?.addEventListener('click', closeUserProfilePanel);
+  bottomDoneBtn?.addEventListener('click', closeUserProfilePanel);
+  panel?.addEventListener('click', (e) => {
+    if (e.target === panel) closeUserProfilePanel();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && panel?.classList.contains('active')) {
+      closeUserProfilePanel();
+    }
+  });
+
+  // Edit profile button in shopping view opens the panel
+  document.getElementById('btn-edit-profile-name')?.addEventListener('click', () => {
+    openUserProfilePanel();
+  });
+
+  // Revoke Mandate button
+  document.getElementById('btn-revoke-mandate')?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/mandates/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentMandate = null;
+        updateCustomerUI();
+        renderProfileMandateSection();
+      } else {
+        alert(data.error || 'Failed to revoke mandate.');
+      }
+    } catch (err) {
+      alert('Network error revoking mandate: ' + err.message);
+    }
+  });
+
+  // Adjust Limit toggle
+  document.getElementById('btn-toggle-new-mandate')?.addEventListener('click', () => {
+    const form = document.getElementById('form-create-mandate');
+    if (form) {
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+
+  // Mandate creation form submit
+  document.getElementById('form-create-mandate')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const maxAmount = Number(document.getElementById('mandate-input-max')?.value || 5000);
+    const categoryScope = document.getElementById('mandate-input-category')?.value || '*';
+    const durationSeconds = Number(document.getElementById('mandate-input-duration')?.value || 3600);
+
+    const submitBtn = document.getElementById('btn-submit-mandate');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing AP2 Mandate...';
+    }
+
+    try {
+      const res = await fetch('/api/mandates/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          max_amount: maxAmount,
+          category_scope: categoryScope,
+          duration_seconds: durationSeconds
+        })
+      });
+      const data = await res.json();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign & Authorize Spend Mandate →';
+      }
+
+      if (data.success && data.mandate) {
+        currentMandate = data.mandate;
+        updateCustomerUI();
+        renderProfileMandateSection();
+      } else {
+        alert(data.error || 'Failed to authorize mandate.');
+      }
+    } catch (err) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign & Authorize Spend Mandate →';
+      }
+      alert('Network error creating mandate: ' + err.message);
+    }
+  });
+
+  // Profile Edit form submit (PATCH)
+  document.getElementById('form-profile-edit')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('input-edit-fullname')?.value.trim();
+    const notif = document.getElementById('input-edit-notif')?.value;
+    const feedback = document.getElementById('profile-save-feedback');
+    const submitBtn = document.getElementById('btn-save-profile-patch');
+
+    if (!name) return alert('Name cannot be empty.');
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+    }
+
+    try {
+      const res = await fetch('/api/customer/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, notification_pref: notif })
+      });
+      const data = await res.json();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
+      }
+
+      if (data.success && data.user) {
+        currentCustomer = data.user;
+        updateCustomerUI();
+        const initials = currentCustomer.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+        const monogramEl = document.getElementById('profile-monogram-large');
+        const nameEl = document.getElementById('profile-user-fullname');
+        if (monogramEl) monogramEl.textContent = initials;
+        if (nameEl) nameEl.textContent = currentCustomer.name;
+
+        if (feedback) {
+          feedback.textContent = 'Profile updated successfully!';
+          feedback.style.color = '#16a34a';
+          setTimeout(() => { feedback.textContent = ''; }, 3000);
+        }
+      } else {
+        if (feedback) {
+          feedback.textContent = data.error || 'Failed to update profile.';
+          feedback.style.color = '#dc2626';
+        }
+      }
+    } catch (err) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
+      }
+      if (feedback) {
+        feedback.textContent = 'Network error: ' + err.message;
+        feedback.style.color = '#dc2626';
+      }
+    }
+  });
+
+  // Logout button
+  logoutBtn?.addEventListener('click', async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {}
+
+    currentCustomer = null;
+    currentMandate = null;
+    currentUserOrders = [];
+
+    closeUserProfilePanel();
+    updateCustomerUI();
+    window.switchAppView('view-landing');
+  });
 }
 
 function updateCustomerGreeting() {
@@ -524,7 +718,7 @@ function setupMerchantAuth() {
       });
       const data = await res.json();
       btn.disabled = false;
-      btn.textContent = 'Log In to Command Center →';
+      btn.textContent = 'Log In to Merchant Center →';
 
       if (data.success && data.merchant) {
         setAuthenticatedMerchant(data.merchant);
@@ -534,7 +728,7 @@ function setupMerchantAuth() {
       }
     } catch (err) {
       btn.disabled = false;
-      btn.textContent = 'Log In to Command Center →';
+      btn.textContent = 'Log In to Merchant Center →';
       alert('Network error during merchant login: ' + err.message);
     }
   });
@@ -754,6 +948,9 @@ function setupCustomerOrdersModal() {
 // =============================================================
 // 1.4 CUSTOMER LOGIN & AUTHENTICATION POP-UP MODAL CONTROLLER
 // =============================================================
+// =============================================================
+// 1.4 CUSTOMER LOGIN & AUTHENTICATION POP-UP MODAL CONTROLLER
+// =============================================================
 function openCustomerLoginModal(defaultTab = 'login') {
   const modal = document.getElementById('modal-customer-login');
   if (!modal) return;
@@ -763,6 +960,13 @@ function openCustomerLoginModal(defaultTab = 'login') {
   const formLogin = document.getElementById('form-popup-login');
   const formSignup = document.getElementById('form-popup-signup');
   const popupTitle = document.getElementById('auth-popup-title');
+  const errBanner = document.getElementById('auth-popup-error');
+
+  if (errBanner) {
+    errBanner.style.display = 'none';
+    errBanner.textContent = '';
+  }
+  document.querySelectorAll('.field-error-text').forEach(el => el.textContent = '');
 
   if (defaultTab === 'signup') {
     tabSignup?.classList.add('active');
@@ -775,7 +979,7 @@ function openCustomerLoginModal(defaultTab = 'login') {
     tabSignup?.classList.remove('active');
     if (formLogin) formLogin.style.display = 'block';
     if (formSignup) formSignup.style.display = 'none';
-    if (popupTitle) popupTitle.textContent = currentCustomer ? `Switch Account (Signed in as ${currentCustomer.name.split(' ')[0]})` : 'Customer Login & Sign In';
+    if (popupTitle) popupTitle.textContent = currentCustomer ? `Switch Account (Signed in as ${currentCustomer.name.split(' ')[0]})` : 'Sign In to Revify';
   }
 
   modal.classList.add('active');
@@ -788,6 +992,12 @@ function closeCustomerLoginModal() {
     modal.classList.remove('active');
     modal.style.display = 'none';
   }
+  const errBanner = document.getElementById('auth-popup-error');
+  if (errBanner) {
+    errBanner.style.display = 'none';
+    errBanner.textContent = '';
+  }
+  document.querySelectorAll('.field-error-text').forEach(el => el.textContent = '');
 }
 
 window.openCustomerLoginModal = openCustomerLoginModal;
@@ -802,8 +1012,34 @@ function setupCustomerLoginModal() {
   const formLogin = document.getElementById('form-popup-login');
   const formSignup = document.getElementById('form-popup-signup');
   const popupTitle = document.getElementById('auth-popup-title');
+  const errBanner = document.getElementById('auth-popup-error');
 
-  // Close popup handlers
+  function clearErrors() {
+    if (errBanner) {
+      errBanner.style.display = 'none';
+      errBanner.textContent = '';
+    }
+    document.querySelectorAll('.field-error-text').forEach(el => el.textContent = '');
+  }
+
+  function setTab(tab) {
+    clearErrors();
+    if (tab === 'signup') {
+      tabSignup?.classList.add('active');
+      tabLogin?.classList.remove('active');
+      if (formSignup) formSignup.style.display = 'block';
+      if (formLogin) formLogin.style.display = 'none';
+      if (popupTitle) popupTitle.textContent = 'Create Customer Account';
+    } else {
+      tabLogin?.classList.add('active');
+      tabSignup?.classList.remove('active');
+      if (formLogin) formLogin.style.display = 'block';
+      if (formSignup) formSignup.style.display = 'none';
+      if (popupTitle) popupTitle.textContent = 'Sign In to Revify';
+    }
+  }
+
+  // Close popup triggers
   closeBtn?.addEventListener('click', closeCustomerLoginModal);
   footerCloseBtn?.addEventListener('click', closeCustomerLoginModal);
   modal?.addEventListener('click', (e) => {
@@ -815,200 +1051,148 @@ function setupCustomerLoginModal() {
     }
   });
 
-  // Tab switching inside popup
-  tabLogin?.addEventListener('click', () => {
-    tabLogin.classList.add('active');
-    tabSignup?.classList.remove('active');
-    if (formLogin) formLogin.style.display = 'block';
-    if (formSignup) formSignup.style.display = 'none';
-    if (popupTitle) popupTitle.textContent = 'Sign In to Your Account';
-  });
+  // Tab switcher
+  tabLogin?.addEventListener('click', () => setTab('login'));
+  tabSignup?.addEventListener('click', () => setTab('signup'));
 
-  tabSignup?.addEventListener('click', () => {
-    tabSignup.classList.add('active');
-    tabLogin?.classList.remove('active');
-    if (formSignup) formSignup.style.display = 'block';
-    if (formLogin) formLogin.style.display = 'none';
-    if (popupTitle) popupTitle.textContent = 'Create Customer Account';
-  });
-
-  // Demo account quick login buttons inside popup
-  const demoAccounts = {
-    'btn-popup-demo-aarav': { email: 'aarav@example.com', pass: 'password123' },
-    'btn-popup-demo-priya': { email: 'priya@example.com', pass: 'password123' },
-    'btn-popup-demo-rohan': { email: 'rohan@example.com', pass: 'password123' },
-    'btn-popup-demo-ananya': { email: 'ananya@example.com', pass: 'password123' }
-  };
-
-  Object.entries(demoAccounts).forEach(([btnId, creds]) => {
-    document.getElementById(btnId)?.addEventListener('click', () => {
-      tabLogin?.click();
-      const emailInput = document.getElementById('popup-login-email');
-      const passInput = document.getElementById('popup-login-password');
-      if (emailInput) emailInput.value = creds.email;
-      if (passInput) passInput.value = creds.pass;
-      formLogin?.dispatchEvent(new Event('submit'));
+  // Live input error reset
+  ['popup-login-email', 'popup-login-password', 'popup-signup-name', 'popup-signup-email', 'popup-signup-password'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', () => {
+      clearErrors();
     });
   });
 
-  // Popup Login submission
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // Real Database-Backed Login
   formLogin?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearErrors();
+
     const email = document.getElementById('popup-login-email')?.value.trim();
     const password = document.getElementById('popup-login-password')?.value;
+
+    let hasError = false;
+    if (!email || !emailRegex.test(email)) {
+      const err = document.getElementById('error-login-email');
+      if (err) err.textContent = 'Please enter a valid email address.';
+      hasError = true;
+    }
+    if (!password || password.length < 6) {
+      const err = document.getElementById('error-login-password');
+      if (err) err.textContent = 'Password must be at least 6 characters.';
+      hasError = true;
+    }
+    if (hasError) return;
+
     const submitBtn = document.getElementById('btn-popup-submit-login');
-
-    if (!email || !password) return alert('Please enter both email and password.');
-
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Signing in...';
+      submitBtn.textContent = 'Authenticating...';
     }
 
     try {
-      const res = await fetch('/api/customer/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In & Continue Shopping →';
+        submitBtn.textContent = 'Log In →';
       }
 
-      if (data.success && data.customer) {
-        setAuthenticatedCustomer(data.customer);
+      if (data.success && data.user) {
+        setAuthenticatedCustomer(data.user, data.mandate || null);
         closeCustomerLoginModal();
         window.switchAppView('view-shopping');
-        appendChatBubble('Shopping Assistant', `Welcome back, **${data.customer.name}**! Your preferences and order history have been synchronized.`, 'assistant');
+        appendChatBubble('Shopping Assistant', `Welcome back, **${data.user.name}**! Your account and active spend mandates have been verified.`, 'assistant');
       } else {
-        alert(data.error || 'Login failed. Please verify credentials.');
+        if (errBanner) {
+          errBanner.textContent = data.error || 'Invalid email or password.';
+          errBanner.style.display = 'block';
+        }
       }
     } catch (err) {
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In & Continue Shopping →';
+        submitBtn.textContent = 'Log In →';
       }
-      alert('Network error during login: ' + err.message);
+      if (errBanner) {
+        errBanner.textContent = 'Network error during login: ' + err.message;
+        errBanner.style.display = 'block';
+      }
     }
   });
 
-  // Popup Sign Up submission
+  // Real Database-Backed Registration
   formSignup?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearErrors();
+
     const name = document.getElementById('popup-signup-name')?.value.trim();
     const email = document.getElementById('popup-signup-email')?.value.trim();
     const password = document.getElementById('popup-signup-password')?.value;
+
+    let hasError = false;
+    if (!name || name.length < 2) {
+      const err = document.getElementById('error-signup-name');
+      if (err) err.textContent = 'Full name is required (min. 2 characters).';
+      hasError = true;
+    }
+    if (!email || !emailRegex.test(email)) {
+      const err = document.getElementById('error-signup-email');
+      if (err) err.textContent = 'Please enter a valid email address.';
+      hasError = true;
+    }
+    if (!password || password.length < 6) {
+      const err = document.getElementById('error-signup-password');
+      if (err) err.textContent = 'Password must be at least 6 characters.';
+      hasError = true;
+    }
+    if (hasError) return;
+
     const submitBtn = document.getElementById('btn-popup-submit-signup');
-
-    if (!name || !email || !password) return alert('Please complete all required fields.');
-
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Creating account...';
+      submitBtn.textContent = 'Creating Account...';
     }
 
     try {
-      const res = await fetch('/api/customer/signup', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name, email, password })
       });
       const data = await res.json();
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account & Start Shopping →';
+        submitBtn.textContent = 'Create Account →';
       }
 
-      if (data.success && data.customer) {
-        setAuthenticatedCustomer(data.customer);
+      if (data.success && data.user) {
+        setAuthenticatedCustomer(data.user, data.mandate || null);
         closeCustomerLoginModal();
         window.switchAppView('view-shopping');
-        appendChatBubble('Shopping Assistant', `Welcome to Revify, **${data.customer.name}**! What can I help you find today?`, 'assistant');
+        appendChatBubble('Shopping Assistant', `Welcome to Revify, **${data.user.name}**! Your account is created and secured with bcrypt.`, 'assistant');
       } else {
-        alert(data.error || 'Sign up failed.');
+        if (errBanner) {
+          errBanner.textContent = data.error || 'Registration failed.';
+          errBanner.style.display = 'block';
+        }
       }
     } catch (err) {
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account & Start Shopping →';
+        submitBtn.textContent = 'Create Account →';
       }
-      alert('Network error during sign up: ' + err.message);
-    }
-  });
-}
-
-function setupEditProfileModal() {
-  const modal = document.getElementById('modal-edit-profile');
-  const openBtn = document.getElementById('btn-edit-profile-name');
-  const closeBtn = document.getElementById('btn-close-edit-profile');
-  const cancelBtn = document.getElementById('btn-cancel-edit-profile');
-  const form = document.getElementById('form-edit-customer-profile');
-  const nameInput = document.getElementById('edit-profile-name');
-  const emailInput = document.getElementById('edit-profile-email');
-
-  openBtn?.addEventListener('click', () => {
-    if (!currentCustomer) {
-      alert('Please sign in or sign up first.');
-      window.switchAppView('view-customer-auth');
-      return;
-    }
-    if (nameInput) nameInput.value = currentCustomer.name || '';
-    if (emailInput) emailInput.value = currentCustomer.email || '';
-    modal?.classList.add('active');
-  });
-
-  closeBtn?.addEventListener('click', () => modal?.classList.remove('active'));
-  cancelBtn?.addEventListener('click', () => modal?.classList.remove('active'));
-  modal?.addEventListener('click', (e) => {
-    if (e.target === modal) modal.classList.remove('active');
-  });
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentCustomer) return;
-
-    const newName = nameInput.value.trim();
-    const newEmail = emailInput.value.trim();
-    if (!newName) return alert('Customer name cannot be empty.');
-
-    const saveBtn = document.getElementById('btn-save-edit-profile');
-    if (saveBtn) {
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving & Syncing...';
-    }
-
-    try {
-      const res = await fetch('/api/customer/profile/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerId: currentCustomer.id,
-          name: newName,
-          email: newEmail
-        })
-      });
-      const data = await res.json();
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save & Sync Everywhere →';
+      if (errBanner) {
+        errBanner.textContent = 'Network error during registration: ' + err.message;
+        errBanner.style.display = 'block';
       }
-
-      if (data.success && data.customer) {
-        modal?.classList.remove('active');
-        setAuthenticatedCustomer(data.customer);
-        await refreshMerchantData();
-        alert(`Profile Synchronized!\n\n${data.message}`);
-      } else {
-        alert(data.error || 'Failed to update customer profile.');
-      }
-    } catch (err) {
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save & Sync Everywhere →';
-      }
-      alert('Network error updating profile: ' + err.message);
     }
   });
 }
@@ -2371,6 +2555,7 @@ function setupCheckoutModals() {
       const res = await fetch('/api/shopping/checkout/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           sessionId: currentSessionId,
           customerId: currentCustomer ? currentCustomer.id : null,
@@ -2421,6 +2606,7 @@ function setupCheckoutModals() {
       const res = await fetch('/api/shopping/checkout/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           sessionId: currentSessionId,
           customerId: currentCustomer ? currentCustomer.id : null,
@@ -2447,11 +2633,12 @@ function setupCheckoutModals() {
         loadTopRecommendations();
         refreshMerchantData();
       } else {
-        const failText = `Your payment wasn't completed (${payData.reason}), so your order has not been confirmed. Your cart is still safely preserved.`;
+        const errorReason = payData.message || payData.reason || (payData.error === 'MANDATE_EXCEEDED' ? 'Mandate Limit Exceeded: This transaction exceeds your authorized AP2 spend ceiling.' : 'Payment failed.');
+        const failText = `Your payment wasn't completed (${errorReason}), so your order has not been confirmed. Your cart is still safely preserved.`;
         latestAIResponseText = failText;
         appendChatBubble('Shopping Assistant', failText, 'assistant');
 
-        alert(`Payment Failed:\n\n${payData.reason}\n\nYour cart has been preserved.`);
+        alert(`Payment Not Completed:\n\n${errorReason}\n\nYour cart has been preserved.`);
       }
     } catch (err) {
       executePayBtn.disabled = false;

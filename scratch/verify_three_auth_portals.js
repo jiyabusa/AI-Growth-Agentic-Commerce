@@ -77,7 +77,7 @@ async function verifyAll() {
   assert(html.includes('id="form-merchant-login"'), 'Missing form-merchant-login');
   assert(html.includes('id="form-merchant-signup"'), 'Missing form-merchant-signup');
   assert(html.includes('id="btn-fill-demo-revify"') || html.includes('id="btn-fill-demo-omnigrowth"'), 'Missing 1-click demo button for merchant');
-  console.log('  ✓ Verified: AI Commerce Command Center Login Dashboard (Merchant)');
+  console.log('  ✓ Verified: Merchant Center Login Dashboard (Merchant)');
 
   // 2.3: AI-to-AI Login Dashboard
   assert(html.includes('id="view-ai2ai-auth"'), 'Missing view-ai2ai-auth');

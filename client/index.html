@@ -32,31 +32,30 @@
         <span class="nav-btn-icon">🛍️</span> AI Shopping
       </button>
       <button class="nav-switch-btn" data-target="view-merchant" id="btn-nav-merchant">
-        <span class="nav-btn-icon">⚡</span> Command Center
+        <span class="nav-btn-icon">⚡</span> Merchant Center
       </button>
     </div>
 
     <!-- Top Right Status & Cart Button -->
     <div class="top-nav-right">
-      <!-- Direct Login Pop-up Trigger -->
-      <button class="btn-login-popup-nav" id="btn-open-login-popup" title="Customer Login &amp; Sign In">
-        <span class="login-key-icon">🔑</span>
+      <!-- Direct Login Pop-up Trigger (Shown when unauthenticated) -->
+      <button class="btn-login-popup-nav" id="btn-open-login-popup" title="Log In to Revify">
         <span class="login-btn-text">Log In</span>
       </button>
 
-      <!-- Customer Account Pill / Quick Auth -->
-      <button class="btn-customer-account-nav" id="btn-nav-customer" title="Customer Profile &amp; Authentication">
-        <span class="customer-avatar-icon" id="nav-customer-avatar">👤</span>
-        <span class="customer-name-text" id="nav-customer-name">Sign In / Sign Up</span>
+      <!-- Customer Account Monogram Chip (Shown when authenticated) -->
+      <button class="btn-customer-account-nav" id="btn-nav-customer" style="display: none;" title="Your Profile &amp; Spend Mandate">
+        <span class="customer-monogram-avatar" id="nav-customer-monogram">--</span>
+        <span class="customer-name-text" id="nav-customer-name">Account</span>
       </button>
 
-      <div class="agent-status-pill" id="global-agent-pill">
-        <span class="status-dot dot-active"></span>
-        <span class="status-text">Agent: Active</span>
+      <!-- Dynamic Agent Mandate Indicator (Computed live, never hardcoded) -->
+      <div class="agent-status-pill pill-no-mandate" id="global-agent-pill" title="AI Agent Delegation Mandate Status">
+        <span class="status-dot dot-inactive" id="global-agent-dot"></span>
+        <span class="status-text" id="global-agent-text">Agent: No Mandate</span>
       </div>
 
-      <button class="btn-cart-nav" id="btn-open-cart">
-        <span class="cart-icon">🛒</span>
+      <button class="btn-cart-nav" id="btn-open-cart" title="Shopping Cart">
         <span class="cart-label">Cart</span>
         <span class="cart-badge" id="nav-cart-count">0</span>
       </button>
@@ -104,12 +103,12 @@
             <div class="card-icon-pill icon-lavender">⚡</div>
             <span class="card-tag">Merchant Command</span>
           </div>
-          <h2 class="portal-card-title">AI Commerce Command Center</h2>
+          <h2 class="portal-card-title">Merchant Center</h2>
           <p class="portal-card-desc">
             Monitor AI-attributed revenue growth, inspect AI sales intelligence, audit product readiness, run sales experiments, and manage deterministic policy boundaries.
           </p>
           <button class="btn-portal btn-merchant-action">
-            Open Command Center &rarr;
+            Open Merchant Center &rarr;
           </button>
         </div>
       </div>
@@ -142,21 +141,21 @@
         <form id="form-customer-signup" class="auth-form active">
           <div class="form-group">
             <label class="form-label" for="signup-name">Full Name</label>
-            <input type="text" id="signup-name" class="form-input" placeholder="e.g. Jiya Patel" required autocomplete="name">
+            <input type="text" id="signup-name" class="form-input" placeholder="Your full name" required autocomplete="name">
           </div>
 
           <div class="form-group">
             <label class="form-label" for="signup-email">Email Address</label>
-            <input type="email" id="signup-email" class="form-input" placeholder="jiya@example.com" required autocomplete="email">
+            <input type="email" id="signup-email" class="form-input" placeholder="name@example.com" required autocomplete="email">
           </div>
 
           <div class="form-group">
             <label class="form-label" for="signup-password">Password</label>
-            <input type="password" id="signup-password" class="form-input" placeholder="Create a secure password" required autocomplete="new-password">
+            <input type="password" id="signup-password" class="form-input" placeholder="Create a password (min. 6 chars)" required autocomplete="new-password">
           </div>
 
           <div class="auth-terms-hint">
-            By signing up, your AI shopping assistant will remember your session context, cart items, and test-mode orders.
+            By signing up, your session is authenticated with bcrypt hashing and signed JWT cookies.
           </div>
 
           <button type="submit" class="btn-auth-primary" id="btn-submit-signup">
@@ -168,7 +167,7 @@
         <form id="form-customer-login" class="auth-form">
           <div class="form-group">
             <label class="form-label" for="login-email">Email Address</label>
-            <input type="email" id="login-email" class="form-input" placeholder="jiya@example.com" required autocomplete="email">
+            <input type="email" id="login-email" class="form-input" placeholder="name@example.com" required autocomplete="email">
           </div>
 
           <div class="form-group">
@@ -179,29 +178,6 @@
           <button type="submit" class="btn-auth-primary" id="btn-submit-login">
             Log In &amp; Continue &rarr;
           </button>
-
-          <!-- Quick 1-Click Demo Profiles for Returning Customers -->
-          <div class="demo-profiles-box">
-            <span class="demo-profiles-label">⚡ 1-Click Test Customer Profiles (Indian Demo Accounts):</span>
-            <div class="demo-profiles-list">
-              <button type="button" class="btn-demo-profile" id="btn-fill-demo-aarav" title="Log in as Aarav Sharma (Audio & Travel)">
-                <span class="dp-name font-bold">Aarav Sharma</span>
-                <span class="dp-hint">ANC Headphones &bull; Travel Gear</span>
-              </button>
-              <button type="button" class="btn-demo-profile" id="btn-fill-demo-priya" title="Log in as Priya Shah (Headphones + Case Cross-Sell)">
-                <span class="dp-name font-bold">Priya Shah</span>
-                <span class="dp-hint">Headphones &bull; +₹799 Companion Case</span>
-              </button>
-              <button type="button" class="btn-demo-profile" id="btn-fill-demo-rohan" title="Log in as Rohan Mehta (Mechanical Keyboards & Desk Setup)">
-                <span class="dp-name font-bold">Rohan Mehta</span>
-                <span class="dp-hint">Keyboards &bull; Desk Setup History</span>
-              </button>
-              <button type="button" class="btn-demo-profile" id="btn-fill-demo-ananya" title="Log in as Ananya Patel (Ergonomic Desk & USB-C)">
-                <span class="dp-name font-bold">Ananya Patel</span>
-                <span class="dp-hint">Laptop Riser &bull; USB-C Docking Hub</span>
-              </button>
-            </div>
-          </div>
         </form>
 
         <div class="auth-footer-note">
@@ -222,8 +198,8 @@
           <div class="auth-icon-badge auth-logo-badge merchant-icon">
             <img src="logo.png" alt="Revify" class="auth-logo-img">
           </div>
-          <span class="auth-eyebrow">REVIFY COMMAND CENTER</span>
-          <h2 class="auth-title">Welcome to AI Commerce Command Center</h2>
+          <span class="auth-eyebrow">REVIFY MERCHANT CENTER</span>
+          <h2 class="auth-title">Welcome to Merchant Center</h2>
           <p class="auth-sub">Sign in to access your merchant dashboard, revenue analytics, AI attribution, product management, policy controls, and real-time audit trail.</p>
         </div>
 
@@ -246,7 +222,7 @@
           </div>
 
           <button type="submit" class="btn-auth-primary merchant-btn" id="btn-submit-merchant-login">
-            Log In to Command Center &rarr;
+            Log In to Merchant Center &rarr;
           </button>
 
           <!-- Quick 1-Click Demo Merchant Profiles -->
@@ -313,11 +289,11 @@
       <header class="store-header" id="shopping-customer-bar">
         <div class="store-header-left">
           <div class="store-account-kicker">
-            <span class="store-account-avatar" id="customer-avatar-badge">JP</span>
-            <span class="store-account-label">Personal Shopper</span>
+            <span class="store-account-avatar customer-monogram-avatar" id="customer-avatar-badge">--</span>
+            <span class="store-account-label" id="store-customer-name">Personal Shopper</span>
           </div>
-          <h1 class="store-greeting" id="shopping-customer-greeting">Good afternoon, Priya</h1>
-          <p class="store-context-note" id="customer-history-indicator">Curated for your preferences</p>
+          <h1 class="store-greeting" id="shopping-customer-greeting">Welcome to Revify</h1>
+          <p class="store-context-note" id="customer-history-indicator">Conversational AI product discovery with bounded agentic checkout</p>
           <!-- Hidden compatibility elements for scripts -->
           <span id="customer-status-badge" style="display: none;"></span>
           <span id="customer-session-pill" style="display: none;"></span>
@@ -574,7 +550,7 @@
   </main>
 
   <!-- ============================================================= -->
-  <!-- VIEW 3: MERCHANT AI COMMERCE COMMAND CENTER -->
+  <!-- VIEW 3: MERCHANT CENTER -->
   <!-- ============================================================= -->
   <main id="view-merchant" class="app-view">
     <div class="merchant-layout">
@@ -641,13 +617,13 @@
       <section class="merchant-content-area">
 
         <!-- ========================================================= -->
-        <!-- SUB-VIEW 1: COMMAND CENTER OVERVIEW -->
+        <!-- SUB-VIEW 1: MERCHANT CENTER OVERVIEW -->
         <!-- ========================================================= -->
         <div id="sub-overview" class="sub-view active">
           <!-- Command Header -->
           <div class="sub-header-row">
             <div>
-              <span class="sub-view-eyebrow">AI COMMERCE COMMAND CENTER</span>
+              <span class="sub-view-eyebrow">MERCHANT CENTER</span>
               <h2 class="sub-view-title">Welcome back, Revify Admin</h2>
               <p class="sub-view-desc">High-level visibility into store revenue, AI growth attribution, agent health, and readiness.</p>
             </div>
@@ -1620,96 +1596,232 @@
   </div>
 
   <!-- ============================================================= -->
-  <!-- MODAL 8: CUSTOMER LOGIN & AUTHENTICATION POPUP MODAL -->
+  <!-- MODAL 8: CUSTOMER LOGIN & SIGN UP POPUP MODAL -->
   <!-- ============================================================= -->
-  <div class="modal-overlay active" id="modal-customer-login" style="display: flex;">
-    <div class="modal-card modal-auth-popup-card" style="max-width: 460px;">
+  <div class="modal-overlay" id="modal-customer-login">
+    <div class="modal-card modal-auth-popup-card" style="max-width: 440px;">
       <div class="modal-header">
         <div class="auth-popup-brand-wrap" style="display: flex; align-items: center; gap: 10px;">
-          <div class="brand-logo-gem" style="width: 32px; height: 32px;">
+          <div class="brand-logo-gem" style="width: 28px; height: 28px;">
             <img src="logo.png" alt="Revify" class="brand-logo-img">
           </div>
           <div>
-            <span class="modal-eyebrow">CUSTOMER GATEWAY</span>
-            <h2 class="modal-title" id="auth-popup-title">Customer Login &amp; Sign In</h2>
+            <span class="modal-eyebrow">AUTHENTICATION GATEWAY</span>
+            <h2 class="modal-title" id="auth-popup-title">Sign In to Revify</h2>
           </div>
         </div>
-        <button class="modal-close" id="btn-close-customer-login-modal">&times;</button>
+        <button class="modal-close" id="btn-close-customer-login-modal" title="Close modal">&times;</button>
       </div>
 
-      <div class="modal-body" style="padding: 20px;">
-        <!-- Auth Tabs Switcher inside Popup -->
-        <div class="auth-tabs" style="margin-bottom: 16px;">
-          <button type="button" class="auth-tab-btn active" id="tab-popup-login" data-popup-tab="login">Log In</button>
-          <button type="button" class="auth-tab-btn" id="tab-popup-signup" data-popup-tab="signup">New Account (Sign Up)</button>
-        </div>
+      <div class="modal-body" style="padding: 22px 24px;">
+        <!-- Auth Error Banner -->
+        <div class="auth-error-banner" id="auth-popup-error" style="display: none;"></div>
 
-        <!-- 1-Click Quick Demo Customer Accounts -->
-        <div class="demo-accounts-tray" style="margin-bottom: 16px; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <span class="demo-tray-label" style="display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px;">
-            ⚡ 1-CLICK DEMO ACCOUNTS:
-          </span>
-          <div class="demo-chips-grid" style="display: flex; flex-wrap: wrap; gap: 6px;">
-            <button type="button" class="btn-demo-chip" id="btn-popup-demo-aarav" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ede9fe; background: #f5f3ff; color: #6d28d9; cursor: pointer; font-weight: 600;">
-              👤 Aarav (Audio Fan)
-            </button>
-            <button type="button" class="btn-demo-chip" id="btn-popup-demo-priya" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ede9fe; background: #f5f3ff; color: #6d28d9; cursor: pointer; font-weight: 600;">
-              👤 Priya (Traveler)
-            </button>
-            <button type="button" class="btn-demo-chip" id="btn-popup-demo-rohan" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ede9fe; background: #f5f3ff; color: #6d28d9; cursor: pointer; font-weight: 600;">
-              👤 Rohan (Desk Setup)
-            </button>
-            <button type="button" class="btn-demo-chip" id="btn-popup-demo-ananya" style="font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ede9fe; background: #f5f3ff; color: #6d28d9; cursor: pointer; font-weight: 600;">
-              👤 Ananya (New User)
-            </button>
-          </div>
+        <!-- Auth Tabs Switcher inside Popup -->
+        <div class="auth-tabs" style="margin-bottom: 20px;">
+          <button type="button" class="auth-tab-btn active" id="tab-popup-login" data-popup-tab="login">Log In</button>
+          <button type="button" class="auth-tab-btn" id="tab-popup-signup" data-popup-tab="signup">Sign Up</button>
         </div>
 
         <!-- POPUP TAB 1: LOG IN FORM -->
-        <form id="form-popup-login" class="auth-form active">
-          <div class="form-group" style="margin-bottom: 12px;">
+        <form id="form-popup-login" class="auth-form active" novalidate>
+          <div class="form-group" style="margin-bottom: 14px;">
             <label class="form-label" for="popup-login-email">Email Address</label>
-            <input type="email" id="popup-login-email" class="form-input" placeholder="priya@example.com" required autocomplete="email">
+            <input type="email" id="popup-login-email" class="form-input" placeholder="name@example.com" required autocomplete="email">
+            <span class="field-error-text" id="error-login-email"></span>
           </div>
 
-          <div class="form-group" style="margin-bottom: 16px;">
+          <div class="form-group" style="margin-bottom: 18px;">
             <label class="form-label" for="popup-login-password">Password</label>
-            <input type="password" id="popup-login-password" class="form-input" placeholder="Enter password" required autocomplete="current-password" value="password123">
+            <input type="password" id="popup-login-password" class="form-input" placeholder="Enter password (min. 6 characters)" required autocomplete="current-password">
+            <span class="field-error-text" id="error-login-password"></span>
           </div>
 
-          <button type="submit" class="btn-primary" id="btn-popup-submit-login" style="width: 100%; justify-content: center; padding: 10px 16px; font-weight: 700;">
-            Sign In &amp; Continue Shopping &rarr;
+          <button type="submit" class="btn-primary" id="btn-popup-submit-login" style="width: 100%; justify-content: center; padding: 11px 16px; font-weight: 700;">
+            Log In &rarr;
           </button>
         </form>
 
         <!-- POPUP TAB 2: SIGN UP FORM -->
-        <form id="form-popup-signup" class="auth-form" style="display: none;">
-          <div class="form-group" style="margin-bottom: 12px;">
+        <form id="form-popup-signup" class="auth-form" style="display: none;" novalidate>
+          <div class="form-group" style="margin-bottom: 14px;">
             <label class="form-label" for="popup-signup-name">Full Name</label>
-            <input type="text" id="popup-signup-name" class="form-input" placeholder="e.g. Maya Verma" required autocomplete="name">
+            <input type="text" id="popup-signup-name" class="form-input" placeholder="Your full name" required autocomplete="name">
+            <span class="field-error-text" id="error-signup-name"></span>
           </div>
 
-          <div class="form-group" style="margin-bottom: 12px;">
+          <div class="form-group" style="margin-bottom: 14px;">
             <label class="form-label" for="popup-signup-email">Email Address</label>
-            <input type="email" id="popup-signup-email" class="form-input" placeholder="e.g. maya@example.com" required autocomplete="email">
+            <input type="email" id="popup-signup-email" class="form-input" placeholder="name@example.com" required autocomplete="email">
+            <span class="field-error-text" id="error-signup-email"></span>
           </div>
 
-          <div class="form-group" style="margin-bottom: 16px;">
+          <div class="form-group" style="margin-bottom: 18px;">
             <label class="form-label" for="popup-signup-password">Password</label>
-            <input type="password" id="popup-signup-password" class="form-input" placeholder="Create a password" required autocomplete="new-password" value="password123">
+            <input type="password" id="popup-signup-password" class="form-input" placeholder="Create password (min. 6 characters)" required autocomplete="new-password">
+            <span class="field-error-text" id="error-signup-password"></span>
           </div>
 
-          <button type="submit" class="btn-primary" id="btn-popup-submit-signup" style="width: 100%; justify-content: center; padding: 10px 16px; font-weight: 700;">
-            Create Account &amp; Start Shopping &rarr;
+          <button type="submit" class="btn-primary" id="btn-popup-submit-signup" style="width: 100%; justify-content: center; padding: 11px 16px; font-weight: 700;">
+            Create Account &rarr;
           </button>
         </form>
       </div>
 
-      <div class="modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-        <span class="field-hint" style="font-size: 11.5px; color: #64748b;">
-          Encrypted sessions with verified order attribution.
+      <div class="modal-footer" style="padding: 12px 24px; background: #f8fafc; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+        <span class="field-hint" style="font-size: 11.5px; color: var(--text-muted);">
+          Protected with bcrypt password hashing &amp; JWT sessions.
         </span>
         <button type="button" class="btn-secondary" id="btn-close-customer-login-footer">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 9: CUSTOMIZED USER PROFILE & SPEND MANDATE PANEL -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="panel-user-profile">
+    <div class="modal-card modal-profile-panel-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div class="profile-header-user-wrap" style="display: flex; align-items: center; gap: 14px;">
+          <div class="monogram-avatar-large" id="profile-monogram-large">--</div>
+          <div>
+            <span class="modal-eyebrow">USER PROFILE &amp; AGENT MANDATES</span>
+            <h2 class="modal-title" id="profile-user-fullname" style="margin: 0; font-size: 18px;">User Account</h2>
+            <span class="profile-user-email-text" id="profile-user-email" style="font-size: 12.5px; color: var(--text-muted);">--</span>
+          </div>
+        </div>
+        <button class="modal-close" id="btn-close-profile-panel" title="Close">&times;</button>
+      </div>
+
+      <div class="modal-body profile-panel-body" style="padding: 20px 24px; max-height: 75vh; overflow-y: auto;">
+        <!-- Section 1: Agent Mandate Settings (NPCI-UAP / AP2) -->
+        <div class="profile-section-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
+          <div class="profile-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div>
+              <span class="profile-section-badge" style="font-size: 10.5px; font-weight: 800; color: #6d28d9; letter-spacing: 0.5px; text-transform: uppercase;">
+                AUTONOMOUS AGENT DELEGATION
+              </span>
+              <h3 class="profile-section-title" style="margin: 2px 0 0; font-size: 15px; font-weight: 800; color: var(--text-primary);">
+                Spend Mandate (AP2 / UAP Protocol)
+              </h3>
+            </div>
+            <span class="mandate-status-tag" id="profile-mandate-status-tag">NO MANDATE</span>
+          </div>
+          <p class="profile-section-desc" style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0 0 14px;">
+            Authorize a cryptographically signed spending ceiling for your AI shopping companion. When active, autonomous checkout executes within your authorized ceiling without interrupting you.
+          </p>
+
+          <!-- Current Active Mandate Overview Box -->
+          <div class="mandate-active-box" id="box-mandate-active" style="display: none; background: #ffffff; border: 1.5px solid #c4b5fd; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+            <div class="mandate-stat-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
+              <div class="mandate-stat-item">
+                <span class="stat-label" style="display: block; font-size: 10px; font-weight: 700; color: #64748b;">SPEND CEILING</span>
+                <span class="stat-value" id="mandate-val-ceiling" style="font-size: 16px; font-weight: 800; color: #6d28d9;">₹5,000</span>
+              </div>
+              <div class="mandate-stat-item">
+                <span class="stat-label" style="display: block; font-size: 10px; font-weight: 700; color: #64748b;">CATEGORY SCOPE</span>
+                <span class="stat-value" id="mandate-val-category" style="font-size: 13px; font-weight: 700; color: #1e293b;">electronics</span>
+              </div>
+              <div class="mandate-stat-item">
+                <span class="stat-label" style="display: block; font-size: 10px; font-weight: 700; color: #64748b;">EXPIRATION</span>
+                <span class="stat-value" id="mandate-val-expires" style="font-size: 12px; font-weight: 600; color: #1e293b;">--</span>
+              </div>
+            </div>
+            <div class="mandate-card-actions" style="display: flex; gap: 8px; justify-content: flex-end;">
+              <button type="button" class="btn-sm btn-danger-outline" id="btn-revoke-mandate">Revoke Mandate</button>
+              <button type="button" class="btn-sm btn-secondary" id="btn-toggle-new-mandate">Adjust Limit</button>
+            </div>
+          </div>
+
+          <!-- Create / Authorize Mandate Form -->
+          <form id="form-create-mandate" class="mandate-create-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+            <div class="mandate-inputs-row" style="display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div class="form-group">
+                <label class="form-label" for="mandate-input-max" style="font-size: 11px;">Max Ceiling (₹)</label>
+                <input type="number" id="mandate-input-max" class="form-input" min="500" max="50000" step="500" value="5000" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="mandate-input-category" style="font-size: 11px;">Category Scope</label>
+                <select id="mandate-input-category" class="form-input">
+                  <option value="electronics">Electronics &amp; Audio</option>
+                  <option value="accessories">Travel &amp; Accessories</option>
+                  <option value="*">All Categories (*)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="mandate-input-duration" style="font-size: 11px;">Duration</label>
+                <select id="mandate-input-duration" class="form-input">
+                  <option value="1800">30 min</option>
+                  <option value="3600" selected>1 hour</option>
+                  <option value="86400">24 hours</option>
+                  <option value="604800">7 days</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary btn-sm" id="btn-submit-mandate" style="width: 100%; justify-content: center; padding: 8px 14px;">
+              Sign &amp; Authorize Spend Mandate &rarr;
+            </button>
+          </form>
+        </div>
+
+        <!-- Section 2: Editable User Profile Details -->
+        <div class="profile-section-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 18px;">
+          <div class="profile-section-header" style="margin-bottom: 12px;">
+            <span class="profile-section-badge" style="font-size: 10.5px; font-weight: 800; color: #6d28d9; letter-spacing: 0.5px; text-transform: uppercase;">
+              ACCOUNT PREFERENCES
+            </span>
+            <h3 class="profile-section-title" style="margin: 2px 0 0; font-size: 15px; font-weight: 800; color: var(--text-primary);">
+              Edit Profile
+            </h3>
+          </div>
+          <form id="form-profile-edit" class="profile-edit-form">
+            <div class="profile-edit-row" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div class="form-group">
+                <label class="form-label" for="input-edit-fullname" style="font-size: 11px;">Full Name</label>
+                <input type="text" id="input-edit-fullname" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="input-edit-notif" style="font-size: 11px;">Notifications</label>
+                <select id="input-edit-notif" class="form-input">
+                  <option value="email">Email Receipts</option>
+                  <option value="sms">SMS Notifications</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+            </div>
+            <div class="profile-edit-footer" style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="profile-save-feedback" id="profile-save-feedback" style="font-size: 12px; font-weight: 600;"></span>
+              <button type="submit" class="btn-secondary btn-sm" id="btn-save-profile-patch">Save Changes</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Section 3: Live User Transaction History (Scoped to User ID) -->
+        <div class="profile-section-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px;">
+          <div class="profile-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div>
+              <span class="profile-section-badge" style="font-size: 10.5px; font-weight: 800; color: #6d28d9; letter-spacing: 0.5px; text-transform: uppercase;">
+                AUDIT TRAIL
+              </span>
+              <h3 class="profile-section-title" style="margin: 2px 0 0; font-size: 15px; font-weight: 800; color: var(--text-primary);">
+                Your Orders &amp; Transactions
+              </h3>
+            </div>
+            <span class="profile-order-count-badge" id="profile-order-count-badge" style="font-size: 11px; font-weight: 700; background: #ede9fe; color: #6d28d9; padding: 2px 8px; border-radius: 999px;">
+              0 orders
+            </span>
+          </div>
+
+          <div class="user-transactions-container" id="profile-transactions-list">
+            <!-- Empty state or transaction rows rendered dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer profile-footer-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; border-top: 1px solid var(--border-light); background: #ffffff;">
+        <button type="button" class="btn-danger-outline btn-sm" id="btn-profile-logout">Log Out</button>
+        <button type="button" class="btn-primary btn-sm" id="btn-close-profile-bottom">Done</button>
       </div>
     </div>
   </div>

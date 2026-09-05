@@ -21,7 +21,19 @@ let currentUserOrders = [];
 let currentMerchant = null;
 try {
   const saved = localStorage.getItem('revify_merchant') || localStorage.getItem('omnigrowth_merchant');
-  if (saved) currentMerchant = JSON.parse(saved);
+  if (saved) {
+    currentMerchant = JSON.parse(saved);
+    if (currentMerchant) {
+      if (currentMerchant.businessName && (currentMerchant.businessName.includes('OmniGrowth') || currentMerchant.businessName === 'OmniGrowth Labs')) {
+        currentMerchant.businessName = 'Revify Labs';
+      }
+      if (currentMerchant.name && (currentMerchant.name.includes('OmniGrowth') || currentMerchant.name === 'OmniGrowth Labs')) {
+        currentMerchant.name = 'Revify Labs';
+      }
+      localStorage.setItem('revify_merchant', JSON.stringify(currentMerchant));
+    }
+  }
+  localStorage.removeItem('omnigrowth_merchant');
 } catch (e) {
   currentMerchant = null;
 }
@@ -809,12 +821,19 @@ function updateMerchantUI() {
   const merchantAvatarEl = document.querySelector('.merchant-avatar-pill');
 
   if (currentMerchant) {
-    if (merchantNameEl) merchantNameEl.textContent = currentMerchant.businessName;
+    let bName = currentMerchant.businessName || currentMerchant.name || 'Revify Labs';
+    if (bName.includes('OmniGrowth')) {
+      bName = bName.replace(/OmniGrowth/gi, 'Revify');
+      currentMerchant.businessName = bName;
+    }
+    if (merchantNameEl) merchantNameEl.textContent = bName;
     if (merchantPlanEl) merchantPlanEl.textContent = currentMerchant.plan || 'Razorpay Test Mode';
     if (merchantAvatarEl) {
-      const initials = currentMerchant.businessName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      merchantAvatarEl.textContent = initials || 'RV';
+      const initials = bName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+      merchantAvatarEl.textContent = initials || 'RL';
     }
+  } else {
+    if (merchantNameEl) merchantNameEl.textContent = 'Revify Labs';
   }
 }
 

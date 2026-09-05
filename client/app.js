@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupMerchantAuth();
   setupTopRecommendations();
   setupCustomerOrdersModal();
+  setupCustomerLoginModal();
   setupEditProfileModal();
   setupMerchantSubviews();
   setupShoppingChat();
@@ -183,7 +184,7 @@ function setupNavigation() {
     if (currentCustomer) {
       openCustomerOrderHistory();
     } else {
-      window.switchAppView('view-customer-auth');
+      openCustomerLoginModal('login');
     }
   });
 
@@ -191,7 +192,7 @@ function setupNavigation() {
   function handleRouteHash() {
     const hash = (window.location.hash || '').replace('#', '').trim().toLowerCase();
     if (['login', 'auth', 'customer-auth', 'customer-login', 'signin', 'signup'].includes(hash)) {
-      window.switchAppView('view-customer-auth', false);
+      openCustomerLoginModal(hash === 'signup' ? 'signup' : 'login');
     } else if (hash === 'shopping') {
       window.switchAppView('view-shopping', false);
     } else if (['merchant-login', 'merchant-auth', 'merchant-signin'].includes(hash)) {
@@ -337,11 +338,9 @@ function setupCustomerAuth() {
     document.getElementById('form-customer-login').dispatchEvent(new Event('submit'));
   });
 
-  // Switch User / Logout button inside Shopping view
+  // Switch User / Account button inside Shopping view
   document.getElementById('btn-switch-user')?.addEventListener('click', () => {
-    if (confirm('Switch customer account or sign out?')) {
-      logoutCustomer();
-    }
+    openCustomerLoginModal('login');
   });
 
   document.getElementById('btn-open-order-history')?.addEventListener('click', openCustomerOrderHistory);
@@ -715,12 +714,199 @@ function renderTopRecommendations() {
 function setupCustomerOrdersModal() {
   const closeBtn = document.getElementById('btn-close-customer-orders');
   const footerCloseBtn = document.getElementById('btn-close-customer-orders-footer');
+  const switchAccountBtn = document.getElementById('btn-orders-switch-account');
   const modal = document.getElementById('modal-customer-orders');
 
   closeBtn?.addEventListener('click', () => modal?.classList.remove('active'));
   footerCloseBtn?.addEventListener('click', () => modal?.classList.remove('active'));
+  switchAccountBtn?.addEventListener('click', () => {
+    modal?.classList.remove('active');
+    openCustomerLoginModal('login');
+  });
   modal?.addEventListener('click', (e) => {
     if (e.target === modal) modal.classList.remove('active');
+  });
+}
+
+// =============================================================
+// 1.4 CUSTOMER LOGIN & AUTHENTICATION POP-UP MODAL CONTROLLER
+// =============================================================
+function openCustomerLoginModal(defaultTab = 'login') {
+  const modal = document.getElementById('modal-customer-login');
+  if (!modal) return;
+
+  const tabLogin = document.getElementById('tab-popup-login');
+  const tabSignup = document.getElementById('tab-popup-signup');
+  const formLogin = document.getElementById('form-popup-login');
+  const formSignup = document.getElementById('form-popup-signup');
+  const popupTitle = document.getElementById('auth-popup-title');
+
+  if (defaultTab === 'signup') {
+    tabSignup?.classList.add('active');
+    tabLogin?.classList.remove('active');
+    if (formSignup) formSignup.style.display = 'block';
+    if (formLogin) formLogin.style.display = 'none';
+    if (popupTitle) popupTitle.textContent = 'Create Customer Account';
+  } else {
+    tabLogin?.classList.add('active');
+    tabSignup?.classList.remove('active');
+    if (formLogin) formLogin.style.display = 'block';
+    if (formSignup) formSignup.style.display = 'none';
+    if (popupTitle) popupTitle.textContent = currentCustomer ? `Switch Account (Signed in as ${currentCustomer.name.split(' ')[0]})` : 'Sign In to Your Account';
+  }
+
+  modal.classList.add('active');
+}
+
+function closeCustomerLoginModal() {
+  const modal = document.getElementById('modal-customer-login');
+  if (modal) modal.classList.remove('active');
+}
+
+window.openCustomerLoginModal = openCustomerLoginModal;
+window.closeCustomerLoginModal = closeCustomerLoginModal;
+
+function setupCustomerLoginModal() {
+  const modal = document.getElementById('modal-customer-login');
+  const closeBtn = document.getElementById('btn-close-customer-login-modal');
+  const footerCloseBtn = document.getElementById('btn-close-customer-login-footer');
+  const tabLogin = document.getElementById('tab-popup-login');
+  const tabSignup = document.getElementById('tab-popup-signup');
+  const formLogin = document.getElementById('form-popup-login');
+  const formSignup = document.getElementById('form-popup-signup');
+  const popupTitle = document.getElementById('auth-popup-title');
+
+  // Close popup handlers
+  closeBtn?.addEventListener('click', closeCustomerLoginModal);
+  footerCloseBtn?.addEventListener('click', closeCustomerLoginModal);
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeCustomerLoginModal();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+      closeCustomerLoginModal();
+    }
+  });
+
+  // Tab switching inside popup
+  tabLogin?.addEventListener('click', () => {
+    tabLogin.classList.add('active');
+    tabSignup?.classList.remove('active');
+    if (formLogin) formLogin.style.display = 'block';
+    if (formSignup) formSignup.style.display = 'none';
+    if (popupTitle) popupTitle.textContent = 'Sign In to Your Account';
+  });
+
+  tabSignup?.addEventListener('click', () => {
+    tabSignup.classList.add('active');
+    tabLogin?.classList.remove('active');
+    if (formSignup) formSignup.style.display = 'block';
+    if (formLogin) formLogin.style.display = 'none';
+    if (popupTitle) popupTitle.textContent = 'Create Customer Account';
+  });
+
+  // Demo account quick login buttons inside popup
+  const demoAccounts = {
+    'btn-popup-demo-aarav': { email: 'aarav@example.com', pass: 'password123' },
+    'btn-popup-demo-priya': { email: 'priya@example.com', pass: 'password123' },
+    'btn-popup-demo-rohan': { email: 'rohan@example.com', pass: 'password123' },
+    'btn-popup-demo-ananya': { email: 'ananya@example.com', pass: 'password123' }
+  };
+
+  Object.entries(demoAccounts).forEach(([btnId, creds]) => {
+    document.getElementById(btnId)?.addEventListener('click', () => {
+      tabLogin?.click();
+      const emailInput = document.getElementById('popup-login-email');
+      const passInput = document.getElementById('popup-login-password');
+      if (emailInput) emailInput.value = creds.email;
+      if (passInput) passInput.value = creds.pass;
+      formLogin?.dispatchEvent(new Event('submit'));
+    });
+  });
+
+  // Popup Login submission
+  formLogin?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('popup-login-email')?.value.trim();
+    const password = document.getElementById('popup-login-password')?.value;
+    const submitBtn = document.getElementById('btn-popup-submit-login');
+
+    if (!email || !password) return alert('Please enter both email and password.');
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+    }
+
+    try {
+      const res = await fetch('/api/customer/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In & Continue Shopping →';
+      }
+
+      if (data.success && data.customer) {
+        setAuthenticatedCustomer(data.customer);
+        closeCustomerLoginModal();
+        appendChatBubble('Shopping Assistant', `Welcome back, **${data.customer.name}**! Your preferences and order history have been synchronized.`, 'assistant');
+      } else {
+        alert(data.error || 'Login failed. Please verify credentials.');
+      }
+    } catch (err) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In & Continue Shopping →';
+      }
+      alert('Network error during login: ' + err.message);
+    }
+  });
+
+  // Popup Sign Up submission
+  formSignup?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('popup-signup-name')?.value.trim();
+    const email = document.getElementById('popup-signup-email')?.value.trim();
+    const password = document.getElementById('popup-signup-password')?.value;
+    const submitBtn = document.getElementById('btn-popup-submit-signup');
+
+    if (!name || !email || !password) return alert('Please complete all required fields.');
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+    }
+
+    try {
+      const res = await fetch('/api/customer/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account & Start Shopping →';
+      }
+
+      if (data.success && data.customer) {
+        setAuthenticatedCustomer(data.customer);
+        closeCustomerLoginModal();
+        appendChatBubble('Shopping Assistant', `Welcome to Revify, **${data.customer.name}**! What can I help you find today?`, 'assistant');
+      } else {
+        alert(data.error || 'Sign up failed.');
+      }
+    } catch (err) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account & Start Shopping →';
+      }
+      alert('Network error during sign up: ' + err.message);
+    }
   });
 }
 

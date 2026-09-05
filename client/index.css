@@ -113,11 +113,112 @@ body {
 }
 
 .brand-logo-gem {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #ffffff;
+  border: 1.5px solid #ede9fe;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 3px;
+  transition: all 0.2s ease;
+}
+
+.nav-brand:hover .brand-logo-gem {
+  transform: scale(1.04);
+  border-color: #ddd6fe;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.hero-badge-logo {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 5px;
+}
+
+.auth-logo-badge {
+  background: #ffffff !important;
+  border: 1.5px solid #ede9fe;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.08);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-logo-img {
   width: 32px;
   height: 32px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, var(--lavender-primary), var(--purple-deep));
-  box-shadow: 0 2px 8px rgba(122, 99, 200, 0.3);
+  object-fit: contain;
+  display: block;
+}
+
+.hero-tag-logo {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+
+.dialogue-brand-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  background: #ffffff;
+  border: 1px solid #ede9fe;
+  border-radius: 7px;
+  padding: 3px;
+  box-shadow: 0 1px 4px rgba(124, 58, 237, 0.08);
+  display: block;
+}
+
+.merchant-logo-pill {
+  background: #ffffff !important;
+  border: 1.5px solid #ede9fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.08);
+}
+
+.merchant-logo-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.cart-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-title-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  background: #ffffff;
+  border: 1px solid #ede9fe;
+  border-radius: 6px;
+  padding: 2px;
+  display: block;
 }
 
 .brand-name-group {

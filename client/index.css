@@ -707,7 +707,31 @@ body {
 /* =============================================================
    VIEW 1: LANDING PAGE SWITCHER
    ============================================================= */
+#view-landing {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-watermark-bg {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(980px, 92vw);
+  height: 440px;
+  background-image: url('assets/revify-watermark.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: contain;
+  opacity: 0.055;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
 .landing-hero {
+  position: relative;
+  z-index: 1;
   max-width: 960px;
   margin: 36px auto;
   padding: 0 24px;
@@ -750,7 +774,11 @@ body {
 }
 
 .portal-card {
-  background-color: var(--bg-surface);
+  position: relative;
+  z-index: 1;
+  background-color: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 32px;

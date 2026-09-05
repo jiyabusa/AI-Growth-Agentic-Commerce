@@ -181,8 +181,7 @@ function setupNavigation() {
   document.getElementById('nav-brand-home')?.addEventListener('click', () => window.switchAppView('view-landing'));
 
   // Landing page portal card click handlers — open login popup directly if not logged in
-  document.getElementById('card-enter-shopping')?.addEventListener('click', (e) => {
-    if (e.target && e.target.id === 'btn-hero-login-popup') return;
+  document.getElementById('card-enter-shopping')?.addEventListener('click', () => {
     if (currentCustomer) {
       window.switchAppView('view-shopping');
     } else {
@@ -196,10 +195,6 @@ function setupNavigation() {
     } else {
       openCustomerLoginModal('login');
     }
-  });
-  document.getElementById('btn-hero-login-popup')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    openCustomerLoginModal('login');
   });
 
   document.getElementById('card-enter-merchant')?.addEventListener('click', () => {

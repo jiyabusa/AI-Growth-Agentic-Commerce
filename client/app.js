@@ -925,14 +925,38 @@ function setupMerchantSubviews() {
 function setupShoppingChat() {
   const chatForm = document.getElementById('chat-form');
   const chatInput = document.getElementById('chat-input');
+  const streamChatForm = document.getElementById('stream-chat-form');
+  const streamChatInput = document.getElementById('stream-chat-input');
+  const streamSendBtn = document.getElementById('btn-stream-send');
   const promptChips = document.querySelectorAll('.prompt-chip');
 
+  // Hero search form submission
   if (chatForm) {
     chatForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      handleUserMessageSubmission(chatInput.value);
+      handleUserMessageSubmission(chatInput ? chatInput.value : '');
     });
   }
+
+  // Sticky conversation composer form submission & send button
+  if (streamChatForm) {
+    streamChatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const msg = streamChatInput ? streamChatInput.value : '';
+      if (msg && msg.trim()) {
+        handleUserMessageSubmission(msg);
+      }
+    });
+  }
+
+  streamSendBtn?.addEventListener('click', (e) => {
+    // Allows direct button click or form submit
+    const msg = streamChatInput ? streamChatInput.value : '';
+    if (msg && msg.trim()) {
+      e.preventDefault();
+      handleUserMessageSubmission(msg);
+    }
+  });
 
   promptChips.forEach(chip => {
     chip.addEventListener('click', () => {
@@ -989,8 +1013,20 @@ async function handleUserMessageSubmission(messageText) {
   const cleanMsg = messageText.trim();
   lastUserIntent = cleanMsg;
 
+  // Clear both hero search input and bottom conversation composer input
   const chatInput = document.getElementById('chat-input');
   if (chatInput) chatInput.value = '';
+  const streamChatInput = document.getElementById('stream-chat-input');
+  if (streamChatInput) streamChatInput.value = '';
+
+  // Dismiss any voice error banners
+  const errBanner = document.getElementById('composer-error-banner');
+  if (errBanner) errBanner.style.display = 'none';
+
+  // Stop active voice recording if user manually submitted
+  if (voiceControllerInstance && voiceControllerInstance.state === 'LISTENING') {
+    voiceControllerInstance.stopListening();
+  }
 
   // Append user message bubble
   appendChatBubble('You', cleanMsg, 'user');
@@ -1317,10 +1353,22 @@ class RobustVoiceInputController {
     this.accumulatedFinal = '';
     this.currentInterim = '';
     this.silenceTimer = null;
-    this.silenceDurationMs = 1750;
-    this.hasDispatched = false;
+    this.silenceDurationMs = 2400;
     this.preferredLang = 'en-IN';
+    this.targetInputId = 'stream-chat-input';
 
+    // Sticky conversation composer elements
+    this.streamMicBtn = document.getElementById('btn-stream-mic');
+    this.streamMicIcon = document.getElementById('stream-mic-icon');
+    this.streamInput = document.getElementById('stream-chat-input');
+    this.composerStatus = document.getElementById('composer-voice-status');
+    this.composerStatusText = document.getElementById('composer-voice-state-text');
+    this.composerStopBtn = document.getElementById('btn-composer-voice-stop');
+    this.composerErrorBanner = document.getElementById('composer-error-banner');
+    this.composerErrorText = document.getElementById('composer-error-text');
+    this.composerDismissErrorBtn = document.getElementById('btn-dismiss-error');
+
+    // Hero search voice controls (preserved)
     this.micBtn = document.getElementById('btn-toggle-mic');
     this.micIcon = document.getElementById('mic-icon');
     this.voiceBanner = document.getElementById('voice-status-banner');
@@ -1338,24 +1386,68 @@ class RobustVoiceInputController {
   }
 
   setupListeners() {
+    // Fixed / Sticky composer microphone trigger
+    this.streamMicBtn?.addEventListener('click', () => {
+      if (this.state === 'LISTENING') {
+        this.stopListening();
+      } else {
+        this.startListening('stream-chat-input');
+      }
+    });
+
+    // Stop listening button in sticky status bar
+    this.composerStopBtn?.addEventListener('click', () => {
+      this.stopListening();
+    });
+
+    // Dismiss error banner button
+    this.composerDismissErrorBtn?.addEventListener('click', () => {
+      if (this.composerErrorBanner) this.composerErrorBanner.style.display = 'none';
+    });
+
+    // Hero search microphone trigger
     this.micBtn?.addEventListener('click', () => {
       if (this.state === 'LISTENING') {
-        this.stopAndFinalize();
+        this.stopListening();
       } else {
-        this.startListening();
+        this.startListening('chat-input');
       }
     });
 
     this.cancelBtn?.addEventListener('click', () => {
-      this.cancelListening();
+      this.stopListening();
     });
   }
 
-  startListening() {
+  getTargetInput() {
+    if (this.targetInputId === 'chat-input') {
+      return this.chatInput || this.streamInput;
+    }
+    return this.streamInput || this.chatInput;
+  }
+
+  showError(msg) {
+    if (this.composerErrorBanner && this.composerErrorText) {
+      this.composerErrorText.textContent = msg;
+      this.composerErrorBanner.style.display = 'flex';
+    } else {
+      alert(msg);
+    }
+  }
+
+  hideError() {
+    if (this.composerErrorBanner) {
+      this.composerErrorBanner.style.display = 'none';
+    }
+  }
+
+  startListening(targetInputId = 'stream-chat-input') {
+    this.targetInputId = targetInputId;
+    this.hideError();
+
     if (!this.isSupported()) {
-      // Graceful fallback: Open voice prompt tray and explain
       if (this.voicePromptsTray) this.voicePromptsTray.style.display = 'flex';
-      alert('Speech recognition is not natively supported in this browser. You can click any voice prompt below or use text chat.');
+      this.showError('Speech recognition is not natively supported in this browser. Please type your message.');
       return;
     }
 
@@ -1373,7 +1465,6 @@ class RobustVoiceInputController {
 
       this.accumulatedFinal = '';
       this.currentInterim = '';
-      this.hasDispatched = false;
 
       this.recognition.onstart = () => {
         this.setState('LISTENING');
@@ -1400,48 +1491,55 @@ class RobustVoiceInputController {
         this.accumulatedFinal = finalConcat.trim();
         this.currentInterim = interimConcat.trim();
 
+        // Accurately transcribe spoken words directly into the typing field for review/editing
         const fullDisplay = (this.accumulatedFinal + ' ' + this.currentInterim).trim();
         if (fullDisplay) {
+          const target = this.getTargetInput();
+          if (target) {
+            target.value = fullDisplay;
+            target.focus();
+          }
           this.updateLiveDisplay(`"${fullDisplay}"`);
-          if (this.chatInput) this.chatInput.value = fullDisplay;
         }
       };
 
       this.recognition.onerror = (event) => {
         if (event.error === 'no-speech') {
-          if (!this.accumulatedFinal) {
-            this.setState('IDLE');
-          }
+          // User paused speaking; keep words transcribed and smoothly return to idle
+          this.stopListening();
           return;
         }
 
         if (event.error === 'language-not-supported' && this.preferredLang === 'en-IN') {
           this.preferredLang = 'en-US';
-          this.startListening();
+          this.startListening(this.targetInputId);
           return;
         }
 
         this.clearSilenceTimer();
-        this.setState('ERROR');
-        
+        this.setState('IDLE');
+
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          this.showError('Microphone access was denied. Please allow microphone permissions in browser settings.');
           if (this.voicePromptsTray) this.voicePromptsTray.style.display = 'flex';
-          alert('Microphone access is disabled. You can select voice prompts from the helper tray below.');
+        } else if (event.error === 'audio-capture') {
+          this.showError('No microphone hardware detected. Please connect a microphone or type your message.');
+        } else if (event.error === 'network') {
+          this.showError('Speech recognition network error. Please try again or type your message.');
+        } else {
+          this.showError('Speech recognition was interrupted. You can review/edit the text and click Send.');
         }
       };
 
       this.recognition.onend = () => {
         this.clearSilenceTimer();
-        if (this.state === 'LISTENING' || this.state === 'PROCESSING') {
-          this.finalizeAndDispatch();
-        } else {
-          this.setState('IDLE');
-        }
+        this.setState('IDLE');
       };
 
       this.recognition.start();
     } catch (err) {
-      this.setState('ERROR');
+      this.setState('IDLE');
+      this.showError('Unable to access microphone. Please type your message.');
     }
   }
 
@@ -1449,7 +1547,7 @@ class RobustVoiceInputController {
     this.clearSilenceTimer();
     this.silenceTimer = setTimeout(() => {
       if (this.state === 'LISTENING') {
-        this.stopAndFinalize();
+        this.stopListening();
       }
     }, this.silenceDurationMs);
   }
@@ -1461,102 +1559,72 @@ class RobustVoiceInputController {
     }
   }
 
-  stopAndFinalize() {
+  stopListening() {
     this.clearSilenceTimer();
-    this.setState('PROCESSING');
-
     if (this.recognition) {
       try {
         this.recognition.stop();
-      } catch (e) {
-        this.finalizeAndDispatch();
-      }
-    } else {
-      this.finalizeAndDispatch();
+      } catch (e) {}
     }
-  }
-
-  finalizeAndDispatch() {
-    if (this.hasDispatched) return;
-
-    this.clearSilenceTimer();
-    const rawTranscript = (this.accumulatedFinal + ' ' + this.currentInterim).trim();
-
-    if (!rawTranscript || rawTranscript.length < 2 || !/[a-zA-Z0-9]/.test(rawTranscript)) {
-      this.setState('IDLE');
-      return;
-    }
-
-    this.hasDispatched = true;
-    this.setState('SENDING');
-
-    const cleanMessage = sanitizeCommerceVoiceTranscript(rawTranscript);
-    handleUserMessageSubmission(cleanMessage);
-
-    setTimeout(() => {
-      this.setState('IDLE');
-    }, 400);
+    this.setState('IDLE');
   }
 
   cancelListening() {
-    this.hasDispatched = true;
     this.clearSilenceTimer();
     if (this.recognition) {
       try { this.recognition.abort(); } catch (e) {}
       this.recognition = null;
     }
-    this.accumulatedFinal = '';
-    this.currentInterim = '';
-    if (this.chatInput) this.chatInput.value = '';
     this.setState('IDLE');
   }
 
   /**
-   * 1-Click Simulated Voice Query Runner (For voice chips and environments without mic access)
+   * 1-Click Simulated Voice Query Runner (For voice chips, automated testing, and headless environments)
    */
   simulateVoiceCommand(commandText) {
     if (!commandText) return;
-    if (this.chatInput) this.chatInput.value = commandText;
+    const target = this.getTargetInput();
+    if (target) target.value = commandText;
     this.setState('LISTENING');
     this.updateLiveDisplay(`"${commandText}"`);
 
     setTimeout(() => {
-      this.setState('SENDING');
-      setTimeout(() => {
-        this.setState('IDLE');
-        handleUserMessageSubmission(commandText);
-      }, 350);
-    }, 450);
+      this.setState('IDLE');
+      handleUserMessageSubmission(commandText);
+    }, 400);
   }
 
   setState(newState) {
     this.state = newState;
 
     if (newState === 'LISTENING') {
+      if (this.streamMicBtn) this.streamMicBtn.classList.add('listening');
       if (this.micBtn) this.micBtn.classList.add('listening');
+      if (this.streamMicIcon) this.streamMicIcon.textContent = '⏹️';
       if (this.micIcon) this.micIcon.textContent = '🎙';
+
+      if (this.composerStatus) this.composerStatus.style.display = 'flex';
+      if (this.composerStatusText) this.composerStatusText.textContent = 'Listening... Speak now';
       if (this.voiceBanner) this.voiceBanner.style.display = 'flex';
       if (this.voicePromptsTray) this.voicePromptsTray.style.display = 'flex';
       if (this.voiceLabel) this.voiceLabel.textContent = 'LISTENING...';
-    } else if (newState === 'PROCESSING') {
-      if (this.micBtn) this.micBtn.classList.remove('listening');
-      if (this.micIcon) this.micIcon.textContent = '◌';
-      if (this.voiceLabel) this.voiceLabel.textContent = 'PROCESSING...';
-    } else if (newState === 'SENDING') {
-      if (this.micBtn) this.micBtn.classList.remove('listening');
-      if (this.micIcon) this.micIcon.textContent = '↑';
-      if (this.voiceLabel) this.voiceLabel.textContent = 'SENDING...';
     } else {
+      if (this.streamMicBtn) this.streamMicBtn.classList.remove('listening');
       if (this.micBtn) this.micBtn.classList.remove('listening');
+      if (this.streamMicIcon) this.streamMicIcon.textContent = '🎙️';
       if (this.micIcon) this.micIcon.textContent = '🎤';
+
+      if (this.composerStatus) this.composerStatus.style.display = 'none';
       if (this.voiceBanner) this.voiceBanner.style.display = 'none';
-      if (this.voicePromptsTray) this.voicePromptsTray.style.display = 'flex';
     }
   }
 
   updateLiveDisplay(text) {
     if (this.voiceLiveText) {
       this.voiceLiveText.textContent = text;
+    }
+    if (this.composerStatusText && this.state === 'LISTENING') {
+      this.composerStatusText.textContent = 'Listening: ' + text;
     }
   }
 }
